@@ -1,5 +1,34 @@
 cmake_minimum_required(VERSION 3.15)
 
+option(GLFW_BUILD_DOCS OFF)
+option(GLFW_INSTALL OFF)
+option(GLFW_BUILD_EXAMPLES "Build the GLFW example programs" OFF)
+option(GLFW_BUILD_TESTS "Build the GLFW test programs" OFF)
+
+add_subdirectory("extern/glfw")
+
+option(JSON_BuildTests "Build the unit tests when BUILD_TESTING is enabled." OFF)
+add_subdirectory("extern/json")
+add_subdirectory("extern/spdlog")
+
+set(imgui_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/extern/imgui)
+add_subdirectory("extern/bitsery")
+
+set(tinygltf_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/extern/tinygltf)
+
+add_subdirectory(extern/RmlUi)
+
+option(LUA_BUILD_COMPILER OFF)
+add_subdirectory(extern/lua)
+add_subdirectory(extern/sol2)
+add_subdirectory(extern/freetype)
+add_subdirectory(extern/dxmath)
+
+add_subdirectory("RxUtil")
+add_subdirectory("RxCore")
+add_subdirectory("RxAssets")
+add_subdirectory("RxECS")
+
 add_library(RxEngine STATIC 
         src/Subsystems/Stats.hpp
         src/Subsystems/Stats.cpp
@@ -100,6 +129,7 @@ target_link_libraries(RxEngine PUBLIC freetype)
 target_link_libraries(RxEngine PUBLIC RmlLua)
 target_link_libraries(RxEngine PUBLIC glfw)
 target_link_libraries(RxEngine PUBLIC DirectXMath)
+
 target_include_directories(RxEngine PUBLIC ${imgui_SOURCE_DIR})
 target_sources(RxEngine PRIVATE ${imgui_SOURCE_DIR}/imgui_draw.cpp ${imgui_SOURCE_DIR}/imgui_widgets ${imgui_SOURCE_DIR}/imgui_demo.cpp ${imgui_SOURCE_DIR}/imgui.cpp ${imgui_SOURCE_DIR}/imgui_tables.cpp ${imgui_SOURCE_DIR}/misc/freetype/imgui_freetype.cpp )
 target_compile_options(RxEngine PUBLIC -DIMGUI_ENABLE_FREETYPE)
