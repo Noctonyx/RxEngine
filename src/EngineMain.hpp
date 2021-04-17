@@ -45,7 +45,7 @@ namespace RxEngine
 
     struct ComponentGui
     {
-        std::function<void(ecs::World *, ecs::entity_t)> editor;
+        std::function<void(ecs::EntityHandle e)> editor;
     };
 
     class EngineMain

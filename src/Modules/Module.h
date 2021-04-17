@@ -10,12 +10,24 @@ namespace RxEngine
 
     class Module
     {
+    protected:
+        ecs::World* world_;
+        EngineMain* engine_;
+
     public:
-        virtual void registerModule(EngineMain* engine, ecs::World * world) = 0;
+        Module(ecs::World* world, EngineMain* engine)
+            : world_(world),
+              engine_(engine)
+        {
+        }
+
+        virtual ~Module() = default;
+
+        virtual void registerModule() = 0;
 
         virtual void enable() = 0;
         virtual void disable() = 0;
 
-        virtual void unregisterModule() = 0;
+        virtual void deregisterModule() = 0;
     };
 }

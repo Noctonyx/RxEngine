@@ -32,7 +32,7 @@ namespace RxEngine
     {
         world_->getUpdate<ecs::SystemSet>(systemSet_)->enabled = false;
     }
-    void StatsModule::unregisterModule()
+    void StatsModule::deregisterModule()
     {
         
     }
