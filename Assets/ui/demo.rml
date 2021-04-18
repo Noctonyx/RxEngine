@@ -1,0 +1,39 @@
+<rml>
+	<head>
+		<title>Demo</title>
+		<link type="text/template" href="window.rml" />
+		<style>
+			body
+			{
+				/*
+				position: absolute;
+				left: 20px;
+				top: 30px;
+				//width: 300px;
+				right: 100px;
+				
+				margin: auto;
+				*/
+				height: 225px;
+			}
+			#root {
+
+			}
+			
+			div#title_bar div#icon
+			{
+				display: none;
+			}
+			
+			div#content
+			{
+				text-align: left;
+			}
+		</style>
+	</head>
+	<body template="window">
+		This is a sample.
+
+		<button onclick="print('Hello world!')" >Button</button>
+	</body>
+</rml>

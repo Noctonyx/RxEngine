@@ -18,7 +18,7 @@ using namespace DirectX;
 
 namespace RxEngine
 {
-    Renderer::Renderer(vk::Device device, World * world)
+    Renderer::Renderer(vk::Device device, ecs::World * world)
         : DeviceObject(device)
         , shadowImagesChanged(true)
         , materialManagerSequence_(99999999)

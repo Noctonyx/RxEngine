@@ -226,7 +226,7 @@ namespace RxEngine
     class Renderer : public RxCore::DeviceObject
     {
     public:
-        explicit Renderer(vk::Device device, World * world);
+        explicit Renderer(vk::Device device, ecs::World * world);
 
         ~Renderer();
 
@@ -407,7 +407,7 @@ namespace RxEngine
         std::vector<std::shared_ptr<RxCore::DescriptorSet>> instanceBUfferDS;
         uint32_t ibCycle{};
         std::mutex ibLock{};
-        World* world_;
+        ecs::World* world_;
         //flecs::world* world_;
         //flecs::query<const Render::MaterialPipelineDetails> query_;
     };

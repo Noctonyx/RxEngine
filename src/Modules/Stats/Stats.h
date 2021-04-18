@@ -4,6 +4,7 @@
 
 #include "Modules/Module.h"
 #include "RxECS.h"
+#include "Vulkan/Device.h"
 
 namespace RxEngine
 {
@@ -17,6 +18,8 @@ namespace RxEngine
         float fps_;
         std::deque<float> fpsHistory_;
         std::deque<float> gpuHistory_;
+
+        std::vector<RxCore::MemHeapStatus> heaps_;
 
     public:
         void registerModule() override;

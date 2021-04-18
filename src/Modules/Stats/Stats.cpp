@@ -6,21 +6,26 @@
 
 namespace RxEngine
 {
-
-    void StatsModule::registerModule(EngineMain * engine, ecs::World * w)
+    void StatsModule::registerModule()
     {
-        world_ = w;
-        engine_ = engine;
-
         systemSet_ = world_->newEntity().set<ecs::SystemSet>({false}).id;
 
         world_->createSystem()
-             .withSet(systemSet_)
-             .execute([this]()
-                 {
-                     presentStatsUi();
-                 }
-             );
+              .withSet(systemSet_)
+              .label<ecs::Pipeline::Final>()
+              .execute([this](ecs::World *)
+                  {
+                      presentStatsUi();
+                  }
+              );
+
+        world_->createSystem()
+              .withSet(systemSet_)
+              .label<ecs::Pipeline::Main>()
+              .execute([this](ecs::World*)
+              {
+                  RxCore::iVulkan()->getMemBudget(heaps_);
+              });
     }
 
     void StatsModule::enable()
@@ -32,9 +37,9 @@ namespace RxEngine
     {
         world_->getUpdate<ecs::SystemSet>(systemSet_)->enabled = false;
     }
+
     void StatsModule::deregisterModule()
     {
-        
     }
 
     void StatsModule::presentStatsUi()
@@ -43,7 +48,7 @@ namespace RxEngine
 
         bool p_open = true;
         const float DISTANCE = 10.0f;
-        auto & io = ImGui::GetIO();
+        auto& io = ImGui::GetIO();
         ImVec2 window_pos = ImVec2(io.DisplaySize.x - 2, 2 * DISTANCE);
 
         std::vector<float> fpss;
@@ -69,7 +74,8 @@ namespace RxEngine
             &p_open,
             (ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
                 ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing |
-                ImGuiWindowFlags_NoNav))) {
+                ImGuiWindowFlags_NoNav)))
+        {
             ImGui::Text("FPS %6.1f FPS", fps_);
             ImGui::PlotLines(
                 "16ms",
@@ -90,9 +96,10 @@ namespace RxEngine
                 16.f,
                 ImVec2(0, 50));
             ImGui::Text("Frame Time %6.2f ms", delta_ * 1000.f);
-            ImGui::Text("Render CPU Time: %5.2f ms", renderer_->cpuTime);
-            ImGui::Text("Render GPU Time: %5.2f ms", renderer_->gpuTime);
-            for (const auto & heap: heaps) {
+            ImGui::Text("Render CPU Time: %5.2f ms", 0.f);
+            ImGui::Text("Render GPU Time: %5.2f ms", 0.f);
+            for (const auto& heap : heaps_)
+            {
                 std::ostringstream stringStream;
                 stringStream << (heap.usage / 1024 / 1024) << "MB/" << (heap.budget / 1204 / 1204)
                     << "MB";

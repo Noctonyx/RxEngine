@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.15)
 
+#set(RXENGINE_ASSET_PATH "${PROJECT_SOURCE_DIR}/Assets")
+#set(RXENGINE_ASSET_PATH "${RXENGINE_ASSET_PATH}" PARENT_PATH)
+
 option(GLFW_BUILD_DOCS OFF)
 option(GLFW_INSTALL OFF)
 option(GLFW_BUILD_EXAMPLES "Build the GLFW example programs" OFF)
@@ -89,8 +92,8 @@ add_library(RxEngine STATIC
         src/Rendering/EntityManager.h 
         src/LuaState.cpp 
         src/LuaState.h 
-        src/Modules/Mesh.cpp
-        src/Modules/Mesh.h
+        #src/Modules/Mesh.cpp
+        #src/Modules/Mesh.h
         src/Modules/Render.h
         src/Modules/Render.cpp
         "src/Modules/Transforms/Transforms.h"

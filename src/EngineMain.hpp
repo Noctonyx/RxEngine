@@ -125,10 +125,10 @@ namespace RxEngine
         void ecsMainMenu(bool & show_entity_window,
                          bool & show_systems_window,
                          bool & show_components_window);
-        void ecsInspectorShowTableDetails(ecs::entity_t & selectedEntity,
-                                          ecs::WorldIterator it) const;
-        void ecsInspectorIsAEntity(ecs::entity_t entity, ecs::entity_t & selectedEntity);
-        void ecsInspectorEntityComponents(ecs::entity_t entity, ecs::entity_t & selectedEntity);
+        void ecsInspectorShowTableDetails(ecs::EntityHandle& selectedEntity,
+                                          ecs::Table * table) const;
+        void ecsInspectorIsAEntity(ecs::EntityHandle entity, ecs::EntityHandle& selectedEntity);
+        void ecsInspectorEntityComponents(ecs::EntityHandle entity, ecs::EntityHandle& selectedEntity);
         void ecsInspectorEntityWindow(bool & show_entity_window);
         void updateEntityGui();
 

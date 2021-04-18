@@ -1,0 +1,30 @@
+body
+{
+	font-family: Roboto;
+	font-weight: normal;
+	font-style: normal;
+	font-size: 12pt;
+	color: white;
+    
+}
+
+body.window {
+    padding-top: 43px;
+    background-color: #ff000020; 
+    height: 100%;
+}
+
+button {
+    border-radius: 2px;
+    background-color: #080;
+    font-size: 14px;
+    padding: 4px;
+    font-weight: bold;
+    border: 2px white;
+    decorator: gradient( horizontal #DB6565 #F1B58A );
+}
+
+button:hover {
+    background-color: #8f8;
+    color: black;
+}

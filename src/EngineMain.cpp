@@ -14,7 +14,6 @@
 #include <RmlUi/Core.h>
 #include <RmlUi/Lua.h>
 #include <imgui.h>
-#include "Modules/Transforms.h"
 
 //#define SOL_ALL_SAFETIES_ON 1
 #include <sol/sol.hpp>
@@ -87,7 +86,7 @@ namespace RxEngine
         window_ = std::make_shared<Window>(width, height, "RX");
 
         device_ = std::make_unique<RxCore::Device>(window_->GetWindow());
-        renderer_ = std::make_unique<Renderer>(device_->VkDevice(), world);
+        renderer_ = std::make_unique<Renderer>(device_->VkDevice(), world.get());
 
         auto surface = RxCore::Device::Context()->surface;
 
@@ -120,6 +119,7 @@ namespace RxEngine
         Rml::SetRenderInterface(rmlRender.get());
         Rml::Initialise();
 
+        world = std::make_unique<ecs::World>();
         //lua_ = new LuaState();
 
         setupLuaEnvironment();
@@ -130,7 +130,7 @@ namespace RxEngine
   //          .beginNamespace("ind")
     //        .endNamespace();
 
-        loadLuaFile("/lua/startup");
+        loadLuaFile("/lua/engine");
         populateStartupData();
 
         //luabridge::LuaRef v2 = luabridge::getGlobal(lua_->L, "data");
@@ -236,6 +236,8 @@ namespace RxEngine
         rmlRender.reset();
         rmlSystem.reset();
         rmlFile.reset();
+
+        world.reset();
 
         entityManager_.reset();
         materialManager_.reset();
