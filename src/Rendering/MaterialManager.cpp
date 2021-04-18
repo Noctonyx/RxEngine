@@ -73,7 +73,7 @@ namespace RxEngine
 
         auto ix = static_cast<uint32_t>(textures_.size());
 
-        textures_.emplace_back(RxCore::CombinedSampler{sampler, std::move(imageView)}, name);
+        textures_.push_back({ RxCore::CombinedSampler{sampler, std::move(imageView)}, name });
         textureIndex_.emplace(name, ix);
 
         changeSequence_++;
@@ -117,7 +117,7 @@ namespace RxEngine
                 j);
         }
 
-        images_.emplace_back(image, iv, path.generic_string());
+        images_.push_back({ image, iv, path.generic_string() });
         imageIndex_.emplace(path.generic_string(), ix);
 
         changeSequence_++;
@@ -275,7 +275,7 @@ namespace RxEngine
         DirectX::XMFLOAT4 param3(mbd.val3[0], mbd.val3[1], mbd.val3[2], mbd.val3[3]);
         DirectX::XMFLOAT4 param4(mbd.val4[0], mbd.val4[1], mbd.val4[2], mbd.val4[3]);
 
-        materialBases_.emplace_back(
+        materialBases_.push_back({
             opaque_material_pipe_ix,
             shadow_material_pipe_ix,
             transparent_material_pipe_ix,
@@ -288,6 +288,7 @@ namespace RxEngine
             param3,
             param4,
             path.generic_string()
+            }
         );
         materialBaseIndex_.emplace(path.generic_string(), ix);
 

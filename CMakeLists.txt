@@ -92,8 +92,6 @@ add_library(RxEngine STATIC
         src/Rendering/EntityManager.h 
         src/LuaState.cpp 
         src/LuaState.h 
-        #src/Modules/Mesh.cpp
-        #src/Modules/Mesh.h
         src/Modules/Render.h
         src/Modules/Render.cpp
         "src/Modules/Transforms/Transforms.h"
@@ -102,7 +100,14 @@ add_library(RxEngine STATIC
         src/EngineUI.cpp 
         src/Modules/Stats/Stats.h
         src/Modules/Stats/Stats.cpp
-        src/Modules/Module.h "src/Modules/Transforms/Transforms.cpp")
+        src/Modules/Module.h 
+        src/Modules/Transforms/Transforms.cpp 
+#        src/Modules/MainWindow/MainWindow.h
+#        src/Modules/MainWindow/MainWindow.cpp
+        "src/Modules/MainWindow/Mouse.cpp"
+        "src/Modules/MainWindow/Mouse.h" 
+        "src/Modules/MainWindow/Keyboard.h" 
+        "src/Modules/MainWindow/Keyboard.cpp")
 
 target_compile_options(RxEngine PUBLIC -DGLFW_INCLUDE_VULKAN -DVK_USE_PLATFORM_WIN32_KHR -DGLFW_EXPOSE_NATIVE_WIN32 -DNOMINMAX)
 
@@ -119,9 +124,11 @@ if (MSVC)
 endif ()
 
 target_include_directories(RxEngine PUBLIC "src")
+
 target_include_directories(RxEngine INTERFACE "include")
 
 target_link_libraries(RxEngine PUBLIC RxCore)
+target_link_libraries(RxEngine PUBLIC GLFW)
 target_link_libraries(RxEngine PUBLIC RxECS)
 target_link_libraries(RxEngine PUBLIC RxAssets)
 target_link_libraries(RxEngine PUBLIC lua_static)

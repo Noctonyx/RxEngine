@@ -1,8 +1,6 @@
 #pragma once
 
-namespace ecs {
-    class World;
-}
+#include "RxECS.h"
 
 namespace RxEngine
 {
@@ -25,8 +23,12 @@ namespace RxEngine
 
         virtual void registerModule() = 0;
 
-        virtual void enable() = 0;
-        virtual void disable() = 0;
+        virtual void startup();
+
+        virtual void enable() {};
+        virtual void disable() {};
+
+        virtual void shutdown();
 
         virtual void deregisterModule() = 0;
     };

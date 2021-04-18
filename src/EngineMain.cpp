@@ -17,6 +17,8 @@
 
 //#define SOL_ALL_SAFETIES_ON 1
 #include <sol/sol.hpp>
+
+#include "Modules/MainWindow/MainWindow.h"
 #if 0
 #pragma warning( push )
 #pragma warning(disable:4505)
@@ -83,7 +85,9 @@ namespace RxEngine
         }
 
 
-        window_ = std::make_shared<Window>(width, height, "RX");
+        window_ = std::make_unique<Window>(width, height, "RX");
+
+        world->setSingleton<MainWindow::WindowDetails>({ window_.get(), width, height });
 
         device_ = std::make_unique<RxCore::Device>(window_->GetWindow());
         renderer_ = std::make_unique<Renderer>(device_->VkDevice(), world.get());
