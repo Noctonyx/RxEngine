@@ -13,7 +13,7 @@
 #include "MeshBundle.h"
 #include "RenderCamera.h"
 #include "DirectXCollision.h"
-
+#include "RxECS.h"
 #include "Modules/Render.h"
 
 #define NUM_CASCADES 4
@@ -146,7 +146,7 @@ namespace RxEngine
             const std::shared_ptr<RxCore::DescriptorSet> & set,
             uint32_t binding) const {}
     };
-
+#if 0
     class IRenderable
     {
     public:
@@ -216,7 +216,7 @@ namespace RxEngine
 
         virtual std::vector<RenderEntity> getRenderEntities() = 0;
     };
-
+#endif
     struct RenderPushConstants
     {
         DirectX::XMFLOAT4X4 localMatrix;
@@ -327,8 +327,6 @@ namespace RxEngine
 
     public:
         void updateGui() const;
-        void setMaterialManager(MaterialManager * materialManager);
-        void setEntityManager(EntityManager * entityManager);
         //void collectLights(const std::vector<IRenderable *> & subsystems, std::vector<LightData> & lights);
     public:
     public:
@@ -355,17 +353,12 @@ namespace RxEngine
         vk::DescriptorSetLayout ds0Layout;
         std::shared_ptr<RxCore::DescriptorSet> ds0_;
         bool shadowImagesChanged;
-        uint32_t materialManagerSequence_;
 
         vk::Sampler shadowSampler_;
 
         std::shared_ptr<Lighting> lightingManager_;
         vk::PipelineLayout pipelineLayout;
         std::vector<vk::DescriptorSetLayout> dsLayouts;
-
-        //std::shared_ptr<RenderCamera> renderCamera;
-        MaterialManager * materialManager_{};
-        EntityManager * entityManager_{};
 
         void ensureDepthBufferExists(vk::Extent2D & extent);
         void ensureShadowImages(uint32_t shadowMapSize, uint32_t numCascades);

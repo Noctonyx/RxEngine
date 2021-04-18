@@ -18,7 +18,7 @@
 //#define SOL_ALL_SAFETIES_ON 1
 #include <sol/sol.hpp>
 
-#include "Modules/MainWindow/MainWindow.h"
+//#include "Modules/MainWindow/MainWindow.h"
 #if 0
 #pragma warning( push )
 #pragma warning(disable:4505)
@@ -84,10 +84,11 @@ namespace RxEngine
             height = 600;
         }
 
+        world = std::make_unique<ecs::World>();
 
-        window_ = std::make_unique<Window>(width, height, "RX");
+        window_ = std::make_unique<Window>(width, height, "RX", world.get());
 
-        world->setSingleton<MainWindow::WindowDetails>({ window_.get(), width, height });
+        //world->setSingleton<MainWindow::WindowDetails>({ window_.get(), width, height });
 
         device_ = std::make_unique<RxCore::Device>(window_->GetWindow());
         renderer_ = std::make_unique<Renderer>(device_->VkDevice(), world.get());
@@ -97,20 +98,10 @@ namespace RxEngine
         swapChain_ = surface->CreateSwapChain();
         swapChain_->setSwapChainOutOfDate(true);
 
-        window_->mouse = std::make_shared<Mouse>(window_.get());
-        window_->keyboard = std::make_shared<Keyboard>(window_.get());
+        window_->mouse = std::make_shared<Mouse>(window_.get(), world.get());
+        window_->keyboard = std::make_shared<Keyboard>(window_.get(), world.get());
 
         renderer_->startup(swapChain_->imageFormat());
-
-        materialManager_ = std::make_unique<MaterialManager>(device_.get());
-        entityManager_ = std::make_unique<EntityManager>(materialManager_.get());
-
-        /*const uint32_t g =*/
-        entityManager_->addGroup(256, sizeof(RxAssets::MeshData::Vertex), false);
-        //assert(g == 0);
-
-        renderer_->setMaterialManager(materialManager_.get());
-        renderer_->setEntityManager(entityManager_.get());
 
         timer_ = std::chrono::high_resolution_clock::now();
 
@@ -123,16 +114,16 @@ namespace RxEngine
         Rml::SetRenderInterface(rmlRender.get());
         Rml::Initialise();
 
-        world = std::make_unique<ecs::World>();
+
         //lua_ = new LuaState();
 
         setupLuaEnvironment();
         //luabridge::LuaRef v1 = luabridge::newTable(lua_->L);
 
         //luabridge::setGlobal(lua_->L, v1, "data");
-//        luabridge::getGlobalNamespace(lua_->L)
-  //          .beginNamespace("ind")
-    //        .endNamespace();
+        //        luabridge::getGlobalNamespace(lua_->L)
+        //          .beginNamespace("ind")
+        //        .endNamespace();
 
         loadLuaFile("/lua/engine");
         populateStartupData();
@@ -209,7 +200,7 @@ namespace RxEngine
 
         startTime = std::chrono::high_resolution_clock::now();
     }
-
+#if 0
     void EngineMain::setActiveScene(std::shared_ptr<Scene> scene)
     {
         if (scene_) {
@@ -222,17 +213,13 @@ namespace RxEngine
         }
         scene_ = std::move(scene);
     }
-
+#endif
     void EngineMain::shutdown()
     {
         RxCore::iVulkan()->WaitIdle();
 
         device_->clearQueues();
         RxCore::JobManager::instance().Shutdown();
-        if (scene_) {
-            scene_->Shutdown();
-            //scene_->setMaterialManager(nullptr);
-        }
 
         //world.reset();
         renderCamera_.reset();
@@ -280,15 +267,7 @@ namespace RxEngine
             OPTICK_EVENT("Window Updates")
             window_->Update(); // Collect the window events
         }
-        if (!scene_) {
-            return;
-        }
-        //renderer_->setTextureBundle(scene_->getLoader()->getTextureBundle());
-
-        {
-            OPTICK_EVENT("Scene Update", Optick::Category::GameLogic)
-            scene_->Update(delta_);
-        }
+     
         if (deltaAccumulated > 10) {
             deltaAccumulated = 0;
         }
@@ -316,22 +295,23 @@ namespace RxEngine
 
             // auto camera = scene_->getMainCamera();
             const auto current_extent = swapChain_->GetExtent();
-
+#if 0
             scene_->GetRenderables(renderables);
             scene_->GetRenderProviders(providers);
-
+#endif
             // Add the Rml Render data
             renderables.push_back(rmlRender.get());
             rmlRender->resetRender();
             {
                 OPTICK_EVENT("Schedule PreRenders")
-
+#if 0
                 for (auto * renderable: providers) {
                     renderable->setup(scene_->getSceneCamera()->GetCamera());
                 }
                 for (auto * renderable: renderables) {
                     renderable->preRender(current_extent.width, current_extent.height);
                 }
+#endif
             }
 
             auto [next_swap_image_view, next_image_available, next_image_index] =
@@ -372,7 +352,7 @@ namespace RxEngine
         while (!window_->ShouldClose()) {
             update();
         }
-       // shutdown();
+        // shutdown();
     }
 #if 0
     void EngineMain::registerBaseModules()
@@ -439,72 +419,8 @@ namespace RxEngine
         });
     }
 #endif
-
-    MaterialManager * EngineMain::getMaterialManager() const
-    {
-        return materialManager_.get();
-    }
-
-    EntityManager * EngineMain::getEntityManager() const
-    {
-        return entityManager_.get();
-    }
     
-    void EngineMain::updateMaterialGui()
-    {
-        static bool show_material_window = getBoolConfigValue("editor", "materialWindow", false);
-        static bool show_entity_window = getBoolConfigValue("editor", "entityWindow", false);
-
-        if (ImGui::BeginMainMenuBar()) {
-            if (ImGui::BeginMenu("Subsystems")) {
-                if (ImGui::MenuItem("Materials", nullptr, show_material_window)) {
-                    show_material_window = !show_material_window;
-                    setBoolConfigValue("editor", "materialWindow", show_material_window);
-                    //setConfigValue("editor", "materialWindow", showMaterialWindow ? "1" : "0");
-                }
-                if (ImGui::MenuItem("Entities", nullptr, show_entity_window)) {
-                    show_entity_window = !show_entity_window;
-                    setBoolConfigValue("editor", "entityWindow", show_entity_window);
-                    //setConfigValue("editor", "materialWindow", showMaterialWindow ? "1" : "0");
-                }
-                ImGui::EndMenu();
-            }
-            ImGui::EndMainMenuBar();
-        }
-
-        if (show_material_window) {
-            bool is_open = show_material_window;
-
-            if (ImGui::Begin("Material Manager", &is_open)) {
-                materialManager_->materialEditorGui();
-
-            }
-            ImGui::End();
-
-            if (is_open != show_material_window) {
-                show_material_window = is_open;
-                setBoolConfigValue("editor", "materialWindow", show_material_window);
-            }
-        }
-#if 0
-        if (show_entity_window) {
-            bool is_open = show_entity_window;
-
-            if (ImGui::Begin("Entity Manager", &is_open)) {
-                //entityManager_->entityEditorGui();
-
-                ImGui::End();
-            }
-
-            if (is_open != show_entity_window) {
-                show_entity_window = is_open;
-                setBoolConfigValue("editor", "entityWindow", show_entity_window);
-            }
-        }
-#endif
-    }
-
-    void EngineMain::loadConfig()
+        void EngineMain::loadConfig()
     {
         mINI::INIFile file("engine.ini");
         file.read(iniData);

@@ -33,6 +33,27 @@ namespace RxEngine
         ResizeY = 0x00036006
     };
 
+    struct MousePosition
+    {
+        float x;
+        float y;
+
+        EInputMod mods;
+    };
+
+    struct MouseButton
+    {
+        int32_t button;
+        bool pressed;
+        EInputMod mods;
+    };
+
+    struct MouseScroll
+    {
+        float y_offset;
+        EInputMod mods;
+    };
+
     class Mouse
     {
         friend void callbackCursorPos(GLFWwindow* /*window*/, double xpos, double ypos);
@@ -40,7 +61,7 @@ namespace RxEngine
         friend void callbackScroll(GLFWwindow* /*window*/, double /*xoffset*/, double y_offset);
 
     public:
-        explicit Mouse(Window* window);
+        explicit Mouse(Window* window, ecs::World* world);
 
         void setCursor(ECursorStandard standard);
         void hideCursor(bool hidden);
@@ -48,12 +69,13 @@ namespace RxEngine
 
         [[nodiscard]] const DirectX::XMFLOAT2& getPosition() const { return pos_; }
 
-        MulticastDelegate<float, float, RxEngine::EInputMod> onMousePos;
-        MulticastDelegate<int32_t, bool, RxEngine::EInputMod> onMouseButton;
-        MulticastDelegate<float, RxEngine::EInputMod> onScroll;
+        //MulticastDelegate<float, float, RxEngine::EInputMod> onMousePos;
+        //MulticastDelegate<int32_t, bool, RxEngine::EInputMod> onMouseButton;
+        //MulticastDelegate<float, RxEngine::EInputMod> onScroll;
 
     private:
         Window* window_;
+        ecs::World* world_;
         DirectX::XMFLOAT2 pos_;
         GLFWcursor* cursor_;
         ECursorStandard cursorStandard_;

@@ -9,6 +9,7 @@
 
 namespace RxEngine
 {
+#if 0
     uint32_t EntityManager::addGroup(uint32_t groupBufferSize, size_t vertexSize, bool fixedFunction)
     {
         uint32_t new_ix = static_cast<uint32_t>(groups_.size());
@@ -222,4 +223,5 @@ namespace RxEngine
             ImGui::EndTabBar();
         }
     }
+#endif
 }

@@ -21,7 +21,6 @@ namespace RxEngine
     Renderer::Renderer(vk::Device device, ecs::World * world)
         : DeviceObject(device)
         , shadowImagesChanged(true)
-        , materialManagerSequence_(99999999)
         , poolTemplate(
             {
                 {vk::DescriptorType::eCombinedImageSampler, 15000},
@@ -652,16 +651,6 @@ namespace RxEngine
     void Renderer::setLightingManager(std::shared_ptr<Lighting> lm)
     {
         lightingManager_ = std::move(lm);
-    }
-
-    void Renderer::setMaterialManager(MaterialManager * materialManager)
-    {
-        materialManager_ = materialManager;
-    }
-
-    void Renderer::setEntityManager(EntityManager * entityManager)
-    {
-        entityManager_ = entityManager;
     }
 
     void IRenderable::setScissorAndViewPort(

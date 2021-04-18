@@ -9,7 +9,6 @@
 #include <Subsystem.h>
 #include <RmlUi/Core/Context.h>
 #include <RmlUi/Core/Input.h>
-#include "Subsystems/IInputHandler.h"
 
 namespace RxEngine
 {

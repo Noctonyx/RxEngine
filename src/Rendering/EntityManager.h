@@ -15,6 +15,7 @@
 
 namespace RxEngine
 {
+#if 0
     struct EntityId
     {
         friend class EntityManager;
@@ -117,5 +118,6 @@ namespace RxEngine
         std::unordered_map<std::string,BundledMesh> meshIndex_{};
         std::unordered_map<std::string, EntityId> entityIndex_{};
     };
+#endif
 }
 #endif //RX_ENTITYMANAGER_H

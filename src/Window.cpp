@@ -1,15 +1,17 @@
 #include "Window.hpp"
 #include "ini.h"
+#include "RxECS.h"
 
 namespace RxEngine
 {
     void FrameBufferResizeCallback(GLFWwindow * window, int width, int height)
     {
         Window * w = static_cast<Window *>(glfwGetWindowUserPointer(window));
-        w->onResize.Broadcast(width, height);
+        w->doResize(width, height);
     }
 
-    Window::Window(uint32_t width, uint32_t height, const std::string & title)
+    Window::Window(uint32_t width, uint32_t height, const std::string & title, ecs::World * world)
+        : world_(world)
     {
         if (!m_GLFWInit) {
             glfwInit();
@@ -62,13 +64,31 @@ namespace RxEngine
     void Window::SetMouseVisible(bool visible)
     {
         m_IsMouseVisible = visible;
-        if (visible) { glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); }
-        else { glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); }
+        if (visible) {
+            glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        } else {
+            glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        }
     }
 
-    bool Window::GetMouseVisible() const { return m_IsMouseVisible; }
+    bool Window::GetMouseVisible() const
+    {
+        return m_IsMouseVisible;
+    }
 
-    void Window::SetTitle(std::string & title) { glfwSetWindowTitle(m_Window, title.c_str()); }
+    void Window::SetTitle(std::string & title)
+    {
+        glfwSetWindowTitle(m_Window, title.c_str());
+    }
 
-    GLFWwindow * Window::GetWindow() const { return m_Window; }
+    GLFWwindow * Window::GetWindow() const
+    {
+        return m_Window;
+    }
+
+    void Window::doResize(uint32_t width, uint32_t height)
+    {
+        onResize.Broadcast(width, height);
+        world_->getStream<WindowResize>()->add<WindowResize>({width, height});
+    }
 } // namespace RXCore

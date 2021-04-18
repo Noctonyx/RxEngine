@@ -30,7 +30,7 @@ namespace RxEngine
 
     void StatsModule::enable()
     {
-        world_->getUpdate<ecs::SystemSet>(systemSet_)->enabled = true;;
+        world_->getUpdate<ecs::SystemSet>(systemSet_)->enabled = true;
     }
 
     void StatsModule::disable()

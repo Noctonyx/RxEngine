@@ -10,7 +10,6 @@
 #include "Subsystem.h"
 #include <imgui.h>
 #include "Delegates.hpp"
-#include "Subsystems/IInputHandler.h"
 #include "Rendering/Renderer.hpp"
 
 namespace RxEngine

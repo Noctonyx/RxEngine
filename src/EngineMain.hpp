@@ -21,7 +21,7 @@
 #include "ini.h"
 #include "RxECS.h"
 #include "sol/sol.hpp"
-
+#include "Window.hpp"
 //#include "LuaBridge/detail/LuaRef.h"
 
 //#include <sol/sol.hpp>
@@ -62,7 +62,7 @@ namespace RxEngine
         }
 
         void startup();
-        void setActiveScene(std::shared_ptr<Scene> scene);
+        //void setActiveScene(std::shared_ptr<Scene> scene);
         void run();
         void update();
         void shutdown();
@@ -73,9 +73,6 @@ namespace RxEngine
         {
             return totalElapsed_;
         }
-
-        MaterialManager * getMaterialManager() const;
-        EntityManager * getEntityManager() const;
 
         Window * getWindow() const
         {
@@ -138,8 +135,8 @@ namespace RxEngine
         std::unique_ptr<Renderer> renderer_;
         std::unique_ptr<RxCore::Device> device_;
         std::unique_ptr<RxCore::SwapChain> swapChain_;
-        std::unique_ptr<MaterialManager> materialManager_;
-        std::unique_ptr<EntityManager> entityManager_;
+        //std::unique_ptr<MaterialManager> materialManager_;
+        //std::unique_ptr<EntityManager> entityManager_;
 
         std::vector<vk::Semaphore> submitCompleteSemaphores_;
         std::chrono::time_point<std::chrono::steady_clock> timer_;
@@ -152,9 +149,9 @@ namespace RxEngine
 
         //Rml::Context * rmlContext{};
 
-        MulticastDelegate<Subsystem *> onRemoveSubsystem;
-        MulticastDelegate<Subsystem *> onAddSubsystem;
-        std::shared_ptr<Scene> scene_;
+        //MulticastDelegate<Subsystem *> onRemoveSubsystem;
+        //MulticastDelegate<Subsystem *> onAddSubsystem;
+        //std::shared_ptr<Scene> scene_;
 
         std::shared_ptr<RenderCamera> renderCamera_{};
 

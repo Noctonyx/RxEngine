@@ -31,10 +31,9 @@ add_subdirectory("RxUtil")
 add_subdirectory("RxCore")
 add_subdirectory("RxAssets")
 add_subdirectory("RxECS")
+add_subdirectory("ImportGLTF")
 
 add_library(RxEngine STATIC 
-        src/Subsystems/Stats.hpp
-        src/Subsystems/Stats.cpp
         src/ImGui/ImGuiRender.cpp
         src/ImGui/ImGuiRender.hpp
         src/EngineMain.hpp
@@ -59,8 +58,8 @@ add_library(RxEngine STATIC
         src/Rendering/RenderData.h
         src/Subsystems/SceneCamera.h
         src/Subsystems/SceneCamera.cpp
-        src/Subsystems/Input.h
-        src/Subsystems/Input.cpp
+        
+        
         src/FastNoiseLite.h
         src/Subsystems/Lighting.h
         src/Subsystems/Lighting.cpp
@@ -76,10 +75,10 @@ add_library(RxEngine STATIC
         src/UI/RmlFileInterface.h
         src/Subsystems/UiContext.cpp
         src/Subsystems/UiContext.h
-        src/Subsystems/IInputHandler.h
-        src/Subsystems/BatchManager.cpp
-        src/Subsystems/BatchManager.h
-        src/Rendering/BatchData.h
+        
+        
+        
+        
         src/Rendering/MeshBundle.cpp
         src/Rendering/MeshBundle.h
         src/Rendering/RenderCamera.cpp
@@ -102,12 +101,7 @@ add_library(RxEngine STATIC
         src/Modules/Stats/Stats.cpp
         src/Modules/Module.h 
         src/Modules/Transforms/Transforms.cpp 
-#        src/Modules/MainWindow/MainWindow.h
-#        src/Modules/MainWindow/MainWindow.cpp
-        "src/Modules/MainWindow/Mouse.cpp"
-        "src/Modules/MainWindow/Mouse.h" 
-        "src/Modules/MainWindow/Keyboard.h" 
-        "src/Modules/MainWindow/Keyboard.cpp")
+)
 
 target_compile_options(RxEngine PUBLIC -DGLFW_INCLUDE_VULKAN -DVK_USE_PLATFORM_WIN32_KHR -DGLFW_EXPOSE_NATIVE_WIN32 -DNOMINMAX)
 
@@ -128,7 +122,7 @@ target_include_directories(RxEngine PUBLIC "src")
 target_include_directories(RxEngine INTERFACE "include")
 
 target_link_libraries(RxEngine PUBLIC RxCore)
-target_link_libraries(RxEngine PUBLIC GLFW)
+target_link_libraries(RxEngine PUBLIC glfw)
 target_link_libraries(RxEngine PUBLIC RxECS)
 target_link_libraries(RxEngine PUBLIC RxAssets)
 target_link_libraries(RxEngine PUBLIC lua_static)
@@ -137,7 +131,7 @@ target_link_libraries(RxEngine PUBLIC RmlCore)
 target_link_libraries(RxEngine PUBLIC RmlDebugger)
 target_link_libraries(RxEngine PUBLIC freetype)
 target_link_libraries(RxEngine PUBLIC RmlLua)
-target_link_libraries(RxEngine PUBLIC glfw)
+#target_link_libraries(RxEngine PUBLIC glfw)
 target_link_libraries(RxEngine PUBLIC DirectXMath)
 
 target_include_directories(RxEngine PUBLIC ${imgui_SOURCE_DIR})

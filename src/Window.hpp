@@ -7,15 +7,34 @@
 
 #include "Delegates.hpp"
 
+namespace ecs {
+    class World;
+}
+
 namespace RxEngine
 {
+    class Window;
     class Keyboard;
     class Mouse;
+
+    struct WindowDetails
+    {
+        Window* window;
+
+        uint32_t width;
+        uint32_t height;
+    };
+
+    struct WindowResize
+    {
+        uint32_t width;
+        uint32_t height;
+    };
 
     class Window
     {
     public:
-        Window(uint32_t width, uint32_t height, const std::string & title);
+        Window(uint32_t width, uint32_t height, const std::string & title, ecs::World * world);
 
         ~Window();
 
@@ -50,9 +69,12 @@ namespace RxEngine
 
         MulticastDelegate<int, int> onResize;
 
+        void doResize(uint32_t width, uint32_t height);
+
     private:
         bool m_GLFWInit = false;
         GLFWwindow * m_Window = nullptr;
         bool m_IsMouseVisible = true;
+        ecs::World* world_;
     };
 } // namespace RXCore

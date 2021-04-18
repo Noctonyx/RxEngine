@@ -8,12 +8,15 @@
 //#include "glm/vec2.hpp"
 #include "Window.hpp"
 #include "Mouse.hpp"
+#include "RxECS.h"
+#include "Stream.h"
+#include "World.h"
 
 namespace RxEngine
 {
     void callbackCursorPos(GLFWwindow * window, double xpos, double ypos)
     {
-        auto wnd = reinterpret_cast<Window *> (glfwGetWindowUserPointer(window));
+        auto wnd = reinterpret_cast<Window *>(glfwGetWindowUserPointer(window));
         assert(wnd->mouse);
 
         int32_t mods = 0;
@@ -42,7 +45,7 @@ namespace RxEngine
 
     void callbackMouseButton(GLFWwindow * window, int32_t button, int32_t action, int32_t mods)
     {
-        auto wnd = reinterpret_cast<Window *> (glfwGetWindowUserPointer(window));
+        auto wnd = reinterpret_cast<Window *>(glfwGetWindowUserPointer(window));
         assert(wnd->mouse);
 
         wnd->mouse->buttonAction(button, action == GLFW_PRESS, mods);
@@ -50,7 +53,7 @@ namespace RxEngine
 
     void callbackScroll(GLFWwindow * window, double /*xoffset*/, double y_offset)
     {
-        auto wnd = reinterpret_cast<Window *> (glfwGetWindowUserPointer(window));
+        auto wnd = reinterpret_cast<Window *>(glfwGetWindowUserPointer(window));
         assert(wnd->mouse);
 
         int32_t mods = 0;
@@ -74,11 +77,12 @@ namespace RxEngine
             mods |= GLFW_MOD_ALT;
         }
 
-        wnd->mouse->scroll(static_cast<float> (y_offset), mods);
+        wnd->mouse->scroll(static_cast<float>(y_offset), mods);
     }
 
-    Mouse::Mouse(Window * window)
+    Mouse::Mouse(Window * window, ecs::World * world)
         : window_(window)
+        , world_(world)
         , pos_(0, 0)
     {
         glfwSetCursorPosCallback(window_->GetWindow(), callbackCursorPos);
@@ -89,17 +93,28 @@ namespace RxEngine
     void Mouse::mousePosition(float x_pos, float y_pos, int32_t mods)
     {
         pos_ = {x_pos, y_pos};
-        onMousePos.Broadcast(x_pos, y_pos, static_cast<RxEngine::EInputMod>(mods));
+        //onMousePos.Broadcast(x_pos, y_pos, static_cast<RxEngine::EInputMod>(mods));
+
+        world_->getStream<MousePosition>()->add<MousePosition>({
+            x_pos, y_pos, static_cast<RxEngine::EInputMod>(mods)
+        });
     }
 
     void Mouse::buttonAction(int32_t button, bool pressed, int32_t mods)
     {
-        onMouseButton.Broadcast(button, pressed, static_cast<RxEngine::EInputMod>(mods));
+        //onMouseButton.Broadcast(button, pressed, static_cast<RxEngine::EInputMod>(mods));
+
+        world_->getStream<MouseButton>()->add<MouseButton>({
+            button, pressed, static_cast<RxEngine::EInputMod>(mods)
+        });
     }
 
     void Mouse::scroll(float y_scroll, int32_t mods)
     {
-        onScroll.Broadcast(y_scroll, static_cast<RxEngine::EInputMod>(mods));
+        //onScroll.Broadcast(y_scroll, static_cast<RxEngine::EInputMod>(mods));
+        world_->getStream<MouseScroll>()->add<MouseScroll>({
+            y_scroll, static_cast<RxEngine::EInputMod>(mods)
+        });
     }
 
     void Mouse::setCursor(ECursorStandard standard)
