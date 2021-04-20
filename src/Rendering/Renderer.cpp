@@ -34,7 +34,7 @@ namespace RxEngine
     {
         //auto q = world_->query<const Render::MaterialPipelineDetails>();
 
-        lightingManager_ = std::make_shared<Lighting>();
+       // lightingManager_ = std::make_shared<Lighting>();
     }
 
     Renderer::~Renderer() = default;
@@ -225,8 +225,10 @@ namespace RxEngine
             }
         });
 #endif
+#if 0
         materialManager_->ensureOpaqueMaterialPipelinesExist(pipelineLayout, renderPass_, 0);
         materialManager_->ensureShadowMaterialPipelinesExist(pipelineLayout, depthRenderPass_, 0);
+#endif
     }
 
     std::shared_ptr<const std::vector<RenderEntity>> Renderer::finishUpEntityJobs(
@@ -263,7 +265,7 @@ namespace RxEngine
 
     void Renderer::render(
         const std::shared_ptr<RenderCamera> & renderCamera,
-        const std::vector<IRenderable *> & subsystems,
+        //const std::vector<IRenderable *> & subsystems,
         vk::ImageView imageView,
         vk::Extent2D extent,
         std::vector<vk::Semaphore> waitSemaphores,
@@ -278,10 +280,10 @@ namespace RxEngine
         ensureShadowImages(4096, NUM_CASCADES);
 
         renderCamera->readyCameraFrame();
-        lightingManager_->setup(renderCamera->getCamera());
+//        lightingManager_->setup(renderCamera->getCamera());
 
         updateDescriptorSet0(renderCamera);
-        entityManager_->ensureDescriptors(poolTemplate, dsLayouts[1]);
+        //entityManager_->ensureDescriptors(poolTemplate, dsLayouts[1]);
 
         std::vector<std::shared_ptr<RxCore::Job<RenderResponse>>> shadow_jobs;
         std::vector<std::shared_ptr<RxCore::Job<RenderResponse>>> ui_jobs;
@@ -289,6 +291,7 @@ namespace RxEngine
 
         {
             OPTICK_EVENT("Get Subsystem Entities")
+#if 0
             for (auto * subsystem: subsystems) {
                 auto job = RxCore::CreateJob<std::vector<RenderEntity>>(
                     [=]
@@ -299,15 +302,18 @@ namespace RxEngine
                 job->schedule();
                 entity_jobs.push_back(job);
             }
+#endif
         }
 
         std::vector<ShadowCascade> cascades;
         {
+#if 0
             if (lightingManager_) {
                 lightingManager_->getCascadeData(cascades);
                 lightingManager_->setShadowMap(wholeShadowMapView_);
             }
             createUiJobs(ui_jobs, subsystems, extent.width, extent.height);
+#endif
         }
 
         {
@@ -317,10 +323,10 @@ namespace RxEngine
 
         ensureMaterialPipelinesExist();
 
-        std::shared_ptr<const std::vector<RenderEntity>> entity_ptr;
+        //std::shared_ptr<const std::vector<RenderEntity>> entity_ptr;
 
-        entity_ptr = finishUpEntityJobs(entity_jobs);
-
+//        entity_ptr = finishUpEntityJobs(entity_jobs);
+#if 0
         if (!cascades.empty()) {
             shadow_jobs.resize(cascades.size());
             for (uint32_t i = 0; i < cascades.size(); i++) {
@@ -348,9 +354,10 @@ namespace RxEngine
         opaque_job->schedule();
 
         entity_ptr.reset();
+#endif
 
         auto buf = graphicsCommandPool_->GetPrimaryCommandBuffer();
-
+#if 0
         {
             OPTICK_EVENT("Wait for Render Jobs", Optick::Category::Wait)
             //waitAndFinishJobs(opaque_jobs, ERenderSequence::RenderSequenceOpaque, buf);
@@ -369,7 +376,7 @@ namespace RxEngine
         if (res.has_value()) {
             buf->addSecondaryBuffer(res.value(), ERenderSequence::RenderSequenceOpaque);
         }
-
+#endif
         std::shared_ptr<RxCore::FrameBuffer> frame_buffer;
         frame_buffer = createRenderFrameBuffer(imageView, extent);
         {
@@ -418,7 +425,9 @@ namespace RxEngine
             }
             buf->end();
         }
+#if 0
         lightingManager_->teardown();
+#endif
         // frameBufferIndex_ = (frameBufferIndex_ + 1) % imageCount_;
         {
             OPTICK_EVENT("GPU Submit", Optick::Category::Rendering)
@@ -433,6 +442,7 @@ namespace RxEngine
     void Renderer::updateDescriptorSet0(const std::shared_ptr<RenderCamera> & renderCamera)
     {
         OPTICK_EVENT()
+#if 0
         if (shadowImagesChanged || materialManager_->getChangeSequence() != materialManagerSequence_
         ) {
             ds0_ = RxCore::JobManager::threadData().getDescriptorSet(
@@ -455,6 +465,7 @@ namespace RxEngine
             ds0_->setDescriptorOffset(0, renderCamera->getDescriptorOffset());
             ds0_->setDescriptorOffset(1, lightingManager_->getDescriptorOffset());
         }
+#endif
     }
 
     std::shared_ptr<RxCore::FrameBuffer> Renderer::createRenderFrameBuffer(
@@ -521,7 +532,7 @@ namespace RxEngine
         depthBufferView_.reset();
         depthBuffer_.reset();
         graphicsCommandPool_.reset();
-        lightingManager_.reset();
+        //lightingManager_.reset();
 
         cascadeViews_.clear();
         cascadeFrameBuffers_.clear();
@@ -544,41 +555,6 @@ namespace RxEngine
         }
         assert(false);
         return {};
-    }
-
-    void Renderer::createUiJobs(
-        std::vector<std::shared_ptr<RxCore::Job<RenderResponse>>> & jobs,
-        const std::vector<IRenderable *> & subsystems,
-        const uint32_t width,
-        const uint32_t height)
-    {
-        OPTICK_EVENT("Render UI")
-        for (auto * subsystem: subsystems) {
-            if (subsystem->hasRenderUi()) {
-                auto j = RxCore::CreateJob<RenderResponse>(
-                    [=]
-                    {
-                        OPTICK_EVENT("Render Subsystem Ui")
-                        return subsystem->renderUi(RenderStage{renderPass_, 0}, width, height);
-                    });
-                j->schedule();
-                jobs.push_back(j);
-            }
-        }
-    }
-
-    void Renderer::waitAndFinishJobs(
-        std::vector<std::shared_ptr<RxCore::Job<RenderResponse>>> & jobs,
-        uint16_t seq,
-        std::shared_ptr<RxCore::PrimaryCommandBuffer> & buf)
-    {
-        for (auto & j: jobs) {
-            j->waitComplete();
-            auto res = j->result;
-            if (res.has_value()) {
-                buf->addSecondaryBuffer(res.value(), seq);
-            }
-        }
     }
 
     void Renderer::ensureShadowImages(uint32_t
@@ -648,81 +624,6 @@ namespace RxEngine
         }
     }
 
-    void Renderer::setLightingManager(std::shared_ptr<Lighting> lm)
-    {
-        lightingManager_ = std::move(lm);
-    }
-
-    void IRenderable::setScissorAndViewPort(
-        const std::shared_ptr<RxCore::CommandBuffer> & buf,
-        uint32_t width,
-        uint32_t height,
-        bool flipY)
-    {
-        buf->setScissor(
-            {
-                {0, 0},
-                {width, height}
-            });
-        buf->setViewport(
-            .0f, flipY ? static_cast<float>(height) : 0.0f, static_cast<float>(width),
-            flipY ? -static_cast<float>(height) : static_cast<float>(height), 0.0f,
-            1.0f);
-    }
-
-    void Renderer::renderIndirectDraws(
-        IndirectDrawSet ids,
-        const std::shared_ptr<RxCore::SecondaryCommandBuffer> & buf) const
-    {
-        OPTICK_EVENT()
-        MaterialPipelineId current_pipeline{};
-        MeshBundle * prevBundle = nullptr;
-
-        for (auto & h: ids.headers) {
-            OPTICK_EVENT("IDS Header")
-            if (h.commandCount == 0) {
-                continue;
-            }
-            {
-                OPTICK_EVENT("Set Pipeline and buffers")
-                if (h.pipelineId != current_pipeline) {
-                    // Check the pipeline has been created (no cereate it earlier)
-                    auto & pl = materialManager_->getMaterialPipeline(h.pipelineId);
-                    // bind the pipeline
-                    buf->BindPipeline(pl.pipeline);
-                    current_pipeline = h.pipelineId;
-                }
-                if (h.bundle != prevBundle) {
-                    OPTICK_EVENT("Bind Bundle")
-                    {
-                        if (h.bundle->isUseDescriptor()) {
-                            OPTICK_EVENT("Bind Ds")
-                            buf->BindDescriptorSet(1, h.bundle->getDescriptorSet());
-                        } else {
-                            OPTICK_EVENT("Bind VB")
-                            buf->BindVertexBuffer(h.bundle->getVertexBuffer());
-                        }
-                    }
-                    {
-                        OPTICK_EVENT("Bind IB")
-                        buf->BindIndexBuffer(h.bundle->getIndexBuffer());
-                    }
-                    // bind bundle descriptorSet
-                    prevBundle = h.bundle;
-                }
-            }
-            {
-                OPTICK_EVENT("Draw Indexed")
-                for (uint32_t i = 0; i < h.commandCount; i++) {
-                    auto & c = ids.commands[i + h.commandStart];
-                    buf->DrawIndexed(
-                        c.indexCount, c.instanceCount, c.indexOffset, c.vertexOffset,
-                        c.instanceOffset);
-                }
-            }
-        }
-    }
-
     void Renderer::setScissorAndViewport(
         vk::Extent2D extent,
         std::shared_ptr<RxCore::SecondaryCommandBuffer> buf,
@@ -737,296 +638,6 @@ namespace RxEngine
             .0f, flipY ? static_cast<float>(extent.height) : 0.0f, static_cast<float>(extent.width),
             flipY ? -static_cast<float>(extent.height) : static_cast<float>(extent.height), 0.0f,
             1.0f);
-    }
-
-    RenderResponse Renderer::renderOpaque(
-        vk::Extent2D extent,
-        const std::shared_ptr<Camera> & camera,
-        std::shared_ptr<const std::vector<RenderEntity>> entities)
-    {
-        OPTICK_EVENT()
-
-        std::vector<uint32_t> visible_entity_index;
-        std::vector<uint32_t> drawing_entity_index;
-
-        cullEntitiesProj(
-            XMLoadFloat4x4(&camera->cameraShaderData.projection),
-            XMLoadFloat4x4(&camera->cameraShaderData.view),
-            entities,
-            visible_entity_index);
-
-        MaterialPipelineId prev_pipeline;
-        EntityId prev_entity_id;
-        {
-            OPTICK_EVENT("Select matching Pipeline")
-            for (auto & i: visible_entity_index) {
-                auto & e = (*entities)[i];
-                MaterialPipelineId pl;
-                if (e.entityId == prev_entity_id) {
-                    pl = prev_pipeline;
-                } else {
-                    pl = entityManager_->getEntityOpaquePipeline(e.entityId);
-                    prev_pipeline = pl;
-                    prev_entity_id = e.entityId;
-                }
-                if (pl.valid()) {
-                    drawing_entity_index.insert(drawing_entity_index.end(), i);
-                }
-            }
-        }
-
-        if (drawing_entity_index.empty()) {
-            return {};
-        }
-
-        return renderSelectedEntities(
-            extent,
-            XMLoadFloat4x4(&camera->projView),
-            XMLoadFloat4x4(&(camera->cameraShaderData.view)),
-            entities,
-            drawing_entity_index,
-            1,
-            true,
-            renderPass_,
-            0,
-            0,
-            0,
-            nullptr);
-    }
-
-    RenderResponse Renderer::renderSelectedEntities(
-        vk::Extent2D extent,
-        const XMMATRIX & projView,
-        const XMMATRIX & view,
-        const std::shared_ptr<const std::vector<RenderEntity>> & entities,
-        std::vector<uint32_t> selectedEntitiesIndex,
-        uint32_t pipelineIndex,
-        bool flipY,
-        const vk::RenderPass & pass,
-        int subPass,
-        uint32_t pushOffset,
-        uint32_t pushSize,
-        void * pushData)
-    {
-        OPTICK_EVENT()
-
-        auto iView = XMMatrixInverse(nullptr, view); // glm::inverse(view);
-        auto right = XMVector3Normalize(XMVector3TransformNormal(XMVectorSet(1, 0, 0, 0), iView));
-
-        std::vector<std::tuple<MaterialPipelineId, MeshBundle *, uint32_t, uint32_t, MaterialId>>
-            sorting_index;
-        {
-            OPTICK_EVENT("Build Sort Index")
-            for (auto & eix: selectedEntitiesIndex) {
-                const RenderEntity & entity = (*entities)[eix];
-
-                auto pl = pipelineIndex == 1
-                              ? entityManager_->getEntityOpaquePipeline(entity.entityId)
-                              : entityManager_->getEntityShadowPipeline(entity.entityId);
-                auto & e = entityManager_->getEntity(entity.entityId);
-
-                uint8_t selected_lod = 0;
-
-                if (e.lodCount > 1) {
-                    auto s = getSphereSize(projView, right, entity.boundsSphere);
-                    for (; selected_lod < e.lodCount && selected_lod < 4; selected_lod++) {
-                        if (s > e.lods[selected_lod].second) {
-                            break;
-                        }
-                    }
-                    if (selected_lod == 4) {
-                        selected_lod--;
-                    }
-                }
-
-                auto mb = e.bundle;
-                auto mix = e.lods[selected_lod];
-
-                sorting_index.emplace_back(
-                    std::tuple<MaterialPipelineId, MeshBundle *, uint32_t, uint32_t, MaterialId>{
-                        pl,
-                        mb.get(),
-                        mix.first,
-                        eix,
-                        e.materialId
-                    });
-            }
-        }
-        {
-            OPTICK_EVENT("Sort Entity Index")
-            std::ranges::sort(
-                sorting_index,
-                [](const auto & a, const auto & b)
-                {
-                    auto & [apl, abund, amix, ax, amid] = a;
-                    auto & [bpl, bbund, bmix, bx, bmid] = b;
-
-                    if (apl < bpl) {
-                        return true;
-                    }
-                    if (apl > bpl) {
-                        return false;
-                    }
-                    if (abund < bbund) {
-                        return true;
-                    }
-                    if (abund > bbund) {
-                        return false;
-                    }
-                    return amix < bmix;
-                }
-            );
-        }
-        IndirectDrawSet ids;
-
-        {
-            OPTICK_EVENT("Build Draw Commands")
-            MaterialPipelineId prevPL{};
-            MeshBundle * prevBundle = nullptr;
-            uint32_t prevMix = RX_INVALID_ID;
-
-            uint32_t headerIndex = 0;
-            uint32_t commandIndex = 0;
-
-            for (auto & [pl, bundle, mix, eix, mid]: sorting_index) {
-                if (prevPL != pl || bundle != prevBundle) {
-
-                    headerIndex = static_cast<uint32_t>(ids.headers.size());
-                    ids.headers
-                        .push_back({
-                            pl,
-                            bundle,
-                            static_cast<uint32_t>(ids.commands.size()),
-                            0 });
-
-                    prevPL = pl;
-                    prevBundle = bundle;
-                    prevMix = RX_INVALID_ID;
-                }
-
-                if (mix != prevMix) {
-                    commandIndex = static_cast<uint32_t>(ids.commands.size());
-                    auto mesh = bundle->getEntry(mix);
-                    ids.commands.push_back({
-                        mesh.indexCount,
-                        mesh.vertexOffset,
-                        mesh.indexOffset, 0, static_cast<uint32_t>(ids.instances.size()) }
-                    );
-                    ids.headers[headerIndex].commandCount++;
-                    prevMix = mix;
-                }
-                auto & e = (*entities)[eix];
-
-                ids.instances.push_back({ e.transform, e.instanceParams1, mid.index() , 0, 0, 0});
-                ids.commands[commandIndex].instanceCount++;
-
-                if (ids.instances.size() > 19990) {
-                    spdlog::info("too many instances");
-                    break;
-                }
-            }
-        }
-
-        if (ids.instances.empty()) {
-            return {};
-        }
-        std::shared_ptr<RxCore::DescriptorSet> ds;
-        std::shared_ptr<RxCore::Buffer> instanceBuffer;
-        {
-            OPTICK_EVENT("Get Buffer")
-            std::lock_guard<std::mutex> lk(ibLock);
-
-            ds = instanceBUfferDS[ibCycle];
-            instanceBuffer = instanceBuffers[ibCycle];
-
-            ibCycle = (ibCycle + 1) % 20;
-        }
-        auto ptr = instanceBuffer->getMemory()->getPtr();
-        {
-            OPTICK_EVENT("Copy to Instance Buffer")
-            std::copy(ids.instances.begin(), ids.instances.end(),
-                      reinterpret_cast<IndirectDrawInstance *>(ptr));
-        }
-
-        auto buf = RxCore::JobManager::threadData().getCommandBuffer();
-        buf->begin(pass, subPass);
-        OPTICK_GPU_CONTEXT(buf->Handle());
-
-        buf->useLayout(pipelineLayout);
-        if (pushSize > 0) {
-            buf->pushConstant(vk::ShaderStageFlagBits::eVertex, pushOffset, pushSize, pushData);
-        }
-
-        buf->BindDescriptorSet(0, ds0_);
-        buf->BindDescriptorSet(2, ds);
-
-        setScissorAndViewport(extent, buf, flipY);
-
-        {
-            OPTICK_GPU_EVENT("ID Draws")
-            renderIndirectDraws(ids, buf);
-        }
-        buf->end();
-        return {buf};
-    }
-
-    RenderResponse Renderer::renderShadow(
-        vk::Extent2D extent,
-        const XMMATRIX & viewProj,
-        const XMMATRIX & view,
-        const BoundingOrientedBox & cullBox,
-        uint32_t cascadeIndex,
-        std::shared_ptr<const std::vector<RenderEntity>> entities)
-    {
-        OPTICK_EVENT()
-
-        std::vector<uint32_t> visible_entity_index;
-        std::vector<uint32_t> drawing_entity_index;
-
-        cullEntitiesOrtho(cullBox, entities, visible_entity_index);
-
-        MaterialPipelineId prev_pipeline;
-        EntityId prev_entity_id;
-        {
-            OPTICK_EVENT("Select matching Pipeline")
-            for (auto & i: visible_entity_index) {
-                auto & e = (*entities)[i];
-                MaterialPipelineId pl;
-                if (e.entityId == prev_entity_id) {
-                    pl = prev_pipeline;
-                } else {
-                    pl = entityManager_->getEntityShadowPipeline(e.entityId);
-                    prev_pipeline = pl;
-                    prev_entity_id = e.entityId;
-                }
-                if (pl.valid()) {
-                    drawing_entity_index.insert(drawing_entity_index.end(), i);
-                }
-            }
-        }
-
-        if (drawing_entity_index.empty()) {
-            return {};
-        }
-
-        return renderSelectedEntities(
-            extent,
-            viewProj,
-            view,
-            entities,
-            drawing_entity_index,
-            0,
-            false,
-            depthRenderPass_,
-            0,
-            0,
-            sizeof(uint32_t),
-            &cascadeIndex);
-    }
-
-    void Renderer::updateGui() const
-    {
-        lightingManager_->UpdateGui();
     }
 
     void Renderer::createPipelineLayout()

@@ -10,16 +10,17 @@ namespace RxEngine
     {
         systemSet_ = world_->newEntity().set<ecs::SystemSet>({false}).id;
 
-        world_->createSystem()
+        world_->createSystem("Stats:Ui")
               .withSet(systemSet_)
               .label<ecs::Pipeline::Final>()
+                
               .execute([this](ecs::World *)
                   {
                       presentStatsUi();
                   }
               );
 
-        world_->createSystem()
+        world_->createSystem("Stats:Mem")
               .withSet(systemSet_)
               .label<ecs::Pipeline::Main>()
               .execute([this](ecs::World*)

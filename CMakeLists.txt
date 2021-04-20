@@ -67,12 +67,12 @@ add_library(RxEngine STATIC
         src/ImGui/ImGuiPipelineLayout.cpp
         src/ImGui/ImGuiPipelineLayout.h
         src/Rendering/ILightingManager.h
-        src/UI/RmlSystemInterface.cpp
-        src/UI/RmlSystemInterface.h
-        src/UI/RmlRenderInterface.cpp
-        src/UI/RmlRenderInterface.h
-        src/UI/RmlFileInterface.cpp
-        src/UI/RmlFileInterface.h
+        "src/Modules/RmlUI/RmlSystemInterface.cpp"
+        "src/Modules/RmlUI/RmlSystemInterface.h"
+        "src/Modules/RmlUI/RmlRenderInterface.cpp"
+        "src/Modules/RmlUI/RmlRenderInterface.h"
+        "src/Modules/RmlUI/RmlFileInterface.cpp"
+        "src/Modules/RmlUI/RmlFileInterface.h"
         src/Subsystems/UiContext.cpp
         src/Subsystems/UiContext.h
         
@@ -101,7 +101,7 @@ add_library(RxEngine STATIC
         src/Modules/Stats/Stats.cpp
         src/Modules/Module.h 
         src/Modules/Transforms/Transforms.cpp 
-)
+ "src/Modules/RmlUI/RmlUI.h" "src/Modules/RmlUI/RmlUI.cpp" "src/Modules/SceneCamera/SceneCamera.h" "src/Modules/SceneCamera/SceneCamera.cpp")
 
 target_compile_options(RxEngine PUBLIC -DGLFW_INCLUDE_VULKAN -DVK_USE_PLATFORM_WIN32_KHR -DGLFW_EXPOSE_NATIVE_WIN32 -DNOMINMAX)
 

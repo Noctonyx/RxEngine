@@ -18,7 +18,7 @@ namespace RxEngine
     class Keyboard;
     class Mouse;
 
-    class IMGuiRender : public Subsystem, public IRenderable, public IInputHandler
+    class IMGuiRender : public Subsystem
     {
         //friend class Engine;//
 

@@ -231,7 +231,7 @@ namespace RxEngine
         indices_.clear();
         renders.clear();
     }
-
+#if 0
     void RmlRenderInterface::rendererInit(Renderer * renderer)
     {
         auto render_stage = renderer->getSequenceRenderStage(RenderSequenceUi);
@@ -458,7 +458,7 @@ namespace RxEngine
     }
 
     void RmlRenderInterface::readyRender() { }
-
+#endif
     RmlRenderInterface::~RmlRenderInterface()
     {
         for (auto & sm: shaders) {
@@ -497,10 +497,5 @@ namespace RxEngine
 
         return std::tuple<std::shared_ptr<RxCore::VertexBuffer>, std::shared_ptr<
                               RxCore::IndexBuffer>>(vb, ib);
-    }
-
-    std::vector<RenderEntity> RmlRenderInterface::getRenderEntities()
-    {
-        return {};
     }
 }

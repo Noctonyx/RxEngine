@@ -79,7 +79,7 @@ namespace RxEngine
 
     struct RenderEntity
     {
-        EntityId entityId;
+        //EntityId entityId;
         DirectX::XMFLOAT4X4 transform;
         DirectX::BoundingSphere boundsSphere;
         DirectX::XMFLOAT4 instanceParams1;
@@ -234,7 +234,7 @@ namespace RxEngine
 
         void render(
             const std::shared_ptr<RenderCamera> & camera,
-            const std::vector<IRenderable *> & subsystems,
+            //const std::vector<IRenderable *> & subsystems,
             vk::ImageView imageView,
             vk::Extent2D extent,
             std::vector<vk::Semaphore> waitSemaphores,
@@ -244,7 +244,7 @@ namespace RxEngine
         void shutdown();
 
         [[nodiscard]] RenderStage getSequenceRenderStage(ERenderSequence seq) const;
-        void setLightingManager(std::shared_ptr<Lighting> lm);
+        //void setLightingManager(std::shared_ptr<Lighting> lm);
         //void setTextureBundle(const std::shared_ptr<TextureBundle> & textureBundle);
 
     protected:
@@ -255,78 +255,12 @@ namespace RxEngine
         std::shared_ptr<const std::vector<RenderEntity>> finishUpEntityJobs(
             const std::vector<std::shared_ptr<RxCore::Job<std::vector<RenderEntity>>>> & entityJobs);
 
-        void createShadowJobs(
-            std::vector<std::shared_ptr<RxCore::Job<RenderResponse>>> & jobs,
-            const std::vector<IRenderable *> & subsystems,
-            const std::vector<ShadowCascade> & cascades,
-            uint32_t
-            activeCascade,
-            const uint32_t width,
-            const uint32_t height
-        );
-
-        void createOpaqueJobs(
-            std::vector<std::shared_ptr<RxCore::Job<RenderResponse>>> & jobs,
-            const std::vector<IRenderable *> & subsystems,
-            const std::shared_ptr<Camera> & camera,
-            const uint32_t width,
-            const uint32_t height
-        );
-
-        void createUiJobs(
-            std::vector<std::shared_ptr<RxCore::Job<RenderResponse>>> & jobs,
-            const std::vector<IRenderable *> & subsystems,
-            const uint32_t width,
-            const uint32_t height
-        );
-
-        void waitAndFinishJobs(
-            std::vector<std::shared_ptr<RxCore::Job<RenderResponse>>> & jobs,
-            uint16_t seq,
-            std::shared_ptr<RxCore::PrimaryCommandBuffer>
-            & buf
-        );
-
-        void renderIndirectDraws(
-            IndirectDrawSet ids,
-            const std::shared_ptr<RxCore::SecondaryCommandBuffer> & buf) const;
-
         void setScissorAndViewport(
             vk::Extent2D extent,
             std::shared_ptr<RxCore::SecondaryCommandBuffer> buf,
             bool flipY) const;
 
-        RenderResponse renderOpaque(
-            vk::Extent2D extent,
-            const std::shared_ptr<Camera> & camera,
-            std::shared_ptr<const std::vector<RenderEntity>> entities);
-
-        RenderResponse renderShadow(
-            vk::Extent2D extent,
-            const DirectX::XMMATRIX & viewProj,
-            const DirectX::XMMATRIX & view,
-            const DirectX::BoundingOrientedBox& cullBox,
-            uint32_t cascadeIndex,
-            std::shared_ptr<const std::vector<RenderEntity>> entities);
-
-        RenderResponse renderSelectedEntities(
-            vk::Extent2D extent,
-            const DirectX::XMMATRIX & projView,
-            const DirectX::XMMATRIX & view,
-            const std::shared_ptr<const std::vector<RenderEntity>> & entities,
-            std::vector<uint32_t> selectedEntitiesIndex,
-            uint32_t pipelineIndex,
-            bool flipY,
-            const vk::RenderPass & pass,
-            int subPass,
-            uint32_t pushOffset,
-            uint32_t pushSize,
-            void * pushData
-        );
-        
-
     public:
-        void updateGui() const;
         //void collectLights(const std::vector<IRenderable *> & subsystems, std::vector<LightData> & lights);
     public:
     public:
@@ -356,7 +290,7 @@ namespace RxEngine
 
         vk::Sampler shadowSampler_;
 
-        std::shared_ptr<Lighting> lightingManager_;
+        //std::shared_ptr<Lighting> lightingManager_;
         vk::PipelineLayout pipelineLayout;
         std::vector<vk::DescriptorSetLayout> dsLayouts;
 

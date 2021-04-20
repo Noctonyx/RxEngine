@@ -9,6 +9,7 @@ using namespace DirectX;
 
 namespace RxEngine
 {
+#if 0
     void Lighting::UpdateGui()
     {
         OPTICK_EVENT()
@@ -399,4 +400,5 @@ namespace RxEngine
     {
         return {};
     }
+#endif
 }

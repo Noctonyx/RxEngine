@@ -14,12 +14,13 @@
 #include "Delegates.hpp"
 #include "Rendering/MaterialManager.h"
 
-#include "UI/RmlFileInterface.h"
-#include "UI/RmlSystemInterface.h"
-#include "UI/RmlRenderInterface.h"
+//#include "UI/RmlFileInterface.h"
+//#include "UI/RmlSystemInterface.h"
+//#include "UI/RmlRenderInterface.h"
 #pragma warning(disable: 4706)
 #include "ini.h"
 #include "RxECS.h"
+#include "Vfs.h"
 #include "sol/sol.hpp"
 #include "Window.hpp"
 //#include "LuaBridge/detail/LuaRef.h"
@@ -143,9 +144,6 @@ namespace RxEngine
         //RXAssets::Loader * loader_;
         //std::unique_ptr<IMGuiRender> gui;
 
-        std::unique_ptr<RmlSystemInterface> rmlSystem;
-        std::unique_ptr<RmlFileInterface> rmlFile;
-        std::unique_ptr<RmlRenderInterface> rmlRender;
 
         //Rml::Context * rmlContext{};
 
@@ -153,7 +151,7 @@ namespace RxEngine
         //MulticastDelegate<Subsystem *> onAddSubsystem;
         //std::shared_ptr<Scene> scene_;
 
-        std::shared_ptr<RenderCamera> renderCamera_{};
+        //std::shared_ptr<RenderCamera> renderCamera_{};
 
         std::chrono::time_point<std::chrono::steady_clock> startTime;
         float delta_{};

@@ -18,7 +18,7 @@ namespace RxEngine
 
 #define MAX_SHADOW_CASCADES 4
 
-
+#if 0
 
     class Lighting
         : public IRenderProvider,
@@ -122,4 +122,5 @@ namespace RxEngine
         uint32_t ix;
     public:
     };
+#endif
 }

@@ -10,6 +10,7 @@
 #include "Scene.h"
 #include "Input/Mouse.hpp"
 #include "Vulkan/Surface.hpp"
+#include "Rendering/Renderer.hpp"
 #include "Subsystems/SceneCamera.h"
 #include <RmlUi/Core.h>
 #include <RmlUi/Lua.h>
@@ -105,14 +106,6 @@ namespace RxEngine
 
         timer_ = std::chrono::high_resolution_clock::now();
 
-        rmlSystem = std::make_unique<RmlSystemInterface>(this);
-        rmlFile = std::make_unique<RmlFileInterface>();
-        rmlRender = std::make_unique<RmlRenderInterface>();
-
-        Rml::SetSystemInterface(rmlSystem.get());
-        Rml::SetFileInterface(rmlFile.get());
-        Rml::SetRenderInterface(rmlRender.get());
-        Rml::Initialise();
 
 
         //lua_ = new LuaState();
@@ -126,6 +119,9 @@ namespace RxEngine
         //        .endNamespace();
 
         loadLuaFile("/lua/engine");
+
+
+
         populateStartupData();
 
         //luabridge::LuaRef v2 = luabridge::getGlobal(lua_->L, "data");
@@ -182,20 +178,15 @@ namespace RxEngine
             startup.test()
             )" /*sol::script_pass_on_error*/);
 #endif
-        Rml::LoadFontFace("/ui/fonts/TitilliumWeb-Regular.ttf");
-        Rml::LoadFontFace("/ui/LatoLatin-Regular.ttf");
-        Rml::LoadFontFace("/ui/fonts/Roboto-Regular.ttf");
-        Rml::LoadFontFace("/ui/fonts/Roboto-Bold.ttf");
-        Rml::Lua::Initialise();
-
-        rmlRender->rendererInit(renderer_.get());
+     
+        //rmlRender->rendererInit(renderer_.get());
 
         window_->onResize.AddLambda(
             [&](int w, int h)
             {
                 setUint32ConfigValue("window", "width", w);
                 setUint32ConfigValue("window", "height", h);
-                rmlRender->setDirty();
+               
             });
 
         startTime = std::chrono::high_resolution_clock::now();
@@ -223,15 +214,9 @@ namespace RxEngine
 
         //world.reset();
         renderCamera_.reset();
-        Rml::Shutdown();
-        rmlRender.reset();
-        rmlSystem.reset();
-        rmlFile.reset();
 
         world.reset();
 
-        entityManager_.reset();
-        materialManager_.reset();
         renderer_->shutdown();
 
         destroySemaphores();

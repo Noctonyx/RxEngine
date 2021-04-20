@@ -56,7 +56,7 @@ namespace RxEngine
         DirectX::XMFLOAT4X4 transform;
     };
 
-    class RmlRenderInterface : public Rml::RenderInterface, public IRenderable
+    class RmlRenderInterface : public Rml::RenderInterface
     {
     public:
         RmlRenderInterface();
@@ -86,17 +86,18 @@ namespace RxEngine
         void SetTransform(const Rml::Matrix4f * transform) override;
 
         void resetRender();
-        void readyRender();
-
+        //void readyRender();
+#if 0
         void rendererInit(Renderer * renderer) override;
         RenderResponse renderUi(
             const RenderStage & stage,
             const uint32_t width,
             const uint32_t height) override;
         bool hasRenderUi() const override;
+#endif
         void setDirty() { dirtyTextures = true;}
 
-        std::vector<RenderEntity> getRenderEntities() override;
+        //std::vector<RenderEntity> getRenderEntities() override;
     private:
 
         std::tuple<std::shared_ptr<RxCore::VertexBuffer>, std::shared_ptr<RxCore::IndexBuffer>> CreateBuffers() const;

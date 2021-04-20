@@ -5,10 +5,10 @@
 #include "Window.hpp"
 #include "Input/Mouse.hpp"
 #include "Input/Keyboard.hpp"
-#include "Subsystems/IInputHandler.h"
 
 namespace RxEngine
 {
+#if 0
     void Scene::Startup(Renderer * renderer)
     {
         deltaAccumulated_ = 0.f;
@@ -333,4 +333,5 @@ namespace RxEngine
     {
         return engine_->getEntityManager();
     }
+#endif
 }

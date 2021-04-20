@@ -7,6 +7,7 @@
 
 namespace RxEngine
 {
+#if 0
     class IInputHandler;
     class SceneCamera;
     class Camera;
@@ -120,4 +121,5 @@ namespace RxEngine
 
         IInputHandler * mouseCapturer;
     };
+#endif
 }

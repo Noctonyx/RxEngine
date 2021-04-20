@@ -13,6 +13,7 @@
 #include "Input/Keyboard.hpp"
 #include "Scene.h"
 #include "AssetException.h"
+#include "Vfs.h"
 
 namespace RxEngine
 {
