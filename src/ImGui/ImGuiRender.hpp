@@ -7,9 +7,10 @@
 
 #include <vector>
 #include <memory>
-#include "Subsystem.h"
+#include "Modules/Module.h"
 #include <imgui.h>
-#include "Delegates.hpp"
+//#include "Delegates.hpp"
+#include "Input/Keyboard.hpp"
 #include "Rendering/Renderer.hpp"
 
 namespace RxEngine
@@ -18,63 +19,36 @@ namespace RxEngine
     class Keyboard;
     class Mouse;
 
-    class IMGuiRender : public Subsystem
+    class IMGuiRender : public Module
     {
         //friend class Engine;//
 
     public:
-        IMGuiRender(std::shared_ptr<Mouse> mouse, std::shared_ptr<Keyboard> keyboard);
-
+        IMGuiRender(ecs::World* world, EngineMain* engine);
         ~IMGuiRender();
 
-        int16_t GetCallPriority(Sequences sequence) override
-        {
-            switch (sequence) {
-                case Sequences::RendererInit:
-                    return -1;
-                case Sequences::Update:
-                    return -1;
-                case Sequences::UpdateGui:
-                    return -1;
-//            case Sequences::Shutdown:
-                    //              return 1000;
-                default:
-                    return Subsystem::GetCallPriority(sequence);
-            }
-        }
+        void startup() override;
+        void shutdown() override;
 
-        bool OnMouseButton(int32_t button, bool pressed, EInputMod mods) override;
-        bool OnMousePos(float x, float y, EInputMod mods) override;
-        bool OnMouseScroll(float yscroll, EInputMod mods) override;
-        bool OnKey(EKey key, EInputAction action, EInputMod mods) override;
-        bool OnChar(char c) override;
         void SetupInputs(ImGuiIO & io);
         void CreateFontImage(ImGuiIO & io);
-        void rendererInit(Renderer * renderer) override;
-        void Update(float deltaTime) override;
-        void UpdateGui() override;
-        void WindowResize(int width, int height);
+        //void rendererInit(Renderer * renderer) override;
+        void update(float deltaTime);
+        void updateGui();
 
-        bool hasRenderUi() const override { return true; }
         [[nodiscard]] RenderResponse renderUi(
             const RenderStage & stage,
             const uint32_t width,
-            const uint32_t height) override;
+            const uint32_t height);
 
         //void Shutdown() override;
 
-        void addedToScene(
-            Scene * scene,
-            std::vector<std::shared_ptr<Subsystem>> & subsystems) override;
-        void removedFromScene() override;
     protected:
         [[nodiscard]] std::tuple<std::shared_ptr<RxCore::VertexBuffer>, std::shared_ptr<
-            RxCore::IndexBuffer>> CreateBuffers() const;
+                                     RxCore::IndexBuffer>> CreateBuffers() const;
 
         void createMaterial(vk::RenderPass renderPass);
 
-    public:
-        std::vector<RenderEntity> getRenderEntities() override;
     private:
         std::vector<DelegateHandle> delegates_;
         std::shared_ptr<RxCore::Image> fontImage_;
@@ -96,7 +70,7 @@ namespace RxEngine
         std::shared_ptr<RXCore::Pipeline> createPipeline(
             std::shared_ptr<RXCore::PipelineLayout> layout,
             const std::shared_ptr<RXCore::RenderPass> & renderPass);
-#endif      
+#endif
     };
-} 
+}
 #endif // AMX_IMGUIRENDER_HPP

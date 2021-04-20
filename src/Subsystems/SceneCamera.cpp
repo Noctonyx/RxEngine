@@ -68,8 +68,8 @@ namespace RxEngine
         Subsystem::addedToScene(scene, subsystems);
 
         //camera_->setRotation({ DirectX::XMConvertToRadians(-30.0f), 0.0f, 0.0f});
-        camera_->setPerspective(60.0f, scene->getAspectRatio(), 0.1f, 256.0f);
-        camera_->setTranslation({0.0f, .0f, 0.0f});
+       // camera_->setPerspective(60.0f, scene->getAspectRatio(), 0.1f, 256.0f);
+        //camera_->setTranslation({0.0f, .0f, 0.0f});
     }
 
     SceneCamera::SceneCamera()

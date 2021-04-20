@@ -14,11 +14,13 @@
 #include "Scene.h"
 #include "AssetException.h"
 #include "Vfs.h"
+#include "Window.hpp"
+#include "Vulkan/CommandBuffer.hpp"
 
 namespace RxEngine
 {
-    IMGuiRender::IMGuiRender(std::shared_ptr<Mouse> mouse, std::shared_ptr<Keyboard> keyboard)
-        : mouse_(std::move(mouse))
+    IMGuiRender::IMGuiRender(ecs::World * world, EngineMain * engine)
+        : Module(world, engine)
     {
         ImGui::CreateContext();
         ImGui::StyleColorsDark();
@@ -35,27 +37,126 @@ namespace RxEngine
         RxCore::iVulkan()->getDevice().destroyPipeline(pipeline);
     }
 
+    void IMGuiRender::startup()
+    {
+        world_->createSystem("ImGui:Render")
+              //.after<UiContextUpdate>()
+              .before<ecs::Pipeline::EndInit>()
+              .execute([&](ecs::World * world)
+              {
+                  OPTICK_EVENT()
+                  update(world->deltaTime());
+              });
+
+        world_->createSystem("ImGui:Render")
+              //.after<UiContextUpdate>()
+              .execute([&](ecs::World * world)
+              {
+                  OPTICK_EVENT()
+                  updateGui();
+              });
+
+        world_->createSystem("ImGui:WindowResize")
+              .withStream<WindowResize>()
+              .label<ecs::Pipeline::Final>()
+              //.label<UiContextUpdate>()
+              .execute<WindowResize>([&](ecs::World * world, const WindowResize * resize)
+              {
+                  OPTICK_EVENT()
+
+                  ImGuiIO & io = ImGui::GetIO();
+                  io.DisplaySize = ImVec2(
+                      static_cast<float>(resize->width),
+                      static_cast<float>(resize->height));
+                  return false;
+              });
+
+        world_->createSystem("ImGui:MousePos")
+              .withStream<MousePosition>()
+              .label<ecs::Pipeline::Init>()
+              .execute<MousePosition>([&](ecs::World * world, const MousePosition * pos)
+              {
+                  OPTICK_EVENT()
+                  auto & io = ImGui::GetIO();
+                  io.MousePos = ImVec2(pos->x, pos->y);
+                  if (io.WantCaptureMouse) {
+                      return true;
+                  }
+                  return false;
+              });
+
+        world_->createSystem("ImGui:MouseButton")
+              .withStream<MouseButton>()
+              .label<ecs::Pipeline::Init>()
+              .execute<MouseButton>([&](ecs::World * world, const MouseButton * button)
+              {
+                  OPTICK_EVENT()
+                  auto & io = ImGui::GetIO();
+                  if (io.WantCaptureMouse) {
+                      io.MouseDown[static_cast<int>(button->button)] = button->pressed;
+                      return true;
+                  }
+                  return false;
+              });
+
+        world_->createSystem("ImGui:MouseScroll")
+              .withStream<MouseScroll>()
+              .label<ecs::Pipeline::Init>()
+              .execute<MouseScroll>([&](ecs::World * world, const MouseScroll * s)
+              {
+                  OPTICK_EVENT()
+                  auto & io = ImGui::GetIO();
+                  if (io.WantCaptureMouse) {
+                      io.MouseWheel += s->y_offset;
+                      return true;
+                  }
+                  return false;
+              });
+
+        world_->createSystem("ImGui:Key")
+              .withStream<KeyboardKey>()
+              .label<ecs::Pipeline::Init>()
+              .execute<KeyboardKey>([&](ecs::World * world, const KeyboardKey * key)
+              {
+                  OPTICK_EVENT()
+                  auto & io = ImGui::GetIO();
+                  if (!io.WantCaptureKeyboard) {
+                      return false;
+                  }
+                  if (key->action == EInputAction::Press) {
+                      io.KeysDown[static_cast<int>(key->key)] = true;
+                  }
+                  if (key->action == EInputAction::Release) {
+                      io.KeysDown[static_cast<int>(key->key)] = false;
+                  }
+                  io.KeyCtrl = io.KeysDown[static_cast<int>(EKey::ControlLeft)] ||
+                      io.KeysDown[static_cast<int>(EKey::ControlRight)];
+                  io.KeyShift = io.KeysDown[static_cast<int>(EKey::ShiftLeft)] ||
+                      io.KeysDown[static_cast<int>(EKey::ShiftRight)];
+                  io.KeyAlt = io.KeysDown[static_cast<int>(EKey::AltLeft)] ||
+                      io.KeysDown[static_cast<int>(EKey::AltRight)];
+                  io.KeySuper = io.KeysDown[static_cast<int>(EKey::SuperLeft)] ||
+                      io.KeysDown[static_cast<int>(EKey::SuperRight)];
+                  return true;
+              });
+
+        world_->createSystem("ImGui:Char")
+              .withStream<KeyboardChar>()
+              .label<ecs::Pipeline::Init>()
+              .execute<KeyboardChar>([&](ecs::World * world, const KeyboardChar * c)
+              {
+                  OPTICK_EVENT()
+                  auto & io = ImGui::GetIO();
+                  if (!io.WantCaptureKeyboard) {
+                      return false;
+                  }
+                  io.AddInputCharacter(c->c);
+                  return true;
+              });
+    }
+
     void IMGuiRender::SetupInputs(ImGuiIO & io)
     {
-#if 0
-        mouse_->onMouseButton.AddLambda(
-            [&](int32_t button, bool pressed)
-            {
-                io.MouseDown[static_cast<int>(button)] = pressed;
-            });
-
-        mouse_->onMousePos.AddLambda(
-            [&](float x, float y)
-            {
-                io.MousePos = ImVec2(x, y);
-            });
-
-        mouse_->onScroll.AddLambda(
-            [&](float yscroll)
-            {
-                io.MouseWheel += yscroll;
-            });
-#endif
         io.KeyRepeatDelay = 2.0f;
         io.KeyRepeatRate = 0.25f;
         io.KeyMap[ImGuiKey_Tab] = static_cast<int>(EKey::Tab);
@@ -81,32 +182,6 @@ namespace RxEngine
         io.KeyMap[ImGuiKey_Z] = static_cast<int>(EKey::Z);
 
         io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
-#if 0
-        keyboard_->onKey.AddLambda(
-            [&](EKey key, EInputAction action, EInputMod /*mods*/)
-            {
-                if (action == EInputAction::Press) {
-                    io.KeysDown[static_cast<int>(key)] = true;
-                }
-                if (action == EInputAction::Release) {
-                    io.KeysDown[static_cast<int>(key)] = false;
-                }
-                io.KeyCtrl = io.KeysDown[static_cast<int>(EKey::ControlLeft)] ||
-                             io.KeysDown[static_cast<int>(EKey::ControlRight)];
-                io.KeyShift = io.KeysDown[static_cast<int>(EKey::ShiftLeft)] ||
-                              io.KeysDown[static_cast<int>(EKey::ShiftRight)];
-                io.KeyAlt = io.KeysDown[static_cast<int>(EKey::AltLeft)] ||
-                            io.KeysDown[static_cast<int>(EKey::AltRight)];
-                io.KeySuper = io.KeysDown[static_cast<int>(EKey::SuperLeft)] ||
-                              io.KeysDown[static_cast<int>(EKey::SuperRight)];
-            });
-
-        keyboard_->onChar.AddLambda(
-            [&](char c)
-            {
-                io.AddInputCharacter(c);
-            });
-#endif
     }
 
     void IMGuiRender::CreateFontImage(ImGuiIO & io)
@@ -120,7 +195,8 @@ namespace RxEngine
 
         auto size = vfs->getFilesize("/fonts/NotoSans-Regular.ttf");
         if (size == 0) {
-            throw RxAssets::AssetException("Error loading font /fonts/NotoSans-Regular.ttf", std::string(""));
+            throw RxAssets::AssetException("Error loading font /fonts/NotoSans-Regular.ttf",
+                                           std::string(""));
         }
 
         std::vector<std::byte> data(size);
@@ -141,12 +217,9 @@ namespace RxEngine
         auto b = RxCore::iVulkan()->createStagingBuffer(upload_size, pixels);
 
         RxCore::iVulkan()->transferBufferToImage(
-            b, fontImage_, vk::Extent3D(width, height, 1), vk::ImageLayout::eShaderReadOnlyOptimal, 1,
+            b, fontImage_, vk::Extent3D(width, height, 1), vk::ImageLayout::eShaderReadOnlyOptimal,
+            1,
             0);
-
-        //scene_->getMaterialManager()->addTexture()
-        //RXCore::Device::Context()->transitionImageLayout(
-        //    fontImage_, vk::ImageLayout::eShaderReadOnlyOptimal);
     }
 
     void IMGuiRender::createMaterial(vk::RenderPass renderPass)
@@ -201,8 +274,9 @@ namespace RxEngine
         // mp->addDescriptorSetLayout({}, binding);
 
         auto mpid = scene_->getMaterialManager()->loadMaterialPipeline("/materials/imgui.matpipe");
-        pipeline = scene_->getMaterialManager()->createPipeline(mpid, pipelineLayout, renderPass, 0);
-//        RXAssets::MaterialPipelineData mpd;
+        pipeline = scene_->getMaterialManager()->
+                           createPipeline(mpid, pipelineLayout, renderPass, 0);
+        //        RXAssets::MaterialPipelineData mpd;
         //      RXAssets::Loader::loadMaterialPipeline(mpd, );
 #if 0
 
@@ -320,23 +394,13 @@ namespace RxEngine
         return pllb.Build();
     }
 #endif
-    void IMGuiRender::Update(float deltaTime)
+    void IMGuiRender::update(float deltaTime)
     {
         OPTICK_EVENT()
-        // auto height = scene_->Window()->GetHeight();
-        // auto width = scene_->Window()->GetWidth();
-
-        // static auto lastClock = std::chrono::high_resolution_clock::now();
-
-        ///        auto tnow = std::chrono::high_resolution_clock::now();
-        //     std::chrono::duration<float> delta = tnow - lastClock;
-
+    
         auto & io = ImGui::GetIO();
         io.DeltaTime = deltaTime;
-        // const auto size = window->GetSize();
-
-        // auto mouse = window_->mouse;
-
+    
         if (!(io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange)) {
             ImGuiMouseCursor imgui_cursor = ImGui::GetMouseCursor();
             if (imgui_cursor == ImGuiMouseCursor_None || io.MouseDrawCursor) {
@@ -344,24 +408,24 @@ namespace RxEngine
             } else {
                 mouse_->hideCursor(false);
                 switch (imgui_cursor) {
-                    default:
-                    case ImGuiMouseCursor_ResizeAll:
-                    case ImGuiMouseCursor_ResizeNESW:
-                    case ImGuiMouseCursor_ResizeNWSE:
-                        mouse_->setCursor(ECursorStandard::Arrow);
-                        break;
-                    case ImGuiMouseCursor_TextInput:
-                        mouse_->setCursor(ECursorStandard::IBeam);
-                        break;
-                    case ImGuiMouseCursor_ResizeNS:
-                        mouse_->setCursor(ECursorStandard::ResizeY);
-                        break;
-                    case ImGuiMouseCursor_ResizeEW:
-                        mouse_->setCursor(ECursorStandard::ResizeX);
-                        break;
-                    case ImGuiMouseCursor_Hand:
-                        mouse_->setCursor(ECursorStandard::Hand);
-                        break;
+                default:
+                case ImGuiMouseCursor_ResizeAll:
+                case ImGuiMouseCursor_ResizeNESW:
+                case ImGuiMouseCursor_ResizeNWSE:
+                    mouse_->setCursor(ECursorStandard::Arrow);
+                    break;
+                case ImGuiMouseCursor_TextInput:
+                    mouse_->setCursor(ECursorStandard::IBeam);
+                    break;
+                case ImGuiMouseCursor_ResizeNS:
+                    mouse_->setCursor(ECursorStandard::ResizeY);
+                    break;
+                case ImGuiMouseCursor_ResizeEW:
+                    mouse_->setCursor(ECursorStandard::ResizeX);
+                    break;
+                case ImGuiMouseCursor_Hand:
+                    mouse_->setCursor(ECursorStandard::Hand);
+                    break;
                 }
             }
         }
@@ -436,7 +500,7 @@ namespace RxEngine
         }
 
         // Create Vertex/Index Buffers
-        auto[vb, ib] = CreateBuffers();
+        auto [vb, ib] = CreateBuffers();
 
         buf->begin(stage.renderPass, stage.subPass);
         {
@@ -454,7 +518,8 @@ namespace RxEngine
 
             auto scale = DirectX::XMFLOAT2(2.0f / dd->DisplaySize.x, 2.0f / dd->DisplaySize.y);
             auto translate =
-                DirectX::XMFLOAT2(-1.0f - dd->DisplayPos.x * scale.x, -1.0f - dd->DisplayPos.y * scale.y);
+                DirectX::XMFLOAT2(-1.0f - dd->DisplayPos.x * scale.x,
+                                  -1.0f - dd->DisplayPos.y * scale.y);
 
             pd.translate = translate;
             pd.scale = scale;
@@ -476,14 +541,16 @@ namespace RxEngine
                 for (auto j = 0; j < cmd_list->CmdBuffer.Size; j++) {
                     auto draw_cmd = &cmd_list->CmdBuffer[j];
                     buf->setScissor(
-                        {{
-                             std::max(0, static_cast<int32_t>(draw_cmd->ClipRect.x)),
-                             std::max(0, static_cast<int32_t>(draw_cmd->ClipRect.y))
-                         },
-                         {
-                             static_cast<uint32_t>(draw_cmd->ClipRect.z - draw_cmd->ClipRect.x),
-                             static_cast<uint32_t>(draw_cmd->ClipRect.w - draw_cmd->ClipRect.y)
-                         }});
+                        {
+                            {
+                                std::max(0, static_cast<int32_t>(draw_cmd->ClipRect.x)),
+                                std::max(0, static_cast<int32_t>(draw_cmd->ClipRect.y))
+                            },
+                            {
+                                static_cast<uint32_t>(draw_cmd->ClipRect.z - draw_cmd->ClipRect.x),
+                                static_cast<uint32_t>(draw_cmd->ClipRect.w - draw_cmd->ClipRect.y)
+                            }
+                        });
                     buf->DrawIndexed(
                         draw_cmd->ElemCount, 1, draw_cmd->IdxOffset + idx_offset,
                         draw_cmd->VtxOffset + vb_offset, 0);
@@ -497,25 +564,6 @@ namespace RxEngine
         return {buf};
     }
 
-    void IMGuiRender::addedToScene(
-        Scene * scene,
-        std::vector<std::shared_ptr<Subsystem>> & subsystems)
-    {
-        Subsystem::addedToScene(scene, subsystems);
-
-        ImGuiIO & io = ImGui::GetIO();
-        io.DisplaySize = ImVec2(
-            static_cast<float>(scene_->getWidth()),
-            static_cast<float>(scene_->getHeight()));
-        scene_->onResize.AddRaw(this, &IMGuiRender::WindowResize);
-    }
-
-    void IMGuiRender::removedFromScene()
-    {
-        scene_->onResize.RemoveObject(this);
-        Subsystem::removedFromScene();
-    }
-
     void IMGuiRender::rendererInit(Renderer * renderer)
     {
         auto res = renderer->getSequenceRenderStage(RenderSequenceUi);
@@ -526,9 +574,10 @@ namespace RxEngine
         createMaterial(res.renderPass);
     }
 
-    void IMGuiRender::UpdateGui()
+    void IMGuiRender::updateGui()
     {
-        ImGui::DockSpaceOverViewport(0,ImGuiDockNodeFlags_PassthruCentralNode|ImGuiDockNodeFlags_NoDockingInCentralNode );
+        ImGui::DockSpaceOverViewport(
+            0, ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingInCentralNode);
 #if 1
         if (show_demo_window) {
             ImGui::ShowDemoWindow(&show_demo_window);
@@ -569,88 +618,4 @@ namespace RxEngine
         }
 #endif
     }
-
-    void IMGuiRender::WindowResize(int width, int height)
-    {
-        auto & io = ImGui::GetIO();
-        io.DisplaySize = ImVec2(static_cast<float>(width), static_cast<float>(height));
-    }
-
-    bool IMGuiRender::OnMouseButton(int32_t button, bool pressed, RxEngine::EInputMod mods)
-    {
-        auto & io = ImGui::GetIO();
-        if (io.WantCaptureMouse) {
-            io.MouseDown[static_cast<int>(button)] = pressed;
-            return true;
-        }
-        return false;
-    }
-
-    bool IMGuiRender::OnMousePos(float x, float y, RxEngine::EInputMod mods)
-    {
-        auto & io = ImGui::GetIO();
-        io.MousePos = ImVec2(x, y);
-        if (io.WantCaptureMouse) {
-            return true;
-        }
-        return false;
-    }
-
-    bool IMGuiRender::OnMouseScroll(float yscroll, RxEngine::EInputMod mods)
-    {
-        auto & io = ImGui::GetIO();
-        if (io.WantCaptureMouse) {
-            io.MouseWheel += yscroll;
-            return true;
-        }
-        return false;
-    }
-
-    bool IMGuiRender::OnKey(RxEngine::EKey key, RxEngine::EInputAction action, RxEngine::EInputMod mods)
-    {
-        auto & io = ImGui::GetIO();
-        if (!io.WantCaptureKeyboard) {
-            return false;
-        }
-        if (action == EInputAction::Press) {
-            io.KeysDown[static_cast<int>(key)] = true;
-        }
-        if (action == EInputAction::Release) {
-            io.KeysDown[static_cast<int>(key)] = false;
-        }
-        io.KeyCtrl = io.KeysDown[static_cast<int>(EKey::ControlLeft)] ||
-                     io.KeysDown[static_cast<int>(EKey::ControlRight)];
-        io.KeyShift = io.KeysDown[static_cast<int>(EKey::ShiftLeft)] ||
-                      io.KeysDown[static_cast<int>(EKey::ShiftRight)];
-        io.KeyAlt = io.KeysDown[static_cast<int>(EKey::AltLeft)] ||
-                    io.KeysDown[static_cast<int>(EKey::AltRight)];
-        io.KeySuper = io.KeysDown[static_cast<int>(EKey::SuperLeft)] ||
-                      io.KeysDown[static_cast<int>(EKey::SuperRight)];
-        return true;
-    }
-
-    bool IMGuiRender::OnChar(char c)
-    {
-        auto & io = ImGui::GetIO();
-        if (!io.WantCaptureKeyboard) {
-            return false;
-        }
-        io.AddInputCharacter(c);
-        return true;
-    }
-
-    std::vector<RenderEntity> IMGuiRender::getRenderEntities()
-    {
-        return {};
-    }
-
-#if 0
-    void IMGuiRender::preRender(uint32_t width, uint32_t height)
-    {
-        ImGuiIO & io = ImGui::GetIO();
-
-        io.DisplaySize = ImVec2(static_cast<float>(width), static_cast<float>(height));
-        ImGui::Render();
-    }
-#endif
 } // namespace RXEngine

@@ -35,7 +35,7 @@ add_subdirectory("ImportGLTF")
 
 add_library(RxEngine STATIC 
         src/ImGui/ImGuiRender.cpp
-        src/ImGui/ImGuiRender.hpp
+        "src/ImGui/ImGuiRender.hpp"
         src/EngineMain.hpp
         src/EngineMain.cpp
         src/Delegates.hpp
@@ -73,8 +73,8 @@ add_library(RxEngine STATIC
         "src/Modules/RmlUI/RmlRenderInterface.h"
         "src/Modules/RmlUI/RmlFileInterface.cpp"
         "src/Modules/RmlUI/RmlFileInterface.h"
-        src/Subsystems/UiContext.cpp
-        src/Subsystems/UiContext.h
+        "src/Modules/RmlUI/UiContext.cpp"
+        "src/Modules/RmlUI/UiContext.h"
         
         
         

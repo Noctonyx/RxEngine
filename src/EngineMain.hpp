@@ -9,10 +9,11 @@
 #include <memory>
 #include <chrono>
 #include <RXCore.h>
-#include <Rendering/EntityManager.h>
+#include "Rendering/Renderer.hpp"
+//#include <Rendering/EntityManager.h>
 
 #include "Delegates.hpp"
-#include "Rendering/MaterialManager.h"
+//#include "Rendering/MaterialManager.h"
 
 //#include "UI/RmlFileInterface.h"
 //#include "UI/RmlSystemInterface.h"
@@ -44,6 +45,11 @@ namespace RxEngine
     class Window;
     class Scene;
 
+    struct EngineTime
+    {
+        float delta;
+        float totalElapsed;
+    };
     struct ComponentGui
     {
         std::function<void(ecs::EntityHandle e)> editor;

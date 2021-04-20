@@ -213,7 +213,7 @@ namespace RxEngine
         RxCore::JobManager::instance().Shutdown();
 
         //world.reset();
-        renderCamera_.reset();
+        //renderCamera_.reset();
 
         world.reset();
 
@@ -232,10 +232,10 @@ namespace RxEngine
         static float deltaAccumulated = 0.0f;
 
         OPTICK_FRAME("MainThread")
-
-        if (!renderCamera_) {
-            renderCamera_ = std::make_shared<RenderCamera>(scene_->getSceneCamera()->GetCamera());
-        }
+//
+        ///if (!renderCamera_) {
+            //renderCamera_ = std::make_shared<RenderCamera>(scene_->getSceneCamera()->GetCamera());
+        //}
 
         const auto last_clock = timer_;
         const auto time_now = std::chrono::high_resolution_clock::now();
@@ -259,13 +259,14 @@ namespace RxEngine
 
         while (deltaAccumulated > fixed_frame_length) {
             OPTICK_EVENT("ECS Progress");
+            world->setSingleton<EngineTime>({ delta_, totalElapsed_ });
             world->step(fixed_frame_length);
             deltaAccumulated -= fixed_frame_length;
         }
 
-        updateMaterialGui();
+        //updateMaterialGui();
         updateEntityGui();
-        renderer_->updateGui();
+        //renderer_->updateGui();
 
         {
             OPTICK_EVENT("Check SwapChain")
@@ -285,8 +286,8 @@ namespace RxEngine
             scene_->GetRenderProviders(providers);
 #endif
             // Add the Rml Render data
-            renderables.push_back(rmlRender.get());
-            rmlRender->resetRender();
+            //renderables.push_back(rmlRender.get());
+            //rmlRender->resetRender();
             {
                 OPTICK_EVENT("Schedule PreRenders")
 #if 0

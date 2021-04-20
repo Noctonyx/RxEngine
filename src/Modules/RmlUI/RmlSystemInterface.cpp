@@ -10,7 +10,8 @@ namespace RxEngine
 {
     double RmlSystemInterface::GetElapsedTime()
     {
-        return engine->getTotalElapsed();
+        return world_->getSingleton<EngineTime>()->totalElapsed;
+        //return engine->getTotalElapsed();
     }
 
     bool RmlSystemInterface::LogMessage(Rml::Log::Type type, const Rml::String & message)
