@@ -31,7 +31,7 @@ namespace RxEngine
         world_->createSystem("RmlUI:Resize")
             .withStream<WindowResize>()
             .execute<WindowResize>(
-                [&](const WindowResize* resize)
+                [&](ecs::World *, const WindowResize* resize)
                 {
                     rmlRender->setDirty();
                     return false;

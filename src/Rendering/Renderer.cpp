@@ -264,7 +264,7 @@ namespace RxEngine
     }
 
     void Renderer::render(
-        const std::shared_ptr<RenderCamera> & renderCamera,
+        //const std::shared_ptr<RenderCamera> & renderCamera,
         //const std::vector<IRenderable *> & subsystems,
         vk::ImageView imageView,
         vk::Extent2D extent,
@@ -279,10 +279,10 @@ namespace RxEngine
         ensureDepthBufferExists(extent);
         ensureShadowImages(4096, NUM_CASCADES);
 
-        renderCamera->readyCameraFrame();
+     //   renderCamera->readyCameraFrame();
 //        lightingManager_->setup(renderCamera->getCamera());
 
-        updateDescriptorSet0(renderCamera);
+      //  updateDescriptorSet0(renderCamera);
         //entityManager_->ensureDescriptors(poolTemplate, dsLayouts[1]);
 
         std::vector<std::shared_ptr<RxCore::Job<RenderResponse>>> shadow_jobs;

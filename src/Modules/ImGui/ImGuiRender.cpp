@@ -16,6 +16,7 @@
 #include "Vfs.h"
 #include "Window.hpp"
 #include "Vulkan/CommandBuffer.hpp"
+#include "Vulkan/Pipeline.h"
 
 namespace RxEngine
 {
@@ -34,14 +35,14 @@ namespace RxEngine
         fontImage_.reset();
         set0.reset();
 
-        RxCore::iVulkan()->getDevice().destroyPipeline(pipeline);
+        //RxCore::iVulkan()->getDevice().destroyPipeline(pipeline);
     }
 
     void IMGuiRender::startup()
     {
         world_->createSystem("ImGui:Render")
               //.after<UiContextUpdate>()
-              .before<ecs::Pipeline::EndInit>()
+              .inGroup("Pipeline:Update")
               .execute([&](ecs::World * world)
               {
                   OPTICK_EVENT()
@@ -58,7 +59,7 @@ namespace RxEngine
 
         world_->createSystem("ImGui:WindowResize")
               .withStream<WindowResize>()
-              .label<ecs::Pipeline::Final>()
+              .inGroup("Pipeline:PreFrame")
               //.label<UiContextUpdate>()
               .execute<WindowResize>([&](ecs::World * world, const WindowResize * resize)
               {
@@ -73,7 +74,7 @@ namespace RxEngine
 
         world_->createSystem("ImGui:MousePos")
               .withStream<MousePosition>()
-              .label<ecs::Pipeline::Init>()
+              .inGroup("Pipeline:PreFrame")
               .execute<MousePosition>([&](ecs::World * world, const MousePosition * pos)
               {
                   OPTICK_EVENT()
@@ -87,7 +88,7 @@ namespace RxEngine
 
         world_->createSystem("ImGui:MouseButton")
               .withStream<MouseButton>()
-              .label<ecs::Pipeline::Init>()
+              .inGroup("Pipeline:PreFrame")
               .execute<MouseButton>([&](ecs::World * world, const MouseButton * button)
               {
                   OPTICK_EVENT()
@@ -101,7 +102,7 @@ namespace RxEngine
 
         world_->createSystem("ImGui:MouseScroll")
               .withStream<MouseScroll>()
-              .label<ecs::Pipeline::Init>()
+              .inGroup("Pipeline:PreFrame")
               .execute<MouseScroll>([&](ecs::World * world, const MouseScroll * s)
               {
                   OPTICK_EVENT()
@@ -115,7 +116,7 @@ namespace RxEngine
 
         world_->createSystem("ImGui:Key")
               .withStream<KeyboardKey>()
-              .label<ecs::Pipeline::Init>()
+              .inGroup("Pipeline:PreFrame")
               .execute<KeyboardKey>([&](ecs::World * world, const KeyboardKey * key)
               {
                   OPTICK_EVENT()
@@ -142,7 +143,7 @@ namespace RxEngine
 
         world_->createSystem("ImGui:Char")
               .withStream<KeyboardChar>()
-              .label<ecs::Pipeline::Init>()
+            .inGroup("Pipeline:PreFrame")
               .execute<KeyboardChar>([&](ecs::World * world, const KeyboardChar * c)
               {
                   OPTICK_EVENT()
@@ -153,6 +154,47 @@ namespace RxEngine
                   io.AddInputCharacter(c->c);
                   return true;
               });
+
+        world_->createSystem("Imgui:Render")
+              .inGroup("Pipeline:PreRender")
+              .execute([this](ecs::World *)
+              {
+                  renderUi();
+              });
+
+        if (!fontImage_) {
+            ImGuiIO & io = ImGui::GetIO();
+            CreateFontImage(io);
+        }
+
+        const std::vector<vk::DescriptorSetLayoutBinding> binding = {
+            {
+                0,
+                vk::DescriptorType::eCombinedImageSampler,
+                1,
+                vk::ShaderStageFlagBits::eFragment
+            }
+        };
+
+        dsl0 = RxCore::iVulkan()->createDescriptorSetLayout({{}, binding});
+        vk::PipelineLayoutCreateInfo plci{};
+        std::vector<vk::DescriptorSetLayout> dsls{dsl0};
+
+        std::vector<vk::PushConstantRange> pcr = {
+            {
+                vk::ShaderStageFlagBits::eVertex,
+                static_cast<uint32_t>(0),
+                static_cast<uint32_t>(16)
+            }
+        };
+
+        //dsls.push_back(dsl0);
+        plci.setSetLayouts(dsls)
+            .setPushConstantRanges(pcr);
+
+        pipelineLayout = RxCore::iVulkan()->createPipelineLayout(plci);
+
+        pipelineEntity = world_->lookup("pipeline/imgui").id;
     }
 
     void IMGuiRender::SetupInputs(ImGuiIO & io)
@@ -224,33 +266,6 @@ namespace RxEngine
 
     void IMGuiRender::createMaterial(vk::RenderPass renderPass)
     {
-        const std::vector<vk::DescriptorSetLayoutBinding> binding = {
-            {
-                0,
-                vk::DescriptorType::eCombinedImageSampler,
-                1,
-                vk::ShaderStageFlagBits::eFragment
-            }
-        };
-
-        dsl0 = RxCore::iVulkan()->createDescriptorSetLayout({{}, binding});
-        vk::PipelineLayoutCreateInfo plci{};
-        std::vector<vk::DescriptorSetLayout> dsls{dsl0};
-
-        std::vector<vk::PushConstantRange> pcr = {
-            {
-                vk::ShaderStageFlagBits::eVertex,
-                static_cast<uint32_t>(0),
-                static_cast<uint32_t>(16)
-            }
-        };
-
-        //dsls.push_back(dsl0);
-        plci.setSetLayouts(dsls)
-            .setPushConstantRanges(pcr);
-
-        pipelineLayout = RxCore::iVulkan()->createPipelineLayout(plci);
-
         //plb.addPushConstantRange(vk::ShaderStageFlagBits::eVertex, 0, 16);
 
         //auto plo = plb.build();
@@ -273,9 +288,9 @@ namespace RxEngine
 
         // mp->addDescriptorSetLayout({}, binding);
 
-        auto mpid = scene_->getMaterialManager()->loadMaterialPipeline("/materials/imgui.matpipe");
-        pipeline = scene_->getMaterialManager()->
-                           createPipeline(mpid, pipelineLayout, renderPass, 0);
+        // auto mpid = scene_->getMaterialManager()->loadMaterialPipeline("/materials/imgui.matpipe");
+        //   pipeline = scene_->getMaterialManager()->
+        //                    createPipeline(mpid, pipelineLayout, renderPass, 0);
         //        RXAssets::MaterialPipelineData mpd;
         //      RXAssets::Loader::loadMaterialPipeline(mpd, );
 #if 0
@@ -397,10 +412,10 @@ namespace RxEngine
     void IMGuiRender::update(float deltaTime)
     {
         OPTICK_EVENT()
-    
+
         auto & io = ImGui::GetIO();
         io.DeltaTime = deltaTime;
-    
+
         if (!(io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange)) {
             ImGuiMouseCursor imgui_cursor = ImGui::GetMouseCursor();
             if (imgui_cursor == ImGuiMouseCursor_None || io.MouseDrawCursor) {
@@ -479,36 +494,42 @@ namespace RxEngine
         return std::tuple<VB_Ptr, IB_Ptr>(vb, ib);
     }
 
-    RxEngine::RenderResponse IMGuiRender::renderUi(
-        const RxEngine::RenderStage & stage,
-        const uint32_t width,
-        const uint32_t height)
+    void IMGuiRender::renderUi()
     {
         OPTICK_CATEGORY("Render UI", ::Optick::Category::UI)
 
         ImGuiIO & io = ImGui::GetIO();
 
+        auto wd = world_->getSingleton<WindowDetails>();
+        //auto pipeline = world_->get<Render::UiPipeline>(world_->get<Render::HasUiPipeline>(pipelineEntity)->entity);
+        auto pipeline = world_->getRelated<Render::HasUiPipeline, Render::UiPipeline>(
+            pipelineEntity);
+        if (!pipeline) {
+            return;
+        }
+        assert(pipeline);
+        assert(pipeline->pipeline);
 
-        io.DisplaySize = ImVec2(static_cast<float>(width), static_cast<float>(height));
+        io.DisplaySize = ImVec2(static_cast<float>(wd->width), static_cast<float>(wd->height));
         ImGui::Render();
 
         auto buf = RxCore::JobManager::threadData().getCommandBuffer();
 
         const auto dd = ImGui::GetDrawData();
         if (dd->TotalVtxCount == 0) {
-            return {};
+            return;
         }
 
         // Create Vertex/Index Buffers
         auto [vb, ib] = CreateBuffers();
 
-        buf->begin(stage.renderPass, stage.subPass);
+        buf->begin(pipeline->renderPass, pipeline->subPass);
         {
             buf->useLayout(pipelineLayout);
             OPTICK_GPU_CONTEXT(buf->Handle());
             OPTICK_GPU_EVENT("Draw IMGui");
             //auto pipel = _material->GetPipeline(RXCore::RenderSequenceUi);
-            buf->BindPipeline(pipeline);
+            buf->BindPipeline(pipeline->pipeline->Handle());
             buf->BindDescriptorSet(0, set0);
             struct
             {
@@ -561,17 +582,8 @@ namespace RxEngine
             }
         }
         buf->end();
-        return {buf};
-    }
 
-    void IMGuiRender::rendererInit(Renderer * renderer)
-    {
-        auto res = renderer->getSequenceRenderStage(RenderSequenceUi);
-        if (!fontImage_) {
-            ImGuiIO & io = ImGui::GetIO();
-            CreateFontImage(io);
-        }
-        createMaterial(res.renderPass);
+        world_->getStream<Render::UiRenderCommand>()->add<Render::UiRenderCommand>({buf});
     }
 
     void IMGuiRender::updateGui()

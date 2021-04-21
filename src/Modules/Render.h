@@ -4,6 +4,7 @@
 #include "./Mesh.h"
 #include "DirectXCollision.h"
 #include "SerialisationData.h"
+#include "Vulkan/CommandBuffer.hpp"
 
 namespace RxCore
 {
@@ -29,21 +30,29 @@ namespace RxEngine
         struct ShadowPipeline
         {
             std::shared_ptr<RxCore::Pipeline> pipeline;
+            vk::RenderPass renderPass;
+            uint32_t subPass;
         };
 
         struct OpaquePipeline
         {
             std::shared_ptr<RxCore::Pipeline> pipeline;
+            vk::RenderPass renderPass;
+            uint32_t subPass;
         };
 
         struct TransparentPipeline
         {
             std::shared_ptr<RxCore::Pipeline> pipeline;
+            vk::RenderPass renderPass;
+            uint32_t subPass;
         };
 
         struct UiPipeline
         {
             std::shared_ptr<RxCore::Pipeline> pipeline;
+            vk::RenderPass renderPass;
+            uint32_t subPass;
         };
 
         struct VertexShader
@@ -95,6 +104,11 @@ namespace RxEngine
             RxAssets::PipelineRenderStage stage;
 
             //std::string name;
+        };
+
+        struct UiRenderCommand
+        {
+            std::shared_ptr<RxCore::SecondaryCommandBuffer> buf;
         };
 
 #if 0

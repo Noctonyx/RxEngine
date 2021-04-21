@@ -36,10 +36,7 @@ namespace RxEngine
         void update(float deltaTime);
         void updateGui();
 
-        [[nodiscard]] RenderResponse renderUi(
-            const RenderStage & stage,
-            const uint32_t width,
-            const uint32_t height);
+        void renderUi();
 
         //void Shutdown() override;
 
@@ -59,7 +56,8 @@ namespace RxEngine
         vk::DescriptorSetLayout dsl0;
         vk::PipelineLayout pipelineLayout;
         std::shared_ptr<RxCore::DescriptorSet> set0;
-        vk::Pipeline pipeline;
+        //std::shared_ptr<RxCore::Pipeline> pipeline;
+        ecs::entity_t pipelineEntity;
 
         bool show_demo_window = true;
         bool show_another_window = true;

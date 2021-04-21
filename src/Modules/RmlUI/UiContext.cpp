@@ -42,7 +42,7 @@ namespace RxEngine
     void UiContext::startup()
     {
         world_->createSystem("UiContext:Render")
-              .after<UiContextUpdate>()
+              .inGroup("Pipeline:PreRender")
               .execute([&](ecs::World * world)
               {
                   OPTICK_EVENT()
@@ -51,8 +51,7 @@ namespace RxEngine
 
         world_->createSystem("UiContext:WindowResize")
               .withStream<WindowResize>()
-              .label<ecs::Pipeline::Final>()
-              .label<UiContextUpdate>()
+              .inGroup("Pipeline:Update")
               .execute<WindowResize>([&](ecs::World * world, const WindowResize * resize)
               {
                   OPTICK_EVENT()
@@ -69,7 +68,7 @@ namespace RxEngine
 
         world_->createSystem("UiContext:MousePos")
               .withStream<MousePosition>()
-              .label<ecs::Pipeline::Init>()
+              .inGroup("Pipeline:Early")
               .execute<MousePosition>([&](ecs::World * world, const MousePosition * pos)
               {
                   OPTICK_EVENT()
@@ -80,7 +79,7 @@ namespace RxEngine
 
         world_->createSystem("UiContext:MouseButton")
               .withStream<MouseButton>()
-              .label<ecs::Pipeline::Init>()
+              .inGroup("Pipeline:Early")
               .execute<MouseButton>([&](ecs::World * world, const MouseButton * button)
               {
                   OPTICK_EVENT()
@@ -95,7 +94,7 @@ namespace RxEngine
 
         world_->createSystem("UiContext:MouseScroll")
               .withStream<MouseScroll>()
-              .label<ecs::Pipeline::Init>()
+              .inGroup("Pipeline:Early")
               .execute<MouseScroll>([&](ecs::World * world, const MouseScroll * s)
               {
                   OPTICK_EVENT()
@@ -104,7 +103,7 @@ namespace RxEngine
 
         world_->createSystem("UiContext:Key")
               .withStream<KeyboardKey>()
-              .label<ecs::Pipeline::Init>()
+              .inGroup("Pipeline:Early")
               .execute<KeyboardKey>([&](ecs::World * world, const KeyboardKey * key)
               {
                   OPTICK_EVENT()
@@ -130,7 +129,7 @@ namespace RxEngine
 
         world_->createSystem("UiContext:Char")
               .withStream<KeyboardChar>()
-              .label<ecs::Pipeline::Init>()
+              .inGroup("Pipeline:Early")
               .execute<KeyboardChar>([&](ecs::World * world, const KeyboardChar * c)
               {
                   OPTICK_EVENT()

@@ -35,7 +35,6 @@ namespace RxCore
 
 namespace RxEngine
 {
-    class World;
     class BatchManager;
     struct ShadowCascade;
     class Renderer;
@@ -223,6 +222,18 @@ namespace RxEngine
         uint32_t cascadeIndex;
     };
 
+    struct RenderPasses
+    {
+        vk::RenderPass opaqueRenderPass{};
+        uint32_t opaqueSubPass;
+        vk::RenderPass shadowRenderPass{};
+        uint32_t shadowSubPass;
+        vk::RenderPass transportRenderPass{};
+        uint32_t transportSubPass;
+        vk::RenderPass uiRenderPass{};
+        uint32_t uiSubPass;
+    };
+
     class Renderer : public RxCore::DeviceObject
     {
     public:
@@ -233,7 +244,7 @@ namespace RxEngine
         void startup(vk::Format imageFormat);
 
         void render(
-            const std::shared_ptr<RenderCamera> & camera,
+            //const std::shared_ptr<RenderCamera> & camera,
             //const std::vector<IRenderable *> & subsystems,
             vk::ImageView imageView,
             vk::Extent2D extent,

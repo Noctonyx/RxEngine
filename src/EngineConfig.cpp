@@ -5,6 +5,7 @@
 #include "AssetException.h"
 #include "SerialisationData.h"
 #include "Loader.h"
+#include "RxECS.h"
 
 
 static const auto & script_key_world = "GlobalResource.World";

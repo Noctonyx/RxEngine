@@ -34,8 +34,8 @@ add_subdirectory("RxECS")
 add_subdirectory("ImportGLTF")
 
 add_library(RxEngine STATIC 
-        src/ImGui/ImGuiRender.cpp
-        "src/ImGui/ImGuiRender.hpp"
+        "src/Modules/ImGui/ImGuiRender.cpp"
+        "src/Modules/ImGui/ImGuiRender.hpp"
         src/EngineMain.hpp
         src/EngineMain.cpp
         src/Delegates.hpp

@@ -15,9 +15,7 @@
 namespace RxEngine
 {
     enum class EInputMod;
-
-    struct UiContextUpdate{};
-
+   
     class UiContext : public Module
     {
     public:

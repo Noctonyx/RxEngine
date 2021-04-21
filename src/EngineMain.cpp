@@ -106,7 +106,14 @@ namespace RxEngine
 
         timer_ = std::chrono::high_resolution_clock::now();
 
-
+        world->newEntity("Pipeline:PreFrame").set<ecs::SystemGroup>({ 1, false, 0.0f, 0.0f });
+        world->newEntity("Pipeline:Early").set<ecs::SystemGroup>({ 2, false, 0.0f, 0.0f });
+        world->newEntity("Pipeline:FixedUpdate").set<ecs::SystemGroup>({ 3, true, 0.0f, 0.02f });
+        world->newEntity("Pipeline:Update").set<ecs::SystemGroup>({ 4, false, 0.0f, 0.0f });
+        world->newEntity("Pipeline:PreRender").set<ecs::SystemGroup>({ 5, false, 0.0f, 0.0f });
+        world->newEntity("Pipeline:Render").set<ecs::SystemGroup>({ 6, false, 0.0f, 0.0f });
+        world->newEntity("Pipeline:PostRender").set<ecs::SystemGroup>({ 7, false, 0.0f, 0.0f });
+        world->newEntity("Pipeline:Final").set<ecs::SystemGroup>({ 8, false, 0.0f, 0.0f });
 
         //lua_ = new LuaState();
 
@@ -276,8 +283,8 @@ namespace RxEngine
         }
         {
             OPTICK_EVENT("Scene Render")
-            std::vector<IRenderable *> renderables;
-            std::vector<IRenderProvider *> providers;
+            //std::vector<IRenderable *> renderables;
+            //std::vector<IRenderProvider *> providers;
 
             // auto camera = scene_->getMainCamera();
             const auto current_extent = swapChain_->GetExtent();
@@ -304,8 +311,7 @@ namespace RxEngine
                 swapChain_->AcquireNextImage();
             {
                 OPTICK_EVENT("Actual Render")
-                renderer_->render(
-                    renderCamera_, renderables,
+                renderer_->render(                    
                     next_swap_image_view, current_extent, {next_image_available},
                     {vk::PipelineStageFlagBits::eColorAttachmentOutput},
                     submitCompleteSemaphores_[next_image_index]);
@@ -321,13 +327,13 @@ namespace RxEngine
             }
             {
                 OPTICK_EVENT("Post Render")
-                for (auto * r: renderables) {
-                    r->postRender();
-                }
+//                for (auto * r: renderables) {
+  //                  r->postRender();
+    //            }
 
-                for (auto * renderable: providers) {
-                    renderable->teardown();
-                }
+              //  for (auto * renderable: providers) {
+          //          renderable->teardown();
+          //      }
             }
             RxCore::JobManager::instance().clean();
         }
