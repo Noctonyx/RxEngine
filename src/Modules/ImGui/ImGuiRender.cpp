@@ -49,8 +49,9 @@ namespace RxEngine
                   update(world->deltaTime());
               });
 
-        world_->createSystem("ImGui:Render")
+        world_->createSystem("ImGui:UpdateGui")
               //.after<UiContextUpdate>()
+              .inGroup("Pipeline:Update")
               .execute([&](ecs::World * world)
               {
                   OPTICK_EVENT()
@@ -143,7 +144,7 @@ namespace RxEngine
 
         world_->createSystem("ImGui:Char")
               .withStream<KeyboardChar>()
-            .inGroup("Pipeline:PreFrame")
+              .inGroup("Pipeline:PreFrame")
               .execute<KeyboardChar>([&](ecs::World * world, const KeyboardChar * c)
               {
                   OPTICK_EVENT()
@@ -196,6 +197,8 @@ namespace RxEngine
 
         pipelineEntity = world_->lookup("pipeline/imgui").id;
     }
+
+    void IMGuiRender::shutdown() { }
 
     void IMGuiRender::SetupInputs(ImGuiIO & io)
     {

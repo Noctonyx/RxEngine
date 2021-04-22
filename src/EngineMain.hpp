@@ -24,6 +24,7 @@
 #include "Vfs.h"
 #include "sol/sol.hpp"
 #include "Window.hpp"
+#include "Modules/Module.h"
 //#include "LuaBridge/detail/LuaRef.h"
 
 //#include <sol/sol.hpp>
@@ -146,6 +147,8 @@ namespace RxEngine
         std::unique_ptr<RxCore::SwapChain> swapChain_;
         //std::unique_ptr<MaterialManager> materialManager_;
         //std::unique_ptr<EntityManager> entityManager_;
+
+        std::vector<std::shared_ptr<Module>> modules;
 
         std::vector<vk::Semaphore> submitCompleteSemaphores_;
         std::chrono::time_point<std::chrono::steady_clock> timer_;

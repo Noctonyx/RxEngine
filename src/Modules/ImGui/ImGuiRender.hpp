@@ -21,8 +21,6 @@ namespace RxEngine
 
     class IMGuiRender : public Module
     {
-        //friend class Engine;//
-
     public:
         IMGuiRender(ecs::World* world, EngineMain* engine);
         ~IMGuiRender();

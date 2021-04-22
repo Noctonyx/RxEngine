@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <filesystem>
+#include <memory>
 #include "Modules/Mesh.h"
 #include "Modules/Render.h"
 #include "EngineMain.hpp"
@@ -16,51 +17,14 @@
 #include <RmlUi/Lua.h>
 #include <imgui.h>
 
-//#define SOL_ALL_SAFETIES_ON 1
+#include "Modules/Module.h"
+#include "Modules/ImGui/ImGuiRender.hpp"
+
 #include <sol/sol.hpp>
 
-//#include "Modules/MainWindow/MainWindow.h"
-#if 0
-#pragma warning( push )
-#pragma warning(disable:4505)
-#include "LuaBridge/LuaBridge.h"
-#pragma warning( pop )
-
-//#include "LuaBridge/LuaBridge.h"
-#endif
 
 namespace RxEngine
 {
-#if 0
-    int LoadFileRequire(lua_State* L) {
-        // use sol2 stack API to pull
-        // "first argument"
-        std::string path = sol::stack::get<std::string>(L, 1);
-        path = "/lua/" + path;
-        path = path + ".lua";
-/*
-        if (path == "a") {
-            std::string script = R"(
-            print("Hello from module land!")
-            test = 123
-            return "bananas"
-        )";
-        */
-            auto script = RXAssets::vfs()->getStringFile(path);
-            luaL_loadbuffer(L, script.data(), script.size(), path.c_str());
-            // load "module", but don't run it
-            //luaL_loadbuffer(L, script.data(), script.size(), path.c_str());
-            // returning 1 object left on Lua stack:
-            // a function that, when called, executes the script
-            // (this is what lua_loadX/luaL_loadX functions return
-            return 1;
-        //}
-
-      //  sol::stack::push(L, "This is not the module you're looking for!");
-    //    return 1;
-    }
-#endif
-
     void EngineMain::startup()
     {
         loadConfig();
@@ -106,27 +70,19 @@ namespace RxEngine
 
         timer_ = std::chrono::high_resolution_clock::now();
 
-        world->newEntity("Pipeline:PreFrame").set<ecs::SystemGroup>({ 1, false, 0.0f, 0.0f });
-        world->newEntity("Pipeline:Early").set<ecs::SystemGroup>({ 2, false, 0.0f, 0.0f });
-        world->newEntity("Pipeline:FixedUpdate").set<ecs::SystemGroup>({ 3, true, 0.0f, 0.02f });
-        world->newEntity("Pipeline:Update").set<ecs::SystemGroup>({ 4, false, 0.0f, 0.0f });
-        world->newEntity("Pipeline:PreRender").set<ecs::SystemGroup>({ 5, false, 0.0f, 0.0f });
-        world->newEntity("Pipeline:Render").set<ecs::SystemGroup>({ 6, false, 0.0f, 0.0f });
-        world->newEntity("Pipeline:PostRender").set<ecs::SystemGroup>({ 7, false, 0.0f, 0.0f });
-        world->newEntity("Pipeline:Final").set<ecs::SystemGroup>({ 8, false, 0.0f, 0.0f });
+        world->newEntity("Pipeline:PreFrame").set<ecs::SystemGroup>({1, false, 0.0f, 0.0f});
+        world->newEntity("Pipeline:Early").set<ecs::SystemGroup>({2, false, 0.0f, 0.0f});
+        world->newEntity("Pipeline:FixedUpdate").set<ecs::SystemGroup>({3, true, 0.0f, 0.02f});
+        world->newEntity("Pipeline:Update").set<ecs::SystemGroup>({4, false, 0.0f, 0.0f});
+        world->newEntity("Pipeline:PreRender").set<ecs::SystemGroup>({5, false, 0.0f, 0.0f});
+        world->newEntity("Pipeline:Render").set<ecs::SystemGroup>({6, false, 0.0f, 0.0f});
+        world->newEntity("Pipeline:PostRender").set<ecs::SystemGroup>({7, false, 0.0f, 0.0f});
+        world->newEntity("Pipeline:Final").set<ecs::SystemGroup>({8, false, 0.0f, 0.0f});
 
         //lua_ = new LuaState();
 
         setupLuaEnvironment();
-        //luabridge::LuaRef v1 = luabridge::newTable(lua_->L);
-
-        //luabridge::setGlobal(lua_->L, v1, "data");
-        //        luabridge::getGlobalNamespace(lua_->L)
-        //          .beginNamespace("ind")
-        //        .endNamespace();
-
         loadLuaFile("/lua/engine");
-
 
 
         populateStartupData();
@@ -135,83 +91,29 @@ namespace RxEngine
         //populateStartupData();
         //auto x = v2["hfghfg"];
 
-#if 0
-        lua_.open_libraries(sol::lib::base, sol::lib::package, sol::lib::table);
+        modules.push_back(std::move(std::make_shared<IMGuiRender>(world.get(), this)));
 
-        lua_.clear_package_loaders( );
-        lua_.add_package_loader(LoadFileRequire);
 
-        lua_["print"] = [](sol::variadic_args va)
-        {
-            for(auto v: va) {
 
-               auto x = v.get_type();
-                if(x == sol::type::boolean) {
-                    auto xx = v.get<bool>();
-                    if(xx) {
-                        spdlog::info("true");
-                    } else {
-                        spdlog::info("false");
-                    }
-                } else {
-                    std::string w = v.get<std::string>();
-                    spdlog::info(w);
-                }
-            }
-        };
+        for(auto & m: modules) {
+            m->registerModule();
+        }
 
-        /*
-        sol::table loader = lua_["package"]["searchers"];
-        loader.add(
-            [](lua_State * L)
-            {
-                std::string path = sol::stack::get<std::string>(L,1);
-                auto script = RXAssets::vfs()->getStringFile(path);
-                luaL_loadbuffer(L, script.data(), script.size(), path.c_str());
-                return 1;
-            });
-            */
-/*
-        lua_.add_package_loader([&](const std::string & filename){
+        for (auto& m : modules) {
+            m->startup();
+        }
 
-            auto script = RXAssets::vfs()->getStringFile(filename);
-            return lua_.load_buffer(script.data(), script.size(), filename);
-        }, true);
-*/
-#endif
-#if 0
-        lua_.safe_script(R"(local x = require("startup")
-            print(x)
-            startup.test()
-            )" /*sol::script_pass_on_error*/);
-#endif
-     
-        //rmlRender->rendererInit(renderer_.get());
 
         window_->onResize.AddLambda(
             [&](int w, int h)
             {
                 setUint32ConfigValue("window", "width", w);
                 setUint32ConfigValue("window", "height", h);
-               
             });
 
         startTime = std::chrono::high_resolution_clock::now();
     }
-#if 0
-    void EngineMain::setActiveScene(std::shared_ptr<Scene> scene)
-    {
-        if (scene_) {
-            scene_->Shutdown();
-        }
-        if (scene) {
-            //scene->setMaterialManager(materialManager_.get());
-            //scene->setEntityManager(entityManager_.get());
-            scene->Startup(renderer_.get());
-        }
-        scene_ = std::move(scene);
-    }
-#endif
+
     void EngineMain::shutdown()
     {
         RxCore::iVulkan()->WaitIdle();
@@ -239,9 +141,9 @@ namespace RxEngine
         static float deltaAccumulated = 0.0f;
 
         OPTICK_FRAME("MainThread")
-//
+        //
         ///if (!renderCamera_) {
-            //renderCamera_ = std::make_shared<RenderCamera>(scene_->getSceneCamera()->GetCamera());
+        //renderCamera_ = std::make_shared<RenderCamera>(scene_->getSceneCamera()->GetCamera());
         //}
 
         const auto last_clock = timer_;
@@ -259,20 +161,20 @@ namespace RxEngine
             OPTICK_EVENT("Window Updates")
             window_->Update(); // Collect the window events
         }
-     
+
         if (deltaAccumulated > 10) {
             deltaAccumulated = 0;
         }
+        world->setSingleton<EngineTime>({delta_, totalElapsed_});
+        world->step(delta_);
 
-        while (deltaAccumulated > fixed_frame_length) {
-            OPTICK_EVENT("ECS Progress");
-            world->setSingleton<EngineTime>({ delta_, totalElapsed_ });
-            world->step(fixed_frame_length);
-            deltaAccumulated -= fixed_frame_length;
-        }
+        //        while (deltaAccumulated > fixed_frame_length) {
+        //OPTICK_EVENT("ECS Progress");
+        //deltaAccumulated -= fixed_frame_length;
+        //}
 
         //updateMaterialGui();
-        updateEntityGui();
+        //updateEntityGui();
         //renderer_->updateGui();
 
         {
@@ -311,7 +213,7 @@ namespace RxEngine
                 swapChain_->AcquireNextImage();
             {
                 OPTICK_EVENT("Actual Render")
-                renderer_->render(                    
+                renderer_->render(
                     next_swap_image_view, current_extent, {next_image_available},
                     {vk::PipelineStageFlagBits::eColorAttachmentOutput},
                     submitCompleteSemaphores_[next_image_index]);
@@ -327,13 +229,13 @@ namespace RxEngine
             }
             {
                 OPTICK_EVENT("Post Render")
-//                for (auto * r: renderables) {
-  //                  r->postRender();
-    //            }
+                //                for (auto * r: renderables) {
+                //                  r->postRender();
+                //            }
 
-              //  for (auto * renderable: providers) {
-          //          renderable->teardown();
-          //      }
+                //  for (auto * renderable: providers) {
+                //          renderable->teardown();
+                //      }
             }
             RxCore::JobManager::instance().clean();
         }
@@ -411,8 +313,8 @@ namespace RxEngine
         });
     }
 #endif
-    
-        void EngineMain::loadConfig()
+
+    void EngineMain::loadConfig()
     {
         mINI::INIFile file("engine.ini");
         file.read(iniData);

@@ -21,15 +21,15 @@ namespace RxEngine
 
         virtual ~Module() = default;
 
-        virtual void registerModule() = 0;
+        virtual void registerModule() {};
 
-        virtual void startup();
+        virtual void startup() {};
 
         virtual void enable() {};
         virtual void disable() {};
 
-        virtual void shutdown();
+        virtual void shutdown() {};
 
-        virtual void deregisterModule() = 0;
+        virtual void deregisterModule() {};
     };
 }

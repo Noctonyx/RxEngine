@@ -13,7 +13,7 @@ data.shaders = {
 }
 
 data.material_pipelines = {
-    ["pipeline.imgui"] = {
+    ["pipeline/imgui"] = {
         vertexShader = "shader/imgui_vert",
         fragmentShader = "shader/imgui_frag",
         depthTestEnable = false,
