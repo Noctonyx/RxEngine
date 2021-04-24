@@ -22,13 +22,13 @@ namespace RxEngine
 {
     IMGuiRender::IMGuiRender(ecs::World * world, EngineMain * engine)
         : Module(world, engine)
+        , window_(engine->getWindow())
     {
         ImGui::CreateContext();
         ImGui::StyleColorsDark();
         ImGuiIO & io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
         SetupInputs(io);
-        window_ = engine_->getWindow();
     };
 
     IMGuiRender::~IMGuiRender()
@@ -41,22 +41,20 @@ namespace RxEngine
 
     void IMGuiRender::startup()
     {
+        auto wd = world_->getSingleton<WindowDetails>();
+        assert(wd);
+        ImGuiIO & io = ImGui::GetIO();
+        io.DisplaySize = ImVec2(
+            static_cast<float>(wd->width),
+            static_cast<float>(wd->height));
 
-        world_->createSystem("ImGui:Render")
-              //.after<UiContextUpdate>()
-              .inGroup("Pipeline:Update")
-              .execute([&, this](ecs::World * world)
-              {
-                  //OPTICK_EVENT()
-                  update(world->deltaTime());
-              });
 
         world_->createSystem("ImGui:UpdateGui")
               //.after<UiContextUpdate>()
               .inGroup("Pipeline:Update")
               .execute([&, this](ecs::World * world)
               {
-                  //OPTICK_EVENT()
+                  OPTICK_EVENT()
                   this->updateGui();
               });
 
@@ -64,7 +62,7 @@ namespace RxEngine
               .withStream<WindowResize>()
               .inGroup("Pipeline:PreFrame")
               //.label<UiContextUpdate>()
-              .execute<WindowResize>([&](ecs::World * world, const WindowResize * resize)
+              .execute<WindowResize>([](ecs::World * world, const WindowResize * resize)
               {
                   OPTICK_EVENT()
 
@@ -78,7 +76,7 @@ namespace RxEngine
         world_->createSystem("ImGui:MousePos")
               .withStream<MousePosition>()
               .inGroup("Pipeline:PreFrame")
-              .execute<MousePosition>([&](ecs::World * world, const MousePosition * pos)
+              .execute<MousePosition>([](ecs::World * world, const MousePosition * pos)
               {
                   OPTICK_EVENT()
                   auto & io = ImGui::GetIO();
@@ -92,7 +90,7 @@ namespace RxEngine
         world_->createSystem("ImGui:MouseButton")
               .withStream<MouseButton>()
               .inGroup("Pipeline:PreFrame")
-              .execute<MouseButton>([&](ecs::World * world, const MouseButton * button)
+              .execute<MouseButton>([](ecs::World * world, const MouseButton * button)
               {
                   OPTICK_EVENT()
                   auto & io = ImGui::GetIO();
@@ -106,7 +104,7 @@ namespace RxEngine
         world_->createSystem("ImGui:MouseScroll")
               .withStream<MouseScroll>()
               .inGroup("Pipeline:PreFrame")
-              .execute<MouseScroll>([&](ecs::World * world, const MouseScroll * s)
+              .execute<MouseScroll>([](ecs::World * world, const MouseScroll * s)
               {
                   OPTICK_EVENT()
                   auto & io = ImGui::GetIO();
@@ -120,7 +118,7 @@ namespace RxEngine
         world_->createSystem("ImGui:Key")
               .withStream<KeyboardKey>()
               .inGroup("Pipeline:PreFrame")
-              .execute<KeyboardKey>([&](ecs::World * world, const KeyboardKey * key)
+              .execute<KeyboardKey>([](ecs::World * world, const KeyboardKey * key)
               {
                   OPTICK_EVENT()
                   auto & io = ImGui::GetIO();
@@ -147,7 +145,7 @@ namespace RxEngine
         world_->createSystem("ImGui:Char")
               .withStream<KeyboardChar>()
               .inGroup("Pipeline:PreFrame")
-              .execute<KeyboardChar>([&](ecs::World * world, const KeyboardChar * c)
+              .execute<KeyboardChar>([](ecs::World * world, const KeyboardChar * c)
               {
                   OPTICK_EVENT()
                   auto & io = ImGui::GetIO();
@@ -158,15 +156,24 @@ namespace RxEngine
                   return true;
               });
 
+        world_->createSystem("ImGui:NewFrame")
+              //.after<UiContextUpdate>()
+              .inGroup("Pipeline:PreFrame")
+              .execute([this](ecs::World * world)
+              {
+                  OPTICK_EVENT()
+                  update(world->deltaTime());
+              });
+
         world_->createSystem("Imgui:Render")
               .inGroup("Pipeline:PreRender")
               .execute([this](ecs::World *)
               {
-                  renderUi();
+                  OPTICK_EVENT()
+                  createRenderCommands();
               });
 
         if (!fontImage_) {
-            ImGuiIO & io = ImGui::GetIO();
             CreateFontImage(io);
         }
 
@@ -499,7 +506,7 @@ namespace RxEngine
         return std::tuple<VB_Ptr, IB_Ptr>(vb, ib);
     }
 
-    void IMGuiRender::renderUi()
+    void IMGuiRender::createRenderCommands()
     {
         OPTICK_CATEGORY("Render UI", ::Optick::Category::UI)
 
@@ -507,6 +514,10 @@ namespace RxEngine
 
         auto wd = world_->getSingleton<WindowDetails>();
         //auto pipeline = world_->get<Render::UiPipeline>(world_->get<Render::HasUiPipeline>(pipelineEntity)->entity);
+
+        io.DisplaySize = ImVec2(static_cast<float>(wd->width), static_cast<float>(wd->height));
+        ImGui::Render();
+
         auto pipeline = world_->getRelated<Render::HasUiPipeline, Render::UiPipeline>(
             pipelineEntity);
         if (!pipeline) {
@@ -514,9 +525,6 @@ namespace RxEngine
         }
         assert(pipeline);
         assert(pipeline->pipeline);
-
-        io.DisplaySize = ImVec2(static_cast<float>(wd->width), static_cast<float>(wd->height));
-        ImGui::Render();
 
         auto buf = RxCore::JobManager::threadData().getCommandBuffer();
 

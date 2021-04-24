@@ -120,6 +120,13 @@ namespace RxEngine
         device_->clearQueues();
         RxCore::JobManager::instance().Shutdown();
 
+        for (auto& m : modules) {
+            m->shutdown();
+        }
+        for (auto& m : modules) {
+            m->deregisterModule();
+        }
+        modules.clear();
         //world.reset();
         //renderCamera_.reset();
 

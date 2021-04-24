@@ -34,7 +34,7 @@ namespace RxEngine
         void update(float deltaTime);
         void updateGui();
 
-        void renderUi();
+        void createRenderCommands();
 
         //void Shutdown() override;
 
@@ -45,7 +45,7 @@ namespace RxEngine
         void createMaterial(vk::RenderPass renderPass);
 
     private:
-        std::vector<DelegateHandle> delegates_;
+        std::vector<DelegateHandle> delegates_{};
         std::shared_ptr<RxCore::Image> fontImage_;
         //std::shared_ptr<Mouse> mouse_;
         Window * window_;
@@ -56,7 +56,7 @@ namespace RxEngine
         vk::PipelineLayout pipelineLayout;
         std::shared_ptr<RxCore::DescriptorSet> set0;
         //std::shared_ptr<RxCore::Pipeline> pipeline;
-        ecs::entity_t pipelineEntity;
+        ecs::entity_t pipelineEntity{};
 
         bool show_demo_window = true;
         bool show_another_window = true;

@@ -108,6 +108,8 @@ namespace RxEngine
         glfwSetWindowUserPointer(m_Window, this);
 
         glfwSetFramebufferSizeCallback(m_Window, &FrameBufferResizeCallback);
+
+        world->setSingleton<WindowDetails>({ .width = width, .height = height });
     }
 
     Window::~Window()
