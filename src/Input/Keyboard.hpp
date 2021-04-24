@@ -169,21 +169,5 @@ namespace RxEngine
         EInputAction action;
         EInputMod mods;
     };
-
-    class Keyboard
-    {
-    public:
-        explicit Keyboard(Window* window, ecs::World * world);
-        void doChar(uint32_t codepoint);
-        void doKey(int32_t key, int32_t action, int32_t mods);
-
-//        MulticastDelegate<char> onChar;
-//        MulticastDelegate<EKey, EInputAction, EInputMod> onKey;
-
-    private:
-        Window* window_;
-        ecs::World* world_;
-
-    };
 }
 #endif //AMX_KEYBOARD_HPP

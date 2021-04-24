@@ -28,6 +28,7 @@ namespace RxEngine
         ImGuiIO & io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
         SetupInputs(io);
+        window_ = engine_->getWindow();
     };
 
     IMGuiRender::~IMGuiRender()
@@ -40,22 +41,23 @@ namespace RxEngine
 
     void IMGuiRender::startup()
     {
+
         world_->createSystem("ImGui:Render")
               //.after<UiContextUpdate>()
               .inGroup("Pipeline:Update")
-              .execute([&](ecs::World * world)
+              .execute([&, this](ecs::World * world)
               {
-                  OPTICK_EVENT()
+                  //OPTICK_EVENT()
                   update(world->deltaTime());
               });
 
         world_->createSystem("ImGui:UpdateGui")
               //.after<UiContextUpdate>()
               .inGroup("Pipeline:Update")
-              .execute([&](ecs::World * world)
+              .execute([&, this](ecs::World * world)
               {
-                  OPTICK_EVENT()
-                  updateGui();
+                  //OPTICK_EVENT()
+                  this->updateGui();
               });
 
         world_->createSystem("ImGui:WindowResize")
@@ -422,27 +424,27 @@ namespace RxEngine
         if (!(io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange)) {
             ImGuiMouseCursor imgui_cursor = ImGui::GetMouseCursor();
             if (imgui_cursor == ImGuiMouseCursor_None || io.MouseDrawCursor) {
-                mouse_->hideCursor(true);
+                window_->hideCursor(true);
             } else {
-                mouse_->hideCursor(false);
+                window_->hideCursor(false);
                 switch (imgui_cursor) {
                 default:
                 case ImGuiMouseCursor_ResizeAll:
                 case ImGuiMouseCursor_ResizeNESW:
                 case ImGuiMouseCursor_ResizeNWSE:
-                    mouse_->setCursor(ECursorStandard::Arrow);
+                    window_->setCursor(ECursorStandard::Arrow);
                     break;
                 case ImGuiMouseCursor_TextInput:
-                    mouse_->setCursor(ECursorStandard::IBeam);
+                    window_->setCursor(ECursorStandard::IBeam);
                     break;
                 case ImGuiMouseCursor_ResizeNS:
-                    mouse_->setCursor(ECursorStandard::ResizeY);
+                    window_->setCursor(ECursorStandard::ResizeY);
                     break;
                 case ImGuiMouseCursor_ResizeEW:
-                    mouse_->setCursor(ECursorStandard::ResizeX);
+                    window_->setCursor(ECursorStandard::ResizeX);
                     break;
                 case ImGuiMouseCursor_Hand:
-                    mouse_->setCursor(ECursorStandard::Hand);
+                    window_->setCursor(ECursorStandard::Hand);
                     break;
                 }
             }

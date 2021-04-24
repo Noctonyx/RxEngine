@@ -6,6 +6,9 @@
 #include <GLFW/glfw3.h>
 
 #include "Delegates.hpp"
+#include "DirectXMath.h"
+#include "Input/Mouse.hpp"
+#include "RxECS.h"
 
 namespace ecs {
     class World;
@@ -64,17 +67,33 @@ namespace RxEngine
 
         [[nodiscard]] GLFWwindow * GetWindow() const;
 
-        std::shared_ptr<Mouse> mouse;
-        std::shared_ptr<Keyboard> keyboard;
+        //std::shared_ptr<Mouse> mouse;
+        //std::shared_ptr<Keyboard> keyboard;
 
         MulticastDelegate<int, int> onResize;
+     
+
+        void setCursor(ECursorStandard standard);
+        void hideCursor(bool hidden);
+        void setPosition(const DirectX::XMFLOAT2& position);
+
+        [[nodiscard]] const DirectX::XMFLOAT2& getPosition() const { return pos_; }
 
         void doResize(uint32_t width, uint32_t height);
-
+        void doChar(uint32_t codepoint);
+        void doKey(int32_t key, int32_t action, int32_t mods);
+        void mousePosition(float x_pos, float y_pos, int32_t mods);
+        void buttonAction(int32_t button, bool pressed, int32_t mods);
+        void scroll(float y_scroll, int32_t mods);
+        
     private:
         bool m_GLFWInit = false;
         GLFWwindow * m_Window = nullptr;
         bool m_IsMouseVisible = true;
-        ecs::World* world_;
+        ecs::World* world_ = nullptr;
+        DirectX::XMFLOAT2 pos_{};
+        GLFWcursor* cursor_ = nullptr;
+        ECursorStandard cursorStandard_{};
+        bool hidden_ = false;
     };
 } // namespace RXCore

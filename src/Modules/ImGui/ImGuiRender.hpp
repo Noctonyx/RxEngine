@@ -47,7 +47,8 @@ namespace RxEngine
     private:
         std::vector<DelegateHandle> delegates_;
         std::shared_ptr<RxCore::Image> fontImage_;
-        std::shared_ptr<Mouse> mouse_;
+        //std::shared_ptr<Mouse> mouse_;
+        Window * window_;
         //std::shared_ptr<Keyboard> keyboard_;
         //std::shared_ptr<Material> _material;
 

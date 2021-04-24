@@ -53,7 +53,7 @@ namespace RxEngine
         float y_offset;
         EInputMod mods;
     };
-
+#if 0
     class Mouse
     {
         friend void callbackCursorPos(GLFWwindow* /*window*/, double xpos, double ypos);
@@ -85,5 +85,6 @@ namespace RxEngine
         void buttonAction(int32_t button, bool pressed, int32_t mods);
         void scroll(float y_scroll, int32_t mods);
     };
+#endif
 }
 #endif //AMX_MOUSE_HPP

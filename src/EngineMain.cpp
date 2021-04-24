@@ -20,7 +20,7 @@
 #include "Modules/Module.h"
 #include "Modules/ImGui/ImGuiRender.hpp"
 
-#include <sol/sol.hpp>
+//#include <sol/sol.hpp>
 
 
 namespace RxEngine
@@ -63,8 +63,8 @@ namespace RxEngine
         swapChain_ = surface->CreateSwapChain();
         swapChain_->setSwapChainOutOfDate(true);
 
-        window_->mouse = std::make_shared<Mouse>(window_.get(), world.get());
-        window_->keyboard = std::make_shared<Keyboard>(window_.get(), world.get());
+        //window_->mouse = std::make_shared<Mouse>(window_.get(), world.get());
+        //window_->keyboard = std::make_shared<Keyboard>(window_.get(), world.get());
 
         renderer_->startup(swapChain_->imageFormat());
 
@@ -102,7 +102,6 @@ namespace RxEngine
         for (auto& m : modules) {
             m->startup();
         }
-
 
         window_->onResize.AddLambda(
             [&](int w, int h)

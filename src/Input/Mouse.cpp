@@ -14,6 +14,7 @@
 
 namespace RxEngine
 {
+#if 0
     void callbackCursorPos(GLFWwindow * window, double xpos, double ypos)
     {
         auto wnd = reinterpret_cast<Window *>(glfwGetWindowUserPointer(window));
@@ -150,4 +151,5 @@ namespace RxEngine
         pos_ = position;
         glfwSetCursorPos(window_->GetWindow(), pos_.x, pos_.y);
     }
+#endif
 }

@@ -11,6 +11,7 @@
 
 namespace RxEngine
 {
+#if 0
     void callbackKey(GLFWwindow * window,
                      int32_t key,
                      int32_t scancode,
@@ -57,4 +58,5 @@ namespace RxEngine
             static_cast<EInputMod>(mods)
         });
     }
+#endif
 }
