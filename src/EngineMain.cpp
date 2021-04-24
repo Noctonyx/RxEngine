@@ -19,12 +19,15 @@
 
 #include "Modules/Module.h"
 #include "Modules/ImGui/ImGuiRender.hpp"
+#include "Modules/Stats/Stats.h"
 
 //#include <sol/sol.hpp>
 
 
 namespace RxEngine
 {
+    class StatsModule;
+
     void EngineMain::startup()
     {
         loadConfig();
@@ -33,15 +36,7 @@ namespace RxEngine
 
         width = getUint32ConfigValue("window", "width", 800);
         height = getUint32ConfigValue("window", "height", 600);
-        /*
-        try {
-            width = std::stol(getConfigValue("window", "width"));
-            height = std::stol(getConfigValue("window", "height"));
-        } catch (std::invalid_argument) {
-            width = 800;
-            height = 600;
-        }
-         */
+
         if (width <= 0) {
             width = 800;
         }
@@ -53,8 +48,6 @@ namespace RxEngine
 
         window_ = std::make_unique<Window>(width, height, "RX", world.get());
 
-        //world->setSingleton<MainWindow::WindowDetails>({ window_.get(), width, height });
-
         device_ = std::make_unique<RxCore::Device>(window_->GetWindow());
         renderer_ = std::make_unique<Renderer>(device_->VkDevice(), world.get());
 
@@ -62,9 +55,6 @@ namespace RxEngine
 
         swapChain_ = surface->CreateSwapChain();
         swapChain_->setSwapChainOutOfDate(true);
-
-        //window_->mouse = std::make_shared<Mouse>(window_.get(), world.get());
-        //window_->keyboard = std::make_shared<Keyboard>(window_.get(), world.get());
 
         renderer_->startup(swapChain_->imageFormat());
 
@@ -77,30 +67,26 @@ namespace RxEngine
         world->newEntity("Pipeline:PreRender").set<ecs::SystemGroup>({5, false, 0.0f, 0.0f});
         world->newEntity("Pipeline:Render").set<ecs::SystemGroup>({6, false, 0.0f, 0.0f});
         world->newEntity("Pipeline:PostRender").set<ecs::SystemGroup>({7, false, 0.0f, 0.0f});
-        world->newEntity("Pipeline:Final").set<ecs::SystemGroup>({8, false, 0.0f, 0.0f});
-
-        //lua_ = new LuaState();
+        world->newEntity("Pipeline:PostFrame").set<ecs::SystemGroup>({8, false, 0.0f, 0.0f});
 
         setupLuaEnvironment();
         loadLuaFile("/lua/engine");
 
-
         populateStartupData();
 
-        //luabridge::LuaRef v2 = luabridge::getGlobal(lua_->L, "data");
-        //populateStartupData();
-        //auto x = v2["hfghfg"];
-
         modules.push_back(std::move(std::make_shared<IMGuiRender>(world.get(), this)));
+        modules.push_back(std::move(std::make_shared<StatsModule>(world.get(), this)));
 
-
-
-        for(auto & m: modules) {
+        for (auto & m: modules) {
             m->registerModule();
         }
 
-        for (auto& m : modules) {
+        for (auto & m: modules) {
             m->startup();
+        }
+
+        for (auto & m: modules) {
+            m->enable();
         }
 
         window_->onResize.AddLambda(
@@ -111,19 +97,33 @@ namespace RxEngine
             });
 
         startTime = std::chrono::high_resolution_clock::now();
+
+        world->createSystem("Engine:CheckSwapchain")
+             .inGroup("Pipeline:PreFrame")
+             .execute([this](ecs::World * world)
+             {
+                 OPTICK_EVENT("Check SwapChain")
+                 if (swapChain_->swapChainOutOfDate()) {
+                     replaceSwapChain();
+                 }
+             });
     }
 
     void EngineMain::shutdown()
     {
+        for (auto & m: modules) {
+            m->disable();
+        }
+
         RxCore::iVulkan()->WaitIdle();
 
         device_->clearQueues();
         RxCore::JobManager::instance().Shutdown();
 
-        for (auto& m : modules) {
+        for (auto & m: modules) {
             m->shutdown();
         }
-        for (auto& m : modules) {
+        for (auto & m: modules) {
             m->deregisterModule();
         }
         modules.clear();
@@ -144,76 +144,35 @@ namespace RxEngine
 
     void EngineMain::update()
     {
-        static float deltaAccumulated = 0.0f;
-
         OPTICK_FRAME("MainThread")
-        //
-        ///if (!renderCamera_) {
-        //renderCamera_ = std::make_shared<RenderCamera>(scene_->getSceneCamera()->GetCamera());
-        //}
 
         const auto last_clock = timer_;
         const auto time_now = std::chrono::high_resolution_clock::now();
-        const auto fixed_frame_length = 1 / 60.f;
 
         const std::chrono::duration<float> delta_time = time_now - last_clock;
         totalElapsed_ = std::chrono::duration<float>(time_now - startTime).count();
 
         delta_ = delta_time.count();
         timer_ = time_now;
-        deltaAccumulated += delta_;
 
         {
             OPTICK_EVENT("Window Updates")
             window_->Update(); // Collect the window events
         }
 
-        if (deltaAccumulated > 10) {
-            deltaAccumulated = 0;
-        }
         world->setSingleton<EngineTime>({delta_, totalElapsed_});
         world->step(delta_);
-
-        //        while (deltaAccumulated > fixed_frame_length) {
-        //OPTICK_EVENT("ECS Progress");
-        //deltaAccumulated -= fixed_frame_length;
-        //}
-
-        //updateMaterialGui();
-        //updateEntityGui();
-        //renderer_->updateGui();
-
+#if 0
         {
             OPTICK_EVENT("Check SwapChain")
             if (swapChain_->swapChainOutOfDate()) {
                 replaceSwapChain();
             }
         }
+#endif
         {
             OPTICK_EVENT("Scene Render")
-            //std::vector<IRenderable *> renderables;
-            //std::vector<IRenderProvider *> providers;
-
-            // auto camera = scene_->getMainCamera();
             const auto current_extent = swapChain_->GetExtent();
-#if 0
-            scene_->GetRenderables(renderables);
-            scene_->GetRenderProviders(providers);
-#endif
-            // Add the Rml Render data
-            //renderables.push_back(rmlRender.get());
-            //rmlRender->resetRender();
-            {
-                OPTICK_EVENT("Schedule PreRenders")
-#if 0
-                for (auto * renderable: providers) {
-                    renderable->setup(scene_->getSceneCamera()->GetCamera());
-                }
-                for (auto * renderable: renderables) {
-                    renderable->preRender(current_extent.width, current_extent.height);
-                }
-#endif
-            }
 
             auto [next_swap_image_view, next_image_available, next_image_index] =
                 swapChain_->AcquireNextImage();
@@ -226,23 +185,13 @@ namespace RxEngine
             }
 
             {
-                // VkSwapchainKHR h = swapChain_->handle;
                 OPTICK_GPU_FLIP(nullptr)
                 OPTICK_CATEGORY("Present", Optick::Category::Rendering)
                 swapChain_->PresentImage(
                     next_swap_image_view,
                     submitCompleteSemaphores_[next_image_index]);
             }
-            {
-                OPTICK_EVENT("Post Render")
-                //                for (auto * r: renderables) {
-                //                  r->postRender();
-                //            }
 
-                //  for (auto * renderable: providers) {
-                //          renderable->teardown();
-                //      }
-            }
             RxCore::JobManager::instance().clean();
         }
     }

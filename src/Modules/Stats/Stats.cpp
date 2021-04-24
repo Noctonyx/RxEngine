@@ -6,7 +6,7 @@
 
 namespace RxEngine
 {
-    void StatsModule::registerModule()
+    void StatsModule::startup()
     {
         systemSet_ = world_->newEntity().set<ecs::SystemSet>({false}).id;
 
@@ -42,7 +42,11 @@ namespace RxEngine
         world_->getUpdate<ecs::SystemSet>(systemSet_)->enabled = false;
     }
 
-    void StatsModule::deregisterModule() { }
+    void StatsModule::shutdown()
+    {
+        world_->deleteSystem(world_->lookup("Stats:Mem").id);
+        world_->deleteSystem(world_->lookup("Stats:Ui").id);
+    }
 
     void StatsModule::presentStatsUi()
     {

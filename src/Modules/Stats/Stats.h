@@ -22,10 +22,13 @@ namespace RxEngine
         std::vector<RxCore::MemHeapStatus> heaps_;
 
     public:
-        void registerModule() override;
+        StatsModule(ecs::World * world, EngineMain * engine)
+            : Module(world, engine) {}
+
+        void startup() override;
         void enable() override;
         void disable() override;
-        void deregisterModule() override;
+        void shutdown() override;
 
     protected:
         void presentStatsUi();

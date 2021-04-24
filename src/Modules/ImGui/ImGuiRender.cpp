@@ -35,8 +35,34 @@ namespace RxEngine
     {
         fontImage_.reset();
         set0.reset();
+    }
 
-        //RxCore::iVulkan()->getDevice().destroyPipeline(pipeline);
+    void IMGuiRender::createPipelineLayout()
+    {
+        const std::vector<vk::DescriptorSetLayoutBinding> binding = {
+            {
+                0, vk::DescriptorType::eCombinedImageSampler,
+                1, vk::ShaderStageFlagBits::eFragment
+            }
+        };
+
+        dsl0 = RxCore::iVulkan()->createDescriptorSetLayout({{}, binding});
+
+        vk::PipelineLayoutCreateInfo plci{};
+        std::vector<vk::DescriptorSetLayout> dsls{dsl0};
+
+        std::vector<vk::PushConstantRange> pcr = {
+            {
+                vk::ShaderStageFlagBits::eVertex,
+                static_cast<uint32_t>(0),
+                static_cast<uint32_t>(16)
+            }
+        };
+
+        plci.setSetLayouts(dsls)
+            .setPushConstantRanges(pcr);
+
+        pipelineLayout = RxCore::iVulkan()->createPipelineLayout(plci);
     }
 
     void IMGuiRender::startup()
@@ -47,7 +73,6 @@ namespace RxEngine
         io.DisplaySize = ImVec2(
             static_cast<float>(wd->width),
             static_cast<float>(wd->height));
-
 
         world_->createSystem("ImGui:UpdateGui")
               //.after<UiContextUpdate>()
@@ -177,34 +202,11 @@ namespace RxEngine
             CreateFontImage(io);
         }
 
-        const std::vector<vk::DescriptorSetLayoutBinding> binding = {
-            {
-                0,
-                vk::DescriptorType::eCombinedImageSampler,
-                1,
-                vk::ShaderStageFlagBits::eFragment
-            }
-        };
-
-        dsl0 = RxCore::iVulkan()->createDescriptorSetLayout({{}, binding});
-        vk::PipelineLayoutCreateInfo plci{};
-        std::vector<vk::DescriptorSetLayout> dsls{dsl0};
-
-        std::vector<vk::PushConstantRange> pcr = {
-            {
-                vk::ShaderStageFlagBits::eVertex,
-                static_cast<uint32_t>(0),
-                static_cast<uint32_t>(16)
-            }
-        };
-
-        //dsls.push_back(dsl0);
-        plci.setSetLayouts(dsls)
-            .setPushConstantRanges(pcr);
-
-        pipelineLayout = RxCore::iVulkan()->createPipelineLayout(plci);
+        createPipelineLayout();
 
         pipelineEntity = world_->lookup("pipeline/imgui").id;
+
+        createDescriptorSet();
     }
 
     void IMGuiRender::shutdown() { }
@@ -276,75 +278,8 @@ namespace RxEngine
             0);
     }
 
-    void IMGuiRender::createMaterial(vk::RenderPass renderPass)
+    void IMGuiRender::createDescriptorSet()
     {
-        //plb.addPushConstantRange(vk::ShaderStageFlagBits::eVertex, 0, 16);
-
-        //auto plo = plb.build();
-
-        //        auto dsl = RXCore::VulkanContext::VkDevice().createDescriptorSetLayout({{},
-        //        binding});
-        // std::vector<vk::DescriptorSetLayout> dsls;
-
-        // dsls.push_back(dsl);
-
-        // std::vector<vk::PushConstantRange> pcr;
-        // pcr.emplace_back(vk::ShaderStageFlagBits::eVertex, 0, 16);
-
-        // auto pipelineLayout = RXCore::VulkanContext::VkDevice().createPipelineLayout(
-        //  {{}, dsls, pcr});
-
-        // auto pl = std::make_shared<RXCore::PipelineLayout>(pipelineLayout, dsls, pcr);
-
-        // mp->addPushConstantRange(vk::ShaderStageFlagBits::eVertex, 0, 16);
-
-        // mp->addDescriptorSetLayout({}, binding);
-
-        // auto mpid = scene_->getMaterialManager()->loadMaterialPipeline("/materials/imgui.matpipe");
-        //   pipeline = scene_->getMaterialManager()->
-        //                    createPipeline(mpid, pipelineLayout, renderPass, 0);
-        //        RXAssets::MaterialPipelineData mpd;
-        //      RXAssets::Loader::loadMaterialPipeline(mpd, );
-#if 0
-
-
-        RXCore::PipelineBuilder plb;
-
-        plb.setDepthMode(false, false);
-        plb.SetCullMode(RXCore::EPipelineCullMode::None);
-
-        RXAssets::ShaderData sd{};
-
-        RXAssets::Loader::loadShader(sd, "/shaders/shdr_imgui_vert.spv");
-        auto vs = RXCore::Device::VkDevice().createShaderModule(
-            {{}, uint32_t(sd.bytes.size() * 4), (uint32_t *) sd.bytes.data()});
-
-        RXAssets::Loader::loadShader(sd, "/shaders/shdr_imgui_frag.spv");
-        auto vs = RXCore::Device::VkDevice().createShaderModule(
-            {{}, uint32_t(sd.bytes.size() * 4), (uint32_t *) sd.bytes.data()});
-
-//        auto vs = scene_->getLoader()->getShader("/shaders/shdr_imgui_vert.spv");
-        //      auto fs = scene_->getLoader()->getShader("/shaders/shdr_imgui_frag.spv");
-
-        plb.addShader(vs, vk::ShaderStageFlagBits::eVertex);
-        plb.addShader(fs, vk::ShaderStageFlagBits::eFragment);
-
-        const std::vector<vk::VertexInputAttributeDescription> attributes = {
-            {0, 0, vk::Format::eR32G32Sfloat, static_cast<uint32_t>(offsetof(ImDrawVert, pos))},
-            {1, 0, vk::Format::eR32G32Sfloat, static_cast<uint32_t>(offsetof(ImDrawVert, uv))},
-            {2, 0, vk::Format::eR8G8B8A8Unorm, static_cast<uint32_t>(offsetof(ImDrawVert, col))},
-        };
-        const std::vector<vk::VertexInputBindingDescription> bindings = {
-            {0, sizeof(ImDrawVert), vk::VertexInputRate::eVertex}};
-        plb.setVertexInputState(attributes, bindings);
-
-        plb.AddAttachmentColorBlending(true);
-        plb.setLayout(pipelineLayout);
-        plb.setRenderPass(renderPass);
-        plb.setSubPass(0);
-        pipeline = plb.build();
-#endif
-
         auto dp = RxCore::Device::Context()->CreateDescriptorPool(
             {{vk::DescriptorType::eCombinedImageSampler, 1}}, 1);
         set0 = dp->allocateDescriptorSet(dsl0);
@@ -361,66 +296,7 @@ namespace RxEngine
         auto sampler = RxCore::iVulkan()->createSampler(sci);
         set0->updateDescriptor(0, vk::DescriptorType::eCombinedImageSampler, fontImage_, sampler);
     }
-#if 0
-    std::shared_ptr<RXCore::Pipeline> IMGuiRender::createPipeline(
-        std::shared_ptr<RXCore::PipelineLayout> layout,
-        const std::shared_ptr<RXCore::RenderPass> & renderPass)
-    {
-        RXCore::PipelineBuilder plb(layout);
 
-        plb.SetDepthMode(false, false);
-        plb.SetCullMode(RXCore::EPipelineCullMode::None);
-
-        auto vs = RXCore::VulkanContext::Context()->LoadShader("../shaders/imgui.vert.spv");
-        auto fs = RXCore::VulkanContext::Context()->LoadShader("../shaders/imgui.frag.spv");
-
-        plb.AddShader(vs, vk::ShaderStageFlagBits::eVertex);
-        plb.AddShader(fs, vk::ShaderStageFlagBits::eFragment);
-
-        const std::vector<vk::VertexInputAttributeDescription> attributes = {
-            {0, 0, vk::Format::eR32G32Sfloat, static_cast<uint32_t>(offsetof(ImDrawVert, pos))},
-            {1, 0, vk::Format::eR32G32Sfloat, static_cast<uint32_t>(offsetof(ImDrawVert, uv))},
-            {
-                2,
-                0,
-                vk::Format::eR8G8B8A8Unorm,
-                static_cast<uint32_t>(offsetof(ImDrawVert, col))
-            },
-        };
-        const std::vector<vk::VertexInputBindingDescription> bindings = {
-            {0, sizeof(ImDrawVert), vk::VertexInputRate::eVertex}
-        };
-        plb.AddAttachmentColorBlending( /*
-           {
-               true,
-               vk::BlendFactor::eSrcAlpha,
-               vk::BlendFactor::eOneMinusSrcAlpha,
-               vk::BlendOp::eAdd,
-               vk::BlendFactor::eOneMinusSrcAlpha,
-               vk::BlendFactor::eZero,
-               vk::BlendOp::eAdd,
-               vk::ColorComponentFlagBits::eA |
-               vk::ColorComponentFlagBits::eR |
-               vk::ColorComponentFlagBits::eG |
-               vk::ColorComponentFlagBits::eB
-           }*/
-        );
-        plb.setVertexInputState(attributes, bindings);
-        return plb.Build(renderPass);
-    }
-
-    std::shared_ptr<RXCore::PipelineLayout> IMGuiRender::CreatePipelineLayout()
-    {
-        RXCore::PipelineLayoutBuilder pllb;
-
-        pllb.AddPushConstantRange(vk::ShaderStageFlagBits::eVertex, 0, 16);
-        const std::vector<vk::DescriptorSetLayoutBinding> binding = {
-            {0, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eFragment}
-        };
-        pllb.AddDescriptorSetLayout({}, binding);
-        return pllb.Build();
-    }
-#endif
     void IMGuiRender::update(float deltaTime)
     {
         OPTICK_EVENT()

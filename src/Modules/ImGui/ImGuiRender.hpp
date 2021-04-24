@@ -24,12 +24,14 @@ namespace RxEngine
     public:
         IMGuiRender(ecs::World* world, EngineMain* engine);
         ~IMGuiRender();
+        void createPipelineLayout();
 
         void startup() override;
         void shutdown() override;
 
         void SetupInputs(ImGuiIO & io);
         void CreateFontImage(ImGuiIO & io);
+        void createDescriptorSet();
         //void rendererInit(Renderer * renderer) override;
         void update(float deltaTime);
         void updateGui();
