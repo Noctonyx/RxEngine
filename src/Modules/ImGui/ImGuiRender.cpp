@@ -79,7 +79,7 @@ namespace RxEngine
               .inGroup("Pipeline:Update")
               .execute([&, this](ecs::World * world)
               {
-                  OPTICK_EVENT()
+                  OPTICK_EVENT("ImGui:UpdateGui")
                   this->updateGui();
               });
 
@@ -89,7 +89,7 @@ namespace RxEngine
               //.label<UiContextUpdate>()
               .execute<WindowResize>([](ecs::World * world, const WindowResize * resize)
               {
-                  OPTICK_EVENT()
+                  OPTICK_EVENT("ImGui:WindowResize")
 
                   ImGuiIO & io = ImGui::GetIO();
                   io.DisplaySize = ImVec2(
@@ -103,7 +103,7 @@ namespace RxEngine
               .inGroup("Pipeline:PreFrame")
               .execute<MousePosition>([](ecs::World * world, const MousePosition * pos)
               {
-                  OPTICK_EVENT()
+                  OPTICK_EVENT("ImGui:MousePos")
                   auto & io = ImGui::GetIO();
                   io.MousePos = ImVec2(pos->x, pos->y);
                   if (io.WantCaptureMouse) {
@@ -172,7 +172,7 @@ namespace RxEngine
               .inGroup("Pipeline:PreFrame")
               .execute<KeyboardChar>([](ecs::World * world, const KeyboardChar * c)
               {
-                  OPTICK_EVENT()
+                  OPTICK_EVENT("ImGui:Char")
                   auto & io = ImGui::GetIO();
                   if (!io.WantCaptureKeyboard) {
                       return false;
@@ -186,7 +186,7 @@ namespace RxEngine
               .inGroup("Pipeline:PreFrame")
               .execute([this](ecs::World * world)
               {
-                  OPTICK_EVENT()
+                  OPTICK_EVENT("ImGui:NewFrame")
                   update(world->deltaTime());
               });
 
@@ -194,7 +194,7 @@ namespace RxEngine
               .inGroup("Pipeline:PreRender")
               .execute([this](ecs::World *)
               {
-                  OPTICK_EVENT()
+                  OPTICK_EVENT("Imgui:Render")
                   createRenderCommands();
               });
 

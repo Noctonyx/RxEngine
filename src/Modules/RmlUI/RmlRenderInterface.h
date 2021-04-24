@@ -125,7 +125,7 @@ namespace RxEngine
         std::vector<vk::ShaderModule> shaders;
 
         std::shared_ptr<RxCore::Buffer> ub_;
-        DirectX::XMFLOAT4X4 projectionMatrix_{};
+        //DirectX::XMFLOAT4X4 projectionMatrix_{};
     };
 }
 

@@ -142,7 +142,7 @@ namespace RxEngine
     private:
         //std::vector<std::unique_ptr<Subsystem>> subsystems_;
         std::unique_ptr<Window> window_;
-        std::unique_ptr<Renderer> renderer_;
+        //std::unique_ptr<Renderer> renderer_;
         std::unique_ptr<RxCore::Device> device_;
         std::unique_ptr<RxCore::SwapChain> swapChain_;
         //std::unique_ptr<MaterialManager> materialManager_;

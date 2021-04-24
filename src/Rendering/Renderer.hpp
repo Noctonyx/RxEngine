@@ -14,6 +14,7 @@
 #include "RenderCamera.h"
 #include "DirectXCollision.h"
 #include "RxECS.h"
+#include "Modules/Module.h"
 #include "Modules/Render.h"
 
 #define NUM_CASCADES 4
@@ -135,6 +136,25 @@ namespace RxEngine
         std::vector<IndirectDrawCommandHeader> headers;
     };
 
+    struct AcquireImage {};
+
+    struct PresentImage {};
+
+    struct MainRenderImageInput
+    {
+        vk::ImageView imageView;
+        vk::Semaphore imageAvailableSempahore;
+        uint32_t imageIndex;
+        vk::Extent2D extent;
+        vk::Semaphore finishRenderSemaphore;
+    };
+
+    struct MainRenderImageOutput
+    {
+        vk::ImageView imageView;
+        vk::Semaphore finishRenderSemaphore;
+    };
+
     struct IRenderProvider
     {
     public:
@@ -234,14 +254,18 @@ namespace RxEngine
         uint32_t uiSubPass;
     };
 
-    class Renderer : public RxCore::DeviceObject
+    class Renderer : public RxCore::DeviceObject, public Module
     {
     public:
-        explicit Renderer(vk::Device device, ecs::World * world);
+        explicit Renderer(vk::Device device,
+                          ecs::World * world,
+                          vk::Format imageFormat,
+                          EngineMain * engine);
 
         ~Renderer();
 
-        void startup(vk::Format imageFormat);
+
+        void startup();
 
         void render(
             //const std::shared_ptr<RenderCamera> & camera,
@@ -264,13 +288,19 @@ namespace RxEngine
         void createDepthRenderPass();
 
         std::shared_ptr<const std::vector<RenderEntity>> finishUpEntityJobs(
-            const std::vector<std::shared_ptr<RxCore::Job<std::vector<RenderEntity>>>> & entityJobs);
+            const std::vector<std::shared_ptr<RxCore::Job<std::vector<RenderEntity>>>> &
+            entityJobs);
 
         void setScissorAndViewport(
             vk::Extent2D extent,
             std::shared_ptr<RxCore::SecondaryCommandBuffer> buf,
             bool flipY) const;
 
+        vk::Pipeline createUiMaterialPipeline(const Render::MaterialPipelineDetails * mpd,
+                                              const Render::FragmentShader * frag,
+                                              const Render::VertexShader * vert,
+                                              vk::RenderPass rp,
+                                              uint32_t subpass);
     public:
         //void collectLights(const std::vector<IRenderable *> & subsystems, std::vector<LightData> & lights);
     public:
@@ -343,9 +373,9 @@ namespace RxEngine
 
         std::vector<std::shared_ptr<RxCore::Buffer>> instanceBuffers;
         std::vector<std::shared_ptr<RxCore::DescriptorSet>> instanceBUfferDS;
-        uint32_t ibCycle{};
+        //uint32_t ibCycle{};
         std::mutex ibLock{};
-        ecs::World* world_;
+        //ecs::World* world_;
         //flecs::world* world_;
         //flecs::query<const Render::MaterialPipelineDetails> query_;
     };

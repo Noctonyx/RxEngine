@@ -75,6 +75,7 @@ namespace RxEngine
         struct HasShadowPipeline : ecs::Relation { };
         struct HasTransparentPipeline : ecs::Relation { };
         struct HasUiPipeline : ecs::Relation { };
+        struct HasPipeline {};
 
         struct MaterialPipelineDetails
         {

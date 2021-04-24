@@ -5,17 +5,11 @@
 #include <vector>
 #include <filesystem>
 #include <memory>
-#include "Modules/Mesh.h"
 #include "Modules/Render.h"
 #include "EngineMain.hpp"
 #include "Scene.h"
-#include "Input/Mouse.hpp"
 #include "Vulkan/Surface.hpp"
 #include "Rendering/Renderer.hpp"
-#include "Subsystems/SceneCamera.h"
-#include <RmlUi/Core.h>
-#include <RmlUi/Lua.h>
-#include <imgui.h>
 
 #include "Modules/Module.h"
 #include "Modules/ImGui/ImGuiRender.hpp"
@@ -49,14 +43,11 @@ namespace RxEngine
         window_ = std::make_unique<Window>(width, height, "RX", world.get());
 
         device_ = std::make_unique<RxCore::Device>(window_->GetWindow());
-        renderer_ = std::make_unique<Renderer>(device_->VkDevice(), world.get());
 
         auto surface = RxCore::Device::Context()->surface;
 
         swapChain_ = surface->CreateSwapChain();
         swapChain_->setSwapChainOutOfDate(true);
-
-        renderer_->startup(swapChain_->imageFormat());
 
         timer_ = std::chrono::high_resolution_clock::now();
 
@@ -74,8 +65,10 @@ namespace RxEngine
 
         populateStartupData();
 
-        modules.push_back(std::move(std::make_shared<IMGuiRender>(world.get(), this)));
-        modules.push_back(std::move(std::make_shared<StatsModule>(world.get(), this)));
+        modules.push_back(std::make_shared<Renderer>(device_->VkDevice(), world.get(),
+                                                     swapChain_->imageFormat(), this));
+        modules.push_back((std::make_shared<IMGuiRender>(world.get(), this)));
+        modules.push_back((std::make_shared<StatsModule>(world.get(), this)));
 
         for (auto & m: modules) {
             m->registerModule();
@@ -107,6 +100,46 @@ namespace RxEngine
                      replaceSwapChain();
                  }
              });
+
+        world->createSystem("Engine:AcquireImage")
+             .inGroup("Pipeline:Render")
+             .label<AcquireImage>()
+             .execute([this](ecs::World * world)
+             {
+                 OPTICK_EVENT("AcquireImage")
+                 const auto current_extent = swapChain_->GetExtent();
+
+                 auto [next_swap_image_view, next_image_available, next_image_index] =
+                     swapChain_->AcquireNextImage();
+
+                 world->getStream<MainRenderImageInput>()->add<MainRenderImageInput>(
+                     {
+                         next_swap_image_view, next_image_available, next_image_index,
+                         current_extent, submitCompleteSemaphores_[next_image_index]
+                     }
+                 );
+             });
+
+        world->createSystem("Engine:PresentImage")
+             .inGroup("Pipeline:Render")
+             .label<PresentImage>()
+             .withStream<MainRenderImageOutput>()
+             .execute<MainRenderImageOutput>(
+                 [this](ecs::World * world, const MainRenderImageOutput * mri)
+                 {
+                     OPTICK_GPU_FLIP(nullptr)
+                     OPTICK_CATEGORY("Present", Optick::Category::Rendering)
+
+                     swapChain_->PresentImage(mri->imageView, mri->finishRenderSemaphore);
+                     return true;
+                 });
+
+        world->createSystem("Engine:Clean")
+             .inGroup("Pipeline:PostFrame")
+             .execute([](ecs::World * world)
+             {
+                 RxCore::JobManager::instance().clean();
+             });
     }
 
     void EngineMain::shutdown()
@@ -127,19 +160,14 @@ namespace RxEngine
             m->deregisterModule();
         }
         modules.clear();
-        //world.reset();
-        //renderCamera_.reset();
 
         world.reset();
 
-        renderer_->shutdown();
-
         destroySemaphores();
         swapChain_.reset();
-        renderer_.reset();
+
         window_.reset();
         device_.reset();
-        window_.reset();
     }
 
     void EngineMain::update()
@@ -164,18 +192,13 @@ namespace RxEngine
         world->step(delta_);
 #if 0
         {
-            OPTICK_EVENT("Check SwapChain")
-            if (swapChain_->swapChainOutOfDate()) {
-                replaceSwapChain();
-            }
-        }
-#endif
-        {
+#if 0
             OPTICK_EVENT("Scene Render")
             const auto current_extent = swapChain_->GetExtent();
 
             auto [next_swap_image_view, next_image_available, next_image_index] =
                 swapChain_->AcquireNextImage();
+#endif
             {
                 OPTICK_EVENT("Actual Render")
                 renderer_->render(
@@ -183,7 +206,7 @@ namespace RxEngine
                     {vk::PipelineStageFlagBits::eColorAttachmentOutput},
                     submitCompleteSemaphores_[next_image_index]);
             }
-
+#if 0
             {
                 OPTICK_GPU_FLIP(nullptr)
                 OPTICK_CATEGORY("Present", Optick::Category::Rendering)
@@ -191,9 +214,11 @@ namespace RxEngine
                     next_swap_image_view,
                     submitCompleteSemaphores_[next_image_index]);
             }
-
+#endif
             RxCore::JobManager::instance().clean();
+
         }
+#endif
     }
 
     void EngineMain::run()

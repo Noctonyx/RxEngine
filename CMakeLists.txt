@@ -139,4 +139,3 @@ target_sources(RxEngine PRIVATE ${imgui_SOURCE_DIR}/imgui_draw.cpp ${imgui_SOURC
 target_compile_options(RxEngine PUBLIC -DIMGUI_ENABLE_FREETYPE)
 
 set_target_properties(RxEngine PROPERTIES CXX_STANDARD 20)
-
