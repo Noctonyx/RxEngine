@@ -175,6 +175,7 @@ namespace RxEngine
     {
         onResize.Broadcast(width, height);
         world_->getStream<WindowResize>()->add<WindowResize>({width, height});
+        world_->setSingleton<WindowDetails>({ this, width, height });
     }
 
     void Window::doChar(uint32_t codepoint)

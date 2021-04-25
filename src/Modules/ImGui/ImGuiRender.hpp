@@ -31,9 +31,6 @@ namespace RxEngine
 
         void createRenderCommands();
 
-    protected:
-        [[nodiscard]] std::tuple<std::shared_ptr<RxCore::VertexBuffer>, std::shared_ptr<
-                                     RxCore::IndexBuffer>> createBuffers() const;
     private:
         std::vector<DelegateHandle> delegates_{};
         std::shared_ptr<RxCore::Image> fontImage_{};

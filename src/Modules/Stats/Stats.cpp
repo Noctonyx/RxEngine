@@ -14,7 +14,7 @@ namespace RxEngine
 
         world_->createSystem("Stats:Ui")
               .withSet(systemSet_)
-              .inGroup("Pipeline:Update")
+              .inGroup("Pipeline:UpdateUi")
               .after<Update>()
               .execute([this](ecs::World * w)
                   {

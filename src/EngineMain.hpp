@@ -176,6 +176,13 @@ namespace RxEngine
         //World* world;
         //std::unique_ptr<flecs::world> world_;
         //std::unique_ptr<World> world;
+
+        static void ecsNameGui(ecs::EntityHandle e);
+        static void ecsSystemGroupGui(ecs::EntityHandle e);
+        static void ecsWindowDetailsGui(ecs::EntityHandle e);
+        static void ecsEngineTimeGui(ecs::EntityHandle e);
+        static void ecsSystemGui(ecs::EntityHandle e);
+        static void ecsStreamComponentGui(ecs::EntityHandle e);
     };
 
     inline void EngineMain::loadLuaFile(const std::filesystem::path & file)

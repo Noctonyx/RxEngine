@@ -24,7 +24,7 @@ namespace RxEngine
         ImGui::StyleColorsDark();
         ImGuiIO & io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-        SetupInputs(io);
+        setupInputs(io);
     };
 
     IMGuiRender::~IMGuiRender()
@@ -44,7 +44,7 @@ namespace RxEngine
 
         world_->createSystem("ImGui:UpdateGui")
               //.after<UiContextUpdate>()
-              .inGroup("Pipeline:Update")
+              .inGroup("Pipeline:UpdateUi")
               .execute([&, this](ecs::World * world)
               {
                   OPTICK_EVENT("ImGui:UpdateGui")
@@ -167,7 +167,7 @@ namespace RxEngine
               });
 
         if (!fontImage_) {
-            CreateFontImage(io);
+            createFontImage(io);
         }
 
         pipeline_ = world_->lookup("pipeline/imgui");
@@ -177,7 +177,7 @@ namespace RxEngine
 
     void IMGuiRender::shutdown() { }
 
-    void IMGuiRender::SetupInputs(ImGuiIO & io)
+    void IMGuiRender::setupInputs(ImGuiIO & io)
     {
         io.KeyRepeatDelay = 2.0f;
         io.KeyRepeatRate = 0.25f;
@@ -206,12 +206,10 @@ namespace RxEngine
         io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
     }
 
-    void IMGuiRender::CreateFontImage(ImGuiIO & io)
+    void IMGuiRender::createFontImage(ImGuiIO & io)
     {
         unsigned char * pixels;
         int width, height;
-        // std::string fontFile = RX_ASSET_DIR;
-        // fontFile += "/JetBrainsMono-Regular.ttf";
 
         auto vfs = RxAssets::Vfs::getInstance();
 
@@ -224,10 +222,9 @@ namespace RxEngine
         std::vector<std::byte> data(size);
         vfs->getFileContents("/fonts/NotoSans-Regular.ttf", data.data());
 
-        // io.Fonts->AddFontFromFileTTF(fontFile.c_str(),  14);
         io.Fonts->AddFontFromMemoryTTF(data.data(), static_cast<uint32_t>(data.size()), 16);
         io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
-        size_t upload_size = width * height * 4 * sizeof(char);
+        const size_t upload_size = width * height * 4 * sizeof(char);
 
         auto d = std::make_unique<uint8_t[]>(upload_size);
         memcpy(d.get(), pixels, upload_size);
@@ -236,6 +233,7 @@ namespace RxEngine
             vk::Format::eR8G8B8A8Unorm,
             {static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1}, 1, 1,
             vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst);
+
         auto b = RxCore::iVulkan()->createStagingBuffer(upload_size, pixels);
 
         RxCore::iVulkan()->transferBufferToImage(
@@ -305,10 +303,7 @@ namespace RxEngine
         ImGui::NewFrame();
     }
 
-    typedef std::shared_ptr<RxCore::VertexBuffer> VB_Ptr;
-    typedef std::shared_ptr<RxCore::IndexBuffer> IB_Ptr;
-
-    std::tuple<VB_Ptr, IB_Ptr> IMGuiRender::CreateBuffers() const
+    auto createBuffers()
     {
         OPTICK_EVENT("Build IMGui Buffers")
 
@@ -343,12 +338,10 @@ namespace RxEngine
             idxOffset += cmdList->IdxBuffer.Size * sizeof(ImDrawIdx);
         }
 
-        // vb->getMemory()->flush();
         vb->getMemory()->unmap();
-        // ib->getMemory()->flush();
         ib->getMemory()->unmap();
 
-        return std::tuple<VB_Ptr, IB_Ptr>(vb, ib);
+        return std::pair(vb, ib);
     }
 
     void IMGuiRender::createRenderCommands()
@@ -370,7 +363,7 @@ namespace RxEngine
         assert(pipeline);
         assert(pipeline->pipeline);
 
-        auto layout = pipeline_.getRelated<Render::UsesLayout, Render::PipelineLayout>();
+        const auto layout = pipeline_.getRelated<Render::UsesLayout, Render::PipelineLayout>();
 
         auto buf = RxCore::JobManager::threadData().getCommandBuffer();
 
@@ -380,7 +373,7 @@ namespace RxEngine
         }
 
         // Create Vertex/Index Buffers
-        auto [vb, ib] = CreateBuffers();
+        auto [vb, ib] = createBuffers();
 
         buf->begin(pipeline->renderPass, pipeline->subPass);
         {
@@ -451,8 +444,8 @@ namespace RxEngine
         ImGui::DockSpaceOverViewport(
             0, ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingInCentralNode);
 #if 1
-        if (show_demo_window) {
-            ImGui::ShowDemoWindow(&show_demo_window);
+        if (showDemoWindow_) {
+            ImGui::ShowDemoWindow(&showDemoWindow_);
         }
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a
@@ -466,9 +459,9 @@ namespace RxEngine
 
             ImGui::Text("This is some useful text."); // Display some text (you can use a format
             // strings too)
-            ImGui::Checkbox("Demo Window", &show_demo_window); // Edit bools storing our window
+            ImGui::Checkbox("Demo Window", &showDemoWindow_); // Edit bools storing our window
             // open/close state
-            ImGui::Checkbox("Another Window", &show_another_window);
+            ImGui::Checkbox("Another Window", &showAnotherWindow_);
 
             ImGui::SliderFloat("float", &f, 0.0f, 1.0f); // Edit 1 float using a slider from 0.0f
             // to 1.0f

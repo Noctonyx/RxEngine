@@ -28,6 +28,9 @@ namespace RxEngine
     void EngineMain::ecsInspectorShowTableDetails(ecs::EntityHandle & selectedEntity,
                                                   ecs::Table * table) const
     {
+        if (table->entities.size() == 0) {
+            return;
+        }
         ImGui::TableNextRow();
         ImGui::TableNextColumn();
         ImGui::TableNextColumn();
@@ -35,7 +38,7 @@ namespace RxEngine
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4) ImColor::HSV(0.5, 0.6f, 0.6f));
 
-        ImGui::Button("Type");
+        ImGui::Button(table->description().c_str());
         ImGui::PopStyleColor();
         ImGui::PopStyleVar(2);
         for (auto e: *table) {
@@ -56,8 +59,7 @@ namespace RxEngine
     void EngineMain::ecsInspectorIsAEntity(ecs::EntityHandle entity,
                                            ecs::EntityHandle & selectedEntity)
     {
-        if(entity.has<ecs::InstanceOf>())
-        {
+        if (entity.has<ecs::InstanceOf>()) {
             auto p = entity.get<ecs::InstanceOf>();
             auto object = entity.getHandle(p->entity);
 
@@ -66,7 +68,8 @@ namespace RxEngine
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
             ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-            bool open = ImGui::TreeNodeEx(object.description().c_str(), ImGuiTreeNodeFlags_SpanFullWidth,
+            bool open = ImGui::TreeNodeEx(object.description().c_str(),
+                                          ImGuiTreeNodeFlags_SpanFullWidth,
                                           "IsA(%s)", object.description().c_str());
             ImGui::TableNextColumn();
             ImGui::TableNextColumn();
@@ -82,29 +85,29 @@ namespace RxEngine
     void EngineMain::ecsInspectorEntityComponents(ecs::EntityHandle entity,
                                                   ecs::EntityHandle & selectedEntity)
     {
-        for (auto c : entity) {
+        for (auto c: entity) {
             auto cd = world->getComponentDetails(c);
 
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
             ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0.7f, 0.6f, 0.6f));
-            if (ImGui::Button( cd->name.c_str())) {
+            ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4) ImColor::HSV(0.7f, 0.6f, 0.6f));
+            if (ImGui::Button(cd->name.c_str())) {
                 //selectedEntity = id.object();
             }
             ImGui::PopStyleColor();
             ImGui::PopStyleVar(2);
 
-            ImGui::TableNextColumn();
-//            if (id.has_role()) {
-  //              ImGui::TextUnformatted(id.role_str());
-    //        }
+            //            ImGui::TableNextColumn();
+            //            if (id.has_role()) {
+            //              ImGui::TextUnformatted(id.role_str());
+            //        }
 
-            ImGui::TableNextColumn();
-//            if (id.is_pair()) {
-  //              ImGui::TextUnformatted(id.relation().name());
-    //        }
+            //            ImGui::TableNextColumn();
+            //            if (id.is_pair()) {
+            //              ImGui::TextUnformatted(id.relation().name());
+            //        }
 
             ImGui::TableNextColumn();
             if (world->has<ComponentGui>(c)) {
@@ -133,25 +136,24 @@ namespace RxEngine
 
                 for (auto it: *world) {
 
-                    
 
-                    
                     //table_index++;
                     //if (labels[selected_index] == table_type.str().c_str()) {
-//                    if (it.count() > 0) {
-                        ecsInspectorShowTableDetails(selectedEntity, world->getTableForArchetype(it.id));
-  //                  }
+                    //                    if (it.count() > 0) {
+                    ecsInspectorShowTableDetails(selectedEntity,
+                                                 world->getTableForArchetype(it.id));
+                    //                  }
                 }
                 ImGui::EndTable();
             }
 
-            if (ImGui::BeginTable("FocusedEntity", 4,
+            if (ImGui::BeginTable("FocusedEntity", 2,
                                   ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuterH |
                                   ImGuiTableFlags_Resizable | ImGuiWindowFlags_NoBackground |
                                   ImGuiTableFlags_NoBordersInBody)) {
                 ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
-                ImGui::TableSetupColumn("Role", ImGuiTableColumnFlags_NoHide);
-                ImGui::TableSetupColumn("Relation", ImGuiTableColumnFlags_NoHide);
+                //                ImGui::TableSetupColumn("Role", ImGuiTableColumnFlags_NoHide);
+                //ImGui::TableSetupColumn("Relation", ImGuiTableColumnFlags_NoHide);
                 ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_NoHide);
                 ImGui::TableHeadersRow();
 
@@ -169,13 +171,14 @@ namespace RxEngine
                         type = "Prefab";
                     }
 
-                    bool open = ImGui::TreeNodeEx(entity.description().c_str(), ImGuiTreeNodeFlags_SpanFullWidth,
+                    bool open = ImGui::TreeNodeEx(entity.description().c_str(),
+                                                  ImGuiTreeNodeFlags_SpanFullWidth,
                                                   "%s (%s) #%lld", type.c_str(),
                                                   entity.description().c_str(),
                                                   entity.id);
                     ImGui::TableNextColumn();
-                    ImGui::TableNextColumn();
-                    ImGui::TableNextColumn();
+                    //                    ImGui::TableNextColumn();
+                    //                  ImGui::TableNextColumn();
 
                     if (open) {
                         ecsInspectorIsAEntity(entity, selectedEntity);
@@ -191,7 +194,7 @@ namespace RxEngine
 
         if (is_open != show_entity_window) {
             show_entity_window = is_open;
-            
+
             setBoolConfigValue("editor", "ecsEntityWindow", show_entity_window);
         }
     }
@@ -287,6 +290,190 @@ namespace RxEngine
             if (is_open != show_systems_window) {
                 show_systems_window = is_open;
                 setBoolConfigValue("editor", "ecsSystemsWindow", show_systems_window);
+            }
+        }
+    }
+
+    void EngineMain::ecsNameGui(ecs::EntityHandle e)
+    {
+        auto name = e.get<ecs::Name>();
+        if (name) {
+            if (ImGui::BeginTable("ComponentGui", 2, /*ImGuiTableFlags_Borders | */
+                                  ImGuiTableFlags_Resizable |
+                                  ImGuiTableFlags_Hideable)) {
+                ImGui::TableSetupColumn("Name");
+                ImGui::TableSetupColumn("Value");
+                //ImGui::TableHeadersRow();
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::Text("Name");
+                ImGui::TableNextColumn();
+                ImGui::Text(name->name.c_str());
+
+                ImGui::EndTable();
+            }
+        }
+    }
+
+    void EngineMain::ecsSystemGroupGui(ecs::EntityHandle e)
+    {
+        auto group = e.get<ecs::SystemGroup>();
+        if (group) {
+            if (ImGui::BeginTable("ComponentGui", 2, /*ImGuiTableFlags_Borders | */
+                                  ImGuiTableFlags_Resizable |
+                                  ImGuiTableFlags_Hideable)) {
+                ImGui::TableSetupColumn("Name");
+                ImGui::TableSetupColumn("Value");
+                //ImGui::TableHeadersRow();
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::Text("Sequence");
+                ImGui::TableNextColumn();
+                ImGui::Text("%d", group->sequence);
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::Text("Fixed");
+                ImGui::TableNextColumn();
+                ImGui::Text("%s", group->fixed ? "True" : "False");
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::Text("Delta");
+                ImGui::TableNextColumn();
+                ImGui::Text("%.3f", group->delta);
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::Text("Rate");
+                ImGui::TableNextColumn();
+                ImGui::Text("%.3f", group->rate);
+
+                ImGui::EndTable();
+            }
+        }
+    }
+
+    void EngineMain::ecsWindowDetailsGui(ecs::EntityHandle e)
+    {
+        auto comp = e.get<WindowDetails>();
+        if (comp) {
+            if (ImGui::BeginTable("ComponentGui", 2, /*ImGuiTableFlags_Borders | */
+                                  ImGuiTableFlags_Resizable |
+                                  ImGuiTableFlags_Hideable)) {
+                ImGui::TableSetupColumn("Name");
+                ImGui::TableSetupColumn("Value");
+                //ImGui::TableHeadersRow();
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::Text("Width");
+                ImGui::TableNextColumn();
+                ImGui::Text("%d", comp->width);
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::Text("Height");
+                ImGui::TableNextColumn();
+                ImGui::Text("%d", comp->height);
+
+                ImGui::EndTable();
+            }
+        }
+    }
+
+    void EngineMain::ecsEngineTimeGui(ecs::EntityHandle e)
+    {
+        auto comp = e.get<EngineTime>();
+        if (comp) {
+            if (ImGui::BeginTable("ComponentGui", 2, /*ImGuiTableFlags_Borders | */
+                                  ImGuiTableFlags_Resizable |
+                                  ImGuiTableFlags_Hideable)) {
+                ImGui::TableSetupColumn("Name");
+                ImGui::TableSetupColumn("Value");
+                //ImGui::TableHeadersRow();
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::Text("Delta");
+                ImGui::TableNextColumn();
+                ImGui::Text("%.3f", comp->delta);
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::Text("Total");
+                ImGui::TableNextColumn();
+                ImGui::Text("%.3f", comp->totalElapsed);
+
+                ImGui::EndTable();
+            }
+        }
+    }
+
+    void EngineMain::ecsSystemGui(ecs::EntityHandle e)
+    {
+        auto comp = e.get<ecs::System>();
+        if (comp) {
+            if (ImGui::BeginTable("ComponentGui", 2, /*ImGuiTableFlags_Borders | */
+                                  ImGuiTableFlags_Resizable |
+                                  ImGuiTableFlags_Hideable)) {
+                ImGui::TableSetupColumn("Name");
+                ImGui::TableSetupColumn("Value");
+                //ImGui::TableHeadersRow();
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::Text("Type");
+                ImGui::TableNextColumn();
+                ImGui::Text("%s", comp->query ? "Query" : (comp->stream ? "Stream" : "Execute"));
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::Text("Group");
+                ImGui::TableNextColumn();
+                ImGui::Text("%s", e.world->description(comp->groupId).c_str());
+
+                if (comp->stream) {
+                    ImGui::TableNextRow();
+                    ImGui::TableNextColumn();
+                    ImGui::Text("Stream");
+                    ImGui::TableNextColumn();
+                    ImGui::Text("%s", e.world->description(comp->stream).c_str());
+                }
+
+                if (comp->query) {
+                    ImGui::TableNextRow();
+                    ImGui::TableNextColumn();
+                    ImGui::Text("Query");
+                    ImGui::TableNextColumn();
+                    ImGui::Text("%s", e.world->description(comp->query).c_str());
+                }
+
+                ImGui::EndTable();
+            }
+        }
+    }
+
+    void EngineMain::ecsStreamComponentGui(ecs::EntityHandle e)
+    {
+        auto comp = e.get<ecs::StreamComponent>();
+        if (comp) {
+            if (ImGui::BeginTable("ComponentGui", 2, /*ImGuiTableFlags_Borders | */
+                                  ImGuiTableFlags_Resizable |
+                                  ImGuiTableFlags_Hideable)) {
+                ImGui::TableSetupColumn("Name");
+                ImGui::TableSetupColumn("Value");
+                //ImGui::TableHeadersRow();
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::Text("Count");
+                ImGui::TableNextColumn();
+                ImGui::Text("%d", comp->ptr->column->count);
+
+                ImGui::EndTable();
             }
         }
     }
