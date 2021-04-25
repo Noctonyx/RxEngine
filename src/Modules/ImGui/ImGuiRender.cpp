@@ -6,17 +6,13 @@
 #include <imgui.h>
 #include <memory>
 #include "ImGuiRender.hpp"
-#include "Loader.h"
+#include "RxCore.h"
 #include "Window.hpp"
-#include "Vulkan/DescriptorPool.hpp"
 #include "Input/Mouse.hpp"
 #include "Input/Keyboard.hpp"
 #include "Scene.h"
 #include "AssetException.h"
 #include "Vfs.h"
-#include "Window.hpp"
-#include "Vulkan/CommandBuffer.hpp"
-#include "Vulkan/Pipeline.h"
 
 namespace RxEngine
 {
@@ -34,37 +30,9 @@ namespace RxEngine
     IMGuiRender::~IMGuiRender()
     {
         fontImage_.reset();
-        set0.reset();
+        set0_.reset();
     }
-
-    void IMGuiRender::createPipelineLayout()
-    {
-        const std::vector<vk::DescriptorSetLayoutBinding> binding = {
-            {
-                0, vk::DescriptorType::eCombinedImageSampler,
-                1, vk::ShaderStageFlagBits::eFragment
-            }
-        };
-
-        dsl0 = RxCore::iVulkan()->createDescriptorSetLayout({{}, binding});
-
-        vk::PipelineLayoutCreateInfo plci{};
-        std::vector<vk::DescriptorSetLayout> dsls{dsl0};
-
-        std::vector<vk::PushConstantRange> pcr = {
-            {
-                vk::ShaderStageFlagBits::eVertex,
-                static_cast<uint32_t>(0),
-                static_cast<uint32_t>(16)
-            }
-        };
-
-        plci.setSetLayouts(dsls)
-            .setPushConstantRanges(pcr);
-
-        pipelineLayout = RxCore::iVulkan()->createPipelineLayout(plci);
-    }
-
+    
     void IMGuiRender::startup()
     {
         auto wd = world_->getSingleton<WindowDetails>();
@@ -202,9 +170,7 @@ namespace RxEngine
             CreateFontImage(io);
         }
 
-        createPipelineLayout();
-
-        pipelineEntity = world_->lookup("pipeline/imgui").id;
+        pipeline_ = world_->lookup("pipeline/imgui");
 
         createDescriptorSet();
     }
@@ -280,10 +246,12 @@ namespace RxEngine
 
     void IMGuiRender::createDescriptorSet()
     {
+        auto layout = pipeline_.getRelated<Render::UsesLayout, Render::PipelineLayout>();
+
         auto dp = RxCore::Device::Context()->CreateDescriptorPool(
             {{vk::DescriptorType::eCombinedImageSampler, 1}}, 1);
-        set0 = dp->allocateDescriptorSet(dsl0);
-        //_material->setDescriptorSet(set);
+
+        set0_ = dp->allocateDescriptorSet(layout->dsls[0]);
 
         vk::SamplerCreateInfo sci;
         sci.setMagFilter(vk::Filter::eLinear)
@@ -294,7 +262,8 @@ namespace RxEngine
            .setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
 
         auto sampler = RxCore::iVulkan()->createSampler(sci);
-        set0->updateDescriptor(0, vk::DescriptorType::eCombinedImageSampler, fontImage_, sampler);
+
+        set0_->updateDescriptor(0, vk::DescriptorType::eCombinedImageSampler, fontImage_, sampler);
     }
 
     void IMGuiRender::update(float deltaTime)
@@ -389,18 +358,19 @@ namespace RxEngine
         ImGuiIO & io = ImGui::GetIO();
 
         auto wd = world_->getSingleton<WindowDetails>();
-        //auto pipeline = world_->get<Render::UiPipeline>(world_->get<Render::HasUiPipeline>(pipelineEntity)->entity);
 
         io.DisplaySize = ImVec2(static_cast<float>(wd->width), static_cast<float>(wd->height));
         ImGui::Render();
 
-        auto pipeline = world_->get<Render::UiPipeline>(
-            pipelineEntity);
+        auto pipeline = pipeline_.get<Render::UiPipeline>();
+
         if (!pipeline) {
             return;
         }
         assert(pipeline);
         assert(pipeline->pipeline);
+
+        auto layout = pipeline_.getRelated<Render::UsesLayout, Render::PipelineLayout>();
 
         auto buf = RxCore::JobManager::threadData().getCommandBuffer();
 
@@ -414,12 +384,12 @@ namespace RxEngine
 
         buf->begin(pipeline->renderPass, pipeline->subPass);
         {
-            buf->useLayout(pipelineLayout);
+            buf->useLayout(layout->layout);
             OPTICK_GPU_CONTEXT(buf->Handle());
             OPTICK_GPU_EVENT("Draw IMGui");
-            //auto pipel = _material->GetPipeline(RXCore::RenderSequenceUi);
+
             buf->BindPipeline(pipeline->pipeline->Handle());
-            buf->BindDescriptorSet(0, set0);
+            buf->BindDescriptorSet(0, set0_);
             struct
             {
                 DirectX::XMFLOAT2 scale;
@@ -472,7 +442,8 @@ namespace RxEngine
         }
         buf->end();
 
-        world_->getStream<Render::UiRenderCommand>()->add<Render::UiRenderCommand>({buf});
+        world_->getStream<Render::UiRenderCommand>()
+              ->add<Render::UiRenderCommand>({buf});
     }
 
     void IMGuiRender::updateGui()

@@ -368,7 +368,7 @@ namespace RxEngine
 #endif
         }
 
-        std::vector<ShadowCascade> cascades;
+        //std::vector<ShadowCascade> cascades;
         {
 #if 0
             if (lightingManager_) {

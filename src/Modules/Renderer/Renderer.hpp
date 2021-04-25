@@ -3,19 +3,20 @@
 #include <vector>
 #include <memory>
 #include <optional>
-#include "RenderData.h"
+#include "Rendering/RenderData.h"
 #include <Jobs/JobManager.hpp>
-#include "ILightingManager.h"
-#include "MaterialManager.h"
-#include "EntityManager.h"
+//#include "ILightingManager.h"
+//#include "MaterialManager.h"
+//#include "EntityManager.h"
 #include "Vulkan/DescriptorSet.hpp"
 #include "Vulkan/DeviceObject.h"
-#include "MeshBundle.h"
-#include "RenderCamera.h"
+#include "Rendering/MeshBundle.h"
+#include "Rendering/RenderCamera.h"
 #include "DirectXCollision.h"
 #include "RxECS.h"
 #include "Modules/Module.h"
 #include "Modules/Render.h"
+#include "RxECS.h"
 
 #define NUM_CASCADES 4
 
@@ -122,7 +123,7 @@ namespace RxEngine
 
     struct IndirectDrawCommandHeader
     {
-        MaterialPipelineId pipelineId;
+        ecs::entity_t pipelineId;
         MeshBundle * bundle;
         uint32_t commandStart;
         uint32_t commandCount;

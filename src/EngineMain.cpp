@@ -8,12 +8,14 @@
 #include "Modules/Render.h"
 #include "EngineMain.hpp"
 #include "Scene.h"
-#include "Vulkan/Surface.hpp"
-#include "Rendering/Renderer.hpp"
+#include "RxCore.h"
+#include "RxECS.h"
+#include "Modules/Renderer/Renderer.hpp"
 
 #include "Modules/Module.h"
 #include "Modules/ImGui/ImGuiRender.hpp"
 #include "Modules/Stats/Stats.h"
+#include "Modules/Transforms/Transforms.h"
 
 //#include <sol/sol.hpp>
 
@@ -68,6 +70,7 @@ namespace RxEngine
         modules.push_back(std::make_shared<Renderer>(device_->VkDevice(), world.get(),
                                                      swapChain_->imageFormat(), this));
         modules.push_back((std::make_shared<IMGuiRender>(world.get(), this)));
+        modules.push_back((std::make_shared<TransformsModule>(world.get(), this)));
         modules.push_back((std::make_shared<StatsModule>(world.get(), this)));
 
         for (auto & m: modules) {

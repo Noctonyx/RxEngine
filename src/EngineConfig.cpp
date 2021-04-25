@@ -421,6 +421,8 @@ namespace RxEngine
         std::vector<vk::DescriptorSetLayout> dsls{};
         std::vector<vk::PushConstantRange> pcr{};
 
+        Render::PipelineLayout pll;
+
         sol::table dsLayouts = layout["ds_layouts"];
         for (auto & [dsLayoutKey, dsLayoutValue]: dsLayouts) {
             sol::table dsLayoutData = dsLayoutValue;
@@ -449,6 +451,7 @@ namespace RxEngine
             }
 
             auto dsl = device->createDescriptorSetLayout({{}, binding});
+            pll.dsls.push_back(dsl);
             dsls.push_back(dsl);
         }
 
@@ -468,8 +471,9 @@ namespace RxEngine
 
         auto l = device->createPipelineLayout(plci);
 
+        pll.layout = l;
         world->newEntity(name.c_str())
-             .set<Render::PipelineLayout>({.layout= l});
+             .set<Render::PipelineLayout>(pll);
     }
 
     void loadLayouts(ecs::World * world, RxCore::Device * device, sol::table & layouts)

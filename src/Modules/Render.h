@@ -70,6 +70,7 @@ namespace RxEngine
         struct PipelineLayout
         {
             vk::PipelineLayout layout;
+            std::vector<vk::DescriptorSetLayout> dsls;
         };
 
         struct UsesFragmentShader : ecs::Relation {};

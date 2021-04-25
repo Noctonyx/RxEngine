@@ -42,9 +42,10 @@ namespace RxEngine
     class TransformsModule: public Module
     {
     public:
+        TransformsModule(ecs::World * world, EngineMain * engine)
+            : Module(world, engine) {}
+
         void registerModule() override;
-        void enable() override;
-        void disable() override;
         void deregisterModule() override;
 
     private:

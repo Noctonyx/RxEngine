@@ -6,6 +6,7 @@
 
 namespace RxEngine
 {
+#if 0
     class Scene;
     class Camera;
     class RenderCamera;
@@ -29,4 +30,5 @@ namespace RxEngine
     private:
         std::shared_ptr<Camera> camera_;
     };
+#endif
 }

@@ -5,6 +5,7 @@
 
 namespace RxEngine
 {
+#if 0
     void SceneCamera::UpdateGui()
     {
         OPTICK_EVENT()
@@ -121,5 +122,6 @@ namespace RxEngine
             sizeof(CameraShaderData), static_cast<uint32_t>( ix * bufferAlignment));
         //offsets.push_back(static_cast<uint32_t>( ix * bufferAlignment));
     }
+#endif
 #endif
 }

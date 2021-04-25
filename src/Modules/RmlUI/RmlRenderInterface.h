@@ -14,13 +14,17 @@
 #include "DirectXMath.h"
 #include "Vulkan/Vulk.hpp"
 #include <RmlUi/Core/RenderInterface.h>
-#include "Rendering/Renderer.hpp"
+//#include "Rendering/Renderer.hpp"
+#include "Vulkan/DescriptorPool.hpp"
 
 namespace RxCore
 {
     class Image;
     class ImageView;
     class Buffer;
+    class VertexBuffer;
+    class IndexBuffer;
+    struct DescriptorPoolTemplate;
 }
 
 namespace RxEngine

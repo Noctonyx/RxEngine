@@ -6,7 +6,7 @@
 #include "Vulkan/DescriptorSet.hpp"
 #include "Geometry/Camera.hpp"
 #include "Pooler.h"
-#include "Rendering/Renderer.hpp"
+//#include "Rendering/Renderer.hpp"
 
 namespace RxCore
 {

@@ -9,7 +9,7 @@
 #include <memory>
 #include <chrono>
 #include <RXCore.h>
-#include "Rendering/Renderer.hpp"
+#include "Modules/Renderer/Renderer.hpp"
 //#include <Rendering/EntityManager.h>
 
 #include "Delegates.hpp"

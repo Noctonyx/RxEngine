@@ -53,8 +53,8 @@ add_library(RxEngine STATIC
         src/Rendering/RenderMesh.h
         src/Rendering/Mesh.cpp
         src/Rendering/Mesh.hpp
-        src/Rendering/Renderer.hpp
-        src/Rendering/Renderer.cpp
+        "src/Modules/Renderer/Renderer.hpp"
+        "src/Modules/Renderer/Renderer.cpp"
         src/Rendering/RenderData.h
         src/Subsystems/SceneCamera.h
         src/Subsystems/SceneCamera.cpp

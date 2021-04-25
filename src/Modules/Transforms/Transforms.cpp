@@ -14,14 +14,6 @@ namespace RxEngine
                                  {.editor = scalarScaleGui});
     }
 
-    void TransformsModule::enable()
-    {
-    }
-
-    void TransformsModule::disable()
-    {
-    }
-
     void TransformsModule::deregisterModule()
     {
         world_->remove<ComponentGui>(world_->getComponentId<WorldPosition>());

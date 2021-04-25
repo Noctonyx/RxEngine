@@ -6,11 +6,12 @@
 #define AMX_SUBSYSTEM_HPP
 #include <optional>
 //#include "Scene.h"
-#include "Vulkan/CommandBuffer.hpp"
+//#include "Vulkan/CommandBuffer.hpp"
 //#include "Rendering/Renderer.hpp"
 
 namespace RxEngine
 {
+#if 0
     class Scene;
     class Subsystem;
 
@@ -67,6 +68,7 @@ namespace RxEngine
 
         Scene * scene_;
     };
+#endif
 } // namespace RXCore
 
 #endif // AMX_SUBSYSTEM_HPP

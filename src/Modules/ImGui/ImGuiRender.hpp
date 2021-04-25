@@ -2,74 +2,48 @@
 // Created by shane on 3/04/2020.
 //
 
-#ifndef AMX_IMGUIRENDER_HPP
-#define AMX_IMGUIRENDER_HPP
+#pragma once
 
 #include <vector>
 #include <memory>
 #include "Modules/Module.h"
 #include <imgui.h>
-//#include "Delegates.hpp"
 #include "Input/Keyboard.hpp"
-#include "Rendering/Renderer.hpp"
+#include "RxCore.h"
+#include "RxECS.h"
 
 namespace RxEngine
 {
-    class Scene;
-    class Keyboard;
-    class Mouse;
-
     class IMGuiRender : public Module
     {
     public:
         IMGuiRender(ecs::World* world, EngineMain* engine);
-        ~IMGuiRender();
-        void createPipelineLayout();
+        ~IMGuiRender() override;
 
         void startup() override;
         void shutdown() override;
 
-        void SetupInputs(ImGuiIO & io);
-        void CreateFontImage(ImGuiIO & io);
+        void setupInputs(ImGuiIO & io);
+        void createFontImage(ImGuiIO & io);
         void createDescriptorSet();
-        //void rendererInit(Renderer * renderer) override;
         void update(float deltaTime);
         void updateGui();
 
         void createRenderCommands();
 
-        //void Shutdown() override;
-
     protected:
         [[nodiscard]] std::tuple<std::shared_ptr<RxCore::VertexBuffer>, std::shared_ptr<
-                                     RxCore::IndexBuffer>> CreateBuffers() const;
-
-        void createMaterial(vk::RenderPass renderPass);
-
+                                     RxCore::IndexBuffer>> createBuffers() const;
     private:
         std::vector<DelegateHandle> delegates_{};
-        std::shared_ptr<RxCore::Image> fontImage_;
-        //std::shared_ptr<Mouse> mouse_;
-        Window * window_;
-        //std::shared_ptr<Keyboard> keyboard_;
-        //std::shared_ptr<Material> _material;
+        std::shared_ptr<RxCore::Image> fontImage_{};
 
-        vk::DescriptorSetLayout dsl0;
-        vk::PipelineLayout pipelineLayout;
-        std::shared_ptr<RxCore::DescriptorSet> set0;
-        //std::shared_ptr<RxCore::Pipeline> pipeline;
-        ecs::entity_t pipelineEntity{};
+        Window * window_{};
 
-        bool show_demo_window = true;
-        bool show_another_window = true;
+        std::shared_ptr<RxCore::DescriptorSet> set0_;
+        ecs::EntityHandle pipeline_;
 
-#if 0
-        std::shared_ptr<RXCore::PipelineLayout> CreatePipelineLayout();
-
-        std::shared_ptr<RXCore::Pipeline> createPipeline(
-            std::shared_ptr<RXCore::PipelineLayout> layout,
-            const std::shared_ptr<RXCore::RenderPass> & renderPass);
-#endif
+        bool showDemoWindow_ = true;
+        bool showAnotherWindow_ = true;
     };
 }
-#endif // AMX_IMGUIRENDER_HPP
