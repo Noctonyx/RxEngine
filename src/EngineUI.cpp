@@ -397,15 +397,15 @@ namespace RxEngine
 
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
-                ImGui::Text("Delta");
+                ImGui::Text("Delta (ms)");
                 ImGui::TableNextColumn();
-                ImGui::Text("%.3f", comp->delta);
+                ImGui::Text("%.3f", comp->delta * 1000.0f);
 
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
-                ImGui::Text("Total");
+                ImGui::Text("Total (s)");
                 ImGui::TableNextColumn();
-                ImGui::Text("%.3f", comp->totalElapsed);
+                ImGui::Text("%.1f", comp->totalElapsed);
 
                 ImGui::EndTable();
             }
@@ -434,6 +434,12 @@ namespace RxEngine
                 ImGui::Text("Group");
                 ImGui::TableNextColumn();
                 ImGui::Text("%s", e.world->description(comp->groupId).c_str());
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::Text("Thread");
+                ImGui::TableNextColumn();
+                ImGui::Text("%s", comp->thread ? "True" : "False");
 
                 if (comp->stream) {
                     ImGui::TableNextRow();

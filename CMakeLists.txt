@@ -40,10 +40,10 @@ add_library(RxEngine STATIC
         src/EngineMain.cpp
         src/Delegates.hpp
         src/Delegates.cpp
-        src/Input/Keyboard.cpp
-        src/Input/Keyboard.hpp
-        src/Input/Mouse.cpp
-        src/Input/Mouse.hpp
+        
+        
+        
+        
         src/Window.cpp
         src/Window.hpp
         src/Scene.h
@@ -64,8 +64,8 @@ add_library(RxEngine STATIC
         src/Subsystems/Lighting.h
         src/Subsystems/Lighting.cpp
         src/Geometry/Camera.hpp
-        src/ImGui/ImGuiPipelineLayout.cpp
-        src/ImGui/ImGuiPipelineLayout.h
+        
+        
         src/Rendering/ILightingManager.h
         "src/Modules/RmlUI/RmlSystemInterface.cpp"
         "src/Modules/RmlUI/RmlSystemInterface.h"
