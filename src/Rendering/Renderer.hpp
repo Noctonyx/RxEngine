@@ -155,6 +155,12 @@ namespace RxEngine
         vk::Semaphore finishRenderSemaphore;
     };
 
+
+    struct UiCommandBuffer
+    {
+        std::shared_ptr<RxCore::SecondaryCommandBuffer> buf;
+    };
+
     struct IRenderProvider
     {
     public:
@@ -299,6 +305,7 @@ namespace RxEngine
         vk::Pipeline createUiMaterialPipeline(const Render::MaterialPipelineDetails * mpd,
                                               const Render::FragmentShader * frag,
                                               const Render::VertexShader * vert,
+                                              vk::PipelineLayout layout,
                                               vk::RenderPass rp,
                                               uint32_t subpass);
     public:

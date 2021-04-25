@@ -139,6 +139,7 @@ namespace RxEngine
              .execute([](ecs::World * world)
              {
                  RxCore::JobManager::instance().clean();
+                 RxCore::JobManager::threadData().freeAllResources();
              });
     }
 

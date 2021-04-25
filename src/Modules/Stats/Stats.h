@@ -10,16 +10,16 @@ namespace RxEngine
 {
     class EngineMain;
 
-    class StatsModule: public Module
+    class StatsModule : public Module
     {
         ecs::entity_t systemSet_;
 
-        float delta_;
-        float fps_;
-        std::deque<float> fpsHistory_;
-        std::deque<float> gpuHistory_;
+        float delta_ = 0.f;
+        float fps_ = 0.f;
+        std::deque<float> fpsHistory_{};
+        std::deque<float> gpuHistory_{};
 
-        std::vector<RxCore::MemHeapStatus> heaps_;
+        std::vector<RxCore::MemHeapStatus> heaps_{};
 
     public:
         StatsModule(ecs::World * world, EngineMain * engine)

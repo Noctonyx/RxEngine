@@ -390,6 +390,99 @@ namespace RxEngine
         }
     }
 
+    vk::ShaderStageFlags getStageFlags(const std::string & stage)
+    {
+        if (stage == "both") {
+           return  vk::ShaderStageFlagBits::eFragment |
+                vk::ShaderStageFlagBits::eVertex;
+        }
+        else if (stage == "vert") {
+            return vk::ShaderStageFlagBits::eVertex;
+        }
+        else if (stage == "frag") {
+            return vk::ShaderStageFlagBits::eFragment;
+        }
+        else {
+            throw std::runtime_error(
+                R"(Invalid value for stage - valid values: "both", "frag", "vert")");
+        }
+
+        //return {};
+    }
+
+    void loadLayout(ecs::World * world,
+                    RxCore::Device * device,
+                    const std::string & name,
+                    sol::table & layout)
+    {
+        //Render::PipelineLayoutDetails pld;
+
+        vk::PipelineLayoutCreateInfo plci{};
+        std::vector<vk::DescriptorSetLayout> dsls{};
+        std::vector<vk::PushConstantRange> pcr{};
+
+        sol::table dsLayouts = layout["ds_layouts"];
+        for (auto & [dsLayoutKey, dsLayoutValue]: dsLayouts) {
+            sol::table dsLayoutData = dsLayoutValue;
+
+            std::vector<vk::DescriptorSetLayoutBinding> binding = {};
+
+            sol::table bindings = dsLayoutData["bindings"];
+            for (auto & [bindingKey, bindingValue]: bindings) {
+                sol::table bindingData = bindingValue;
+                auto & b = binding.emplace_back();
+
+                b.binding = bindingData.get<uint32_t>("binding");
+                b.descriptorCount = bindingData.get_or<uint32_t>("count", 1);
+
+                std::string stage = bindingData.get_or("stage", std::string{"both"});
+                std::string type = bindingData.get_or("type", std::string{"combined-sampler"});
+                b.stageFlags = getStageFlags(stage);
+
+                if (type == "combined-sampler") {
+                    b.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+                }
+                else {
+                    throw std::runtime_error(
+                        R"(Invalid value for stage - valid values: "combined-sampler")");
+                }
+            }
+
+            auto dsl = device->createDescriptorSetLayout({{}, binding});
+            dsls.push_back(dsl);
+        }
+
+        sol::table pushConstants = layout["push_constants"];
+        for (auto& [pcKey, pcValue] : pushConstants) {
+            sol::table pcData = pcValue;
+
+            auto& p = pcr.emplace_back();
+            std::string stage = pcData.get_or("stage", std::string{ "both" });
+            p.stageFlags = getStageFlags(stage);
+            p.offset = pcData.get<uint32_t>("offset");
+            p.size = pcData.get<uint32_t>("size");
+        }
+
+        plci.setSetLayouts(dsls)
+            .setPushConstantRanges(pcr);
+
+        auto l = device->createPipelineLayout(plci);
+
+        world->newEntity(name.c_str())
+             .set<Render::PipelineLayout>({.layout= l});
+    }
+
+    void loadLayouts(ecs::World * world, RxCore::Device * device, sol::table & layouts)
+    {
+        for (auto & [key, value]: layouts) {
+            auto layoutName = key.as<std::string>();
+
+            sol::table details = value;
+
+            loadLayout(world, device, layoutName, details);
+        }
+    }
+
     void loadPipeline(ecs::World * world,
                       RxCore::Device * device,
                       const std::string & name,
@@ -397,6 +490,7 @@ namespace RxEngine
     {
         const std::string vs_name = pipeline["vertexShader"];
         const std::string fs_name = pipeline["fragmentShader"];
+        const std::string layout_name = pipeline["layout"];
 
         Render::MaterialPipelineDetails mpd;
 
@@ -413,10 +507,18 @@ namespace RxEngine
             spdlog::critical("Missing shader for pipeline {}", name.c_str());
             throw RxAssets::AssetException("missing shader:", fs_name);
         }
+
+        auto lay = world->lookup(layout_name.c_str());
+        if (!lay.isAlive() || !lay.has<Render::PipelineLayout>()) {
+            spdlog::critical("Missing layout for pipeline {}", name.c_str());
+            throw RxAssets::AssetException("missing shader:", layout_name);
+        }
+
         world->newEntity(name.c_str())
              .set<Render::MaterialPipelineDetails>({mpd})
              .set<Render::UsesVertexShader>({{vse.id}})
-             .set<Render::UsesFragmentShader>({{fse.id}});
+             .set<Render::UsesFragmentShader>({{fse.id}})
+             .set<Render::UsesLayout>({{lay.id}});
     }
 
     void loadPipelines(ecs::World * world, RxCore::Device * device, sol::table & pipelines)
@@ -651,7 +753,7 @@ namespace RxEngine
             if (!mpd || mpd->stage != RxAssets::PipelineRenderStage::Opaque) {
                 throw RxAssets::AssetException("Not a valid opaquePipeline:", name);
             }
-            e.set<Render::HasOpaquePipeline>({ {eop.id} });
+            e.set<Render::HasOpaquePipeline>({{eop.id}});
         }
 
         if (shadowPipeline.has_value()) {
@@ -661,7 +763,7 @@ namespace RxEngine
             if (!mpd || mpd->stage != RxAssets::PipelineRenderStage::Shadow) {
                 throw RxAssets::AssetException("Not a valid shadowPipeline:", name);
             }
-            e.set<Render::HasShadowPipeline>({ {eop.id} });
+            e.set<Render::HasShadowPipeline>({{eop.id}});
         }
 
         if (transparentPipeline.has_value()) {
@@ -671,7 +773,7 @@ namespace RxEngine
             if (!mpd || mpd->stage != RxAssets::PipelineRenderStage::Transparent) {
                 throw RxAssets::AssetException("Not a valid transparentPipeline:", name);
             }
-            e.set<Render::HasTransparentPipeline>({ {eop.id} });
+            e.set<Render::HasTransparentPipeline>({{eop.id}});
         }
 
         if (uiPipeline.has_value()) {
@@ -681,7 +783,7 @@ namespace RxEngine
             if (!mpd || mpd->stage != RxAssets::PipelineRenderStage::UI) {
                 throw RxAssets::AssetException("Not a valid uiPipeline:", name);
             }
-            e.set<Render::HasUiPipeline>({ {eop.id} });
+            e.set<Render::HasUiPipeline>({{eop.id}});
         }
 
         sol::table t = material["textures"];
@@ -717,11 +819,13 @@ namespace RxEngine
     void EngineMain::populateStartupData()
     {
         sol::table shaders = lua["data"]["shaders"];
+        sol::table layouts = lua["data"]["pipeline_layouts"];
         sol::table textures = lua["data"]["textures"];
         sol::table pipelines = lua["data"]["material_pipelines"];
         sol::table materials = lua["data"]["materials"];
 
         loadShaderData(world.get(), device_.get(), shaders);
+        loadLayouts(world.get(), device_.get(), layouts);
         loadPipelines(world.get(), device_.get(), pipelines);
         loadTextures(world.get(), device_.get(), textures);
         loadMaterials(world.get(), device_.get(), materials);

@@ -67,9 +67,15 @@ namespace RxEngine
             std::string shaderAssetName{};
         };
 
+        struct PipelineLayout
+        {
+            vk::PipelineLayout layout;
+        };
+
         struct UsesFragmentShader : ecs::Relation {};
 
         struct UsesVertexShader : ecs::Relation {};
+        struct UsesLayout : ecs::Relation {};
 
         struct HasOpaquePipeline : ecs::Relation { };
         struct HasShadowPipeline : ecs::Relation { };

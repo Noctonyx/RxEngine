@@ -109,6 +109,13 @@ namespace RxEngine
 
         glfwSetFramebufferSizeCallback(m_Window, &FrameBufferResizeCallback);
 
+        glfwSetCursorPosCallback(GetWindow(), callbackCursorPos);
+        glfwSetMouseButtonCallback(GetWindow(), callbackMouseButton);
+        glfwSetScrollCallback(GetWindow(), callbackScroll);
+
+        glfwSetKeyCallback(GetWindow(), callbackKey);
+        glfwSetCharCallback(GetWindow(), callbackChar);
+
         world->setSingleton<WindowDetails>({ .width = width, .height = height });
     }
 

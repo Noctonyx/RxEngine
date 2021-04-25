@@ -9,7 +9,6 @@
 #include "Vulkan/Queue.hpp"
 #include <utility>
 #include "Vulkan/FrameBuffer.h"
-#include "Subsystems/Lighting.h"
 #include "robin_hood.h"
 #include "DirectXCollision.h"
 #include "Modules/Render.h"
@@ -112,15 +111,21 @@ namespace RxEngine
               .without<Render::HasPipeline>()
               .withRelation<Render::UsesVertexShader, Render::VertexShader>()
               .withRelation<Render::UsesFragmentShader, Render::FragmentShader>()
-              .each<Render::MaterialPipelineDetails, Render::FragmentShader, Render::VertexShader>(
+              .withRelation<Render::UsesLayout, Render::PipelineLayout>()
+              .each<Render::MaterialPipelineDetails,
+                    Render::FragmentShader,
+                    Render::VertexShader,
+                    Render::PipelineLayout>(
                   [this](ecs::EntityHandle e,
                          const Render::MaterialPipelineDetails * mpd,
                          const Render::FragmentShader * frag,
-                         const Render::VertexShader * vert)
+                         const Render::VertexShader * vert,
+                         const Render::PipelineLayout * pll)
                   {
                       if (vert && frag && mpd) {
                           if (mpd->stage == RxAssets::PipelineRenderStage::UI) {
-                              auto pl = createUiMaterialPipeline(mpd, frag, vert, renderPass_, 0);
+                              auto pl = createUiMaterialPipeline(
+                                  mpd, frag, vert, pll->layout, renderPass_, 0);
                               e.setDeferred<Render::UiPipeline>({
                                   std::make_shared<RxCore::Pipeline>(pl), renderPass_, 0
                               });
@@ -415,6 +420,15 @@ namespace RxEngine
 #endif
 
         auto buf = graphicsCommandPool_->GetPrimaryCommandBuffer();
+
+        world_->getStream<Render::UiRenderCommand>()
+              ->each<Render::UiRenderCommand>(
+                  [&](ecs::World * w, const Render::UiRenderCommand * b)
+                  {
+                      buf->addSecondaryBuffer(b->buf, ERenderSequence::RenderSequenceUi);
+                      return true;
+                  }
+              );
 #if 0
         {
             OPTICK_EVENT("Wait for Render Jobs", Optick::Category::Wait)
@@ -703,17 +717,18 @@ namespace RxEngine
     vk::Pipeline Renderer::createUiMaterialPipeline(const Render::MaterialPipelineDetails * mpd,
                                                     const Render::FragmentShader * frag,
                                                     const Render::VertexShader * vert,
+                                                    vk::PipelineLayout layout,
                                                     vk::RenderPass rp,
                                                     uint32_t subpass)
     {
-        vk::GraphicsPipelineCreateInfo gpci;
-        vk::PipelineDynamicStateCreateInfo pdsci;
-        vk::PipelineColorBlendStateCreateInfo pcbsci;
-        vk::PipelineDepthStencilStateCreateInfo pdssci;
-        vk::PipelineMultisampleStateCreateInfo pmsci;
-        vk::PipelineRasterizationStateCreateInfo prsci;
-        vk::PipelineViewportStateCreateInfo pvsci;
-        vk::PipelineInputAssemblyStateCreateInfo piasci;
+        vk::GraphicsPipelineCreateInfo gpci{};
+        vk::PipelineDynamicStateCreateInfo pdsci{};
+        vk::PipelineColorBlendStateCreateInfo pcbsci{};
+        vk::PipelineDepthStencilStateCreateInfo pdssci{};
+        vk::PipelineMultisampleStateCreateInfo pmsci{};
+        vk::PipelineRasterizationStateCreateInfo prsci{};
+        vk::PipelineViewportStateCreateInfo pvsci{};
+        vk::PipelineInputAssemblyStateCreateInfo piasci{};
         vk::PipelineVertexInputStateCreateInfo pvisci;
         //std::shared_ptr<PipelineLayout> pipelineLayout_;
         std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
@@ -797,7 +812,7 @@ namespace RxEngine
             .setPColorBlendState(&pcbsci)
             .setPVertexInputState(&pvisci)
             .setPDynamicState(&pdsci)
-            .setLayout(pipelineLayout)
+            .setLayout(layout)
             .setStages(shaderStages)
             .setRenderPass(rp)
             .setSubpass(subpass);

@@ -12,8 +12,33 @@ data.shaders = {
     },
 }
 
+data.pipeline_layouts = {
+    ["layout/imgui"] = {
+        ds_layouts = {
+            {
+                bindings = {
+                    {
+                        binding = 0,
+                        stage = "frag",
+                        count = 1,
+                        type = "combined-sampler"
+                     }                    
+                }
+            }
+        },
+        push_constants = {
+            {
+                stage = "vert",
+                offset = 0,
+                size = 16
+            }
+        }
+    }
+};
+
 data.material_pipelines = {
     ["pipeline/imgui"] = {
+        layout = "layout/imgui",
         vertexShader = "shader/imgui_vert",
         fragmentShader = "shader/imgui_frag",
         depthTestEnable = false,

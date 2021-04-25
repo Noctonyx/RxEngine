@@ -394,7 +394,7 @@ namespace RxEngine
         io.DisplaySize = ImVec2(static_cast<float>(wd->width), static_cast<float>(wd->height));
         ImGui::Render();
 
-        auto pipeline = world_->getRelated<Render::HasUiPipeline, Render::UiPipeline>(
+        auto pipeline = world_->get<Render::UiPipeline>(
             pipelineEntity);
         if (!pipeline) {
             return;

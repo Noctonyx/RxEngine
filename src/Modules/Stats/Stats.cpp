@@ -16,8 +16,10 @@ namespace RxEngine
               .withSet(systemSet_)
               .inGroup("Pipeline:Update")
               .after<Update>()
-              .execute([this](ecs::World *)
+              .execute([this](ecs::World * w)
                   {
+                      delta_ = w->deltaTime();
+                      fps_ = fps_ * 0.99f + 0.01f * (1 / delta_);
                       presentStatsUi();
                   }
               );
@@ -56,6 +58,11 @@ namespace RxEngine
         const float DISTANCE = 10.0f;
         auto & io = ImGui::GetIO();
         ImVec2 window_pos = ImVec2(io.DisplaySize.x - 2, 2 * DISTANCE);
+
+        fpsHistory_.push_back(delta_ * 1000.f);
+        while (fpsHistory_.size() > 250) {
+            fpsHistory_.pop_front();
+        }
 
         std::vector<float> fpss;
         std::vector<float> gpus;
