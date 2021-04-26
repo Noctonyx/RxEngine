@@ -68,9 +68,9 @@ void importGltf(importList & importList, nlohmann::json & j, std::string assetId
     }
 }
 #endif
-bool CreateGTLFData(std::string importFile, gltfImport & importData/*, nlohmann::json & options*/)
+bool CreateGTLFData(std::string importFile, gltfImport & importData/*, nlohmann::json & options*/, tinygltf::Model & model)
 {
-    tinygltf::Model model;
+    //tinygltf::Model model;
     tinygltf::TinyGLTF loader;
     std::string err;
     std::string warn;
@@ -97,18 +97,30 @@ bool CreateGTLFData(std::string importFile, gltfImport & importData/*, nlohmann:
 
     bool ret = loader.LoadBinaryFromFile(&model, &err, &warn, importFile);
 
-    if (!warn.empty()) { printf("Warn: %s\n", warn.c_str()); }
-    if (!err.empty()) { printf("Err: %s\n", err.c_str()); }
-    if (!ret) { throw std::exception("Unable to read gltf file"); }
+    if (!warn.empty()) {
+        printf("Warn: %s\n", warn.c_str());
+    }
+    if (!err.empty()) {
+        printf("Err: %s\n", err.c_str());
+    }
+    if (!ret) {
+        throw std::exception("Unable to read gltf file");
+    }
 
-    if (model.meshes.size() != 1) { throw std::exception("There should only be 1 mesh in the file"); }
+    if (model.meshes.size() != 1) {
+        throw std::exception("There should only be 1 mesh in the file");
+    }
 
     //RXAssets::MeshData md;
     //RXAssets::MaterialData mat;
     ///std::vector<std::pair<std::string, RXAssets::ImageData>> ims;
 
-    importData.md.minp = {1e9, 1e9, 1e9};
-    importData.md.maxp = {-1e9, -1e9, -1e9};
+    importData.md.minpx = 1e9;
+    importData.md.minpy = 1e9;
+    importData.md.minpz = 1e9;
+    importData.md.maxpx = -1e9;
+    importData.md.maxpy = -1e9;
+    importData.md.maxpz = -1e9;
 
     auto & mesh = model.meshes[0];
 
@@ -124,35 +136,50 @@ bool CreateGTLFData(std::string importFile, gltfImport & importData/*, nlohmann:
         size_t vertexCount = 0;
 
         if (prim.attributes.find("POSITION") != prim.attributes.end()) {
-            const tinygltf::Accessor & accessor = model.accessors[prim.attributes.find("POSITION")->second];
+            const tinygltf::Accessor & accessor = model.accessors[prim.attributes.find("POSITION")->
+                second];
             const tinygltf::BufferView & view = model.bufferViews[accessor.bufferView];
 
-            positionBuffer = reinterpret_cast<const float *>(&(model.buffers[view.buffer].data[accessor.byteOffset +
-                                                                                               view.byteOffset]));
+            positionBuffer = reinterpret_cast<const float *>(&(model.buffers[view.buffer].data[
+                accessor.byteOffset +
+                view.byteOffset]));
             vertexCount = accessor.count;
         }
         if (prim.attributes.find("NORMAL") != prim.attributes.end()) {
-            const tinygltf::Accessor & accessor = model.accessors[prim.attributes.find("NORMAL")->second];
+            const tinygltf::Accessor & accessor = model.accessors[prim.attributes.find("NORMAL")->
+                second];
             const tinygltf::BufferView & view = model.bufferViews[accessor.bufferView];
 
-            normalsBuffer = reinterpret_cast<const float *>(&(model.buffers[view.buffer].data[accessor.byteOffset +
-                                                                                              view.byteOffset]));
+            normalsBuffer = reinterpret_cast<const float *>(&(model.buffers[view.buffer].data[
+                accessor.byteOffset +
+                view.byteOffset]));
         }
         if (prim.attributes.find("TEXCOORD_0") != prim.attributes.end()) {
-            const tinygltf::Accessor & accessor = model.accessors[prim.attributes.find("TEXCOORD_0")->second];
+            const tinygltf::Accessor & accessor = model.accessors[prim.attributes.find("TEXCOORD_0")
+                ->second];
             const tinygltf::BufferView & view = model.bufferViews[accessor.bufferView];
 
-            texCoordsBuffer = reinterpret_cast<const float *>(&(model.buffers[view.buffer].data[accessor.byteOffset +
-                                                                                                view.byteOffset]));
+            texCoordsBuffer = reinterpret_cast<const float *>(&(model.buffers[view.buffer].data[
+                accessor.byteOffset +
+                view.byteOffset]));
         }
 
         for (size_t v = 0; v < vertexCount; v++) {
-            RxAssets::MeshData::Vertex vert{};
-            vert.vertex = DirectX::XMFLOAT3(&positionBuffer[v * 3]);
-            vert.normal = DirectX::XMFLOAT3(&normalsBuffer[v * 3]);
+            RxAssets::MeshSaveVertex vert{};
+            vert.x = positionBuffer[v * 3];
+            vert.y = positionBuffer[v * 3 + 1];
+            vert.z = positionBuffer[v * 3 + 2];
+            //vert.vertex = DirectX::XMFLOAT3(&positionBuffer[v * 3]);
+            //vert.normal = DirectX::XMFLOAT3(&normalsBuffer[v * 3]);
+            vert.nx = normalsBuffer[v * 3];
+            vert.ny = normalsBuffer[v * 3 + 1];
+            vert.nz = normalsBuffer[v * 3 + 2];
+
             //auto n = DirectX::XMLoadFloat3(&vert.normal);
-            DirectX::XMStoreFloat3(&vert.normal, DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(&vert.normal)));
-            vert.uvs =  texCoordsBuffer ? DirectX::XMFLOAT2(&texCoordsBuffer[v * 2]) : DirectX::XMFLOAT2{0.f, 0.f};
+            //DirectX::XMStoreFloat3(&vert.normal, DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(&vert.normal)));
+            //vert.uvs =  texCoordsBuffer ? DirectX::XMFLOAT2(&texCoordsBuffer[v * 2]) : DirectX::XMFLOAT2{0.f, 0.f};
+            vert.uvx = texCoordsBuffer[v * 2];
+            vert.uvy = texCoordsBuffer[v * 2 + 1];
 #if 0
             //vert.vertex
             vert.vertex = glm::vec4(glm::make_vec3(&positionBuffer[v * 3]), 1.0f);
@@ -161,12 +188,24 @@ bool CreateGTLFData(std::string importFile, gltfImport & importData/*, nlohmann:
             vert.uvs = texCoordsBuffer ? glm::make_vec2(&texCoordsBuffer[v * 2]) : glm::vec3(0.0f);
 #endif
             importData.md.vertices.push_back(vert);
-            if (vert.vertex.x < importData.md.minp.x) { importData.md.minp.x = vert.vertex.x; }
-            if (vert.vertex.y < importData.md.minp.y) { importData.md.minp.y = vert.vertex.y; }
-            if (vert.vertex.z < importData.md.minp.z) { importData.md.minp.z = vert.vertex.z; }
-            if (vert.vertex.x > importData.md.maxp.x) { importData.md.maxp.x = vert.vertex.x; }
-            if (vert.vertex.y > importData.md.maxp.y) { importData.md.maxp.y = vert.vertex.y; }
-            if (vert.vertex.z > importData.md.maxp.z) { importData.md.maxp.z = vert.vertex.z; }
+            if (vert.x < importData.md.minpx) {
+                importData.md.minpx = vert.x;
+            }
+            if (vert.y < importData.md.minpy) {
+                importData.md.minpy = vert.y;
+            }
+            if (vert.z < importData.md.minpz) {
+                importData.md.minpz = vert.z;
+            }
+            if (vert.x > importData.md.maxpx) {
+                importData.md.maxpx = vert.x;
+            }
+            if (vert.y > importData.md.maxpy) {
+                importData.md.maxpy = vert.y;
+            }
+            if (vert.z > importData.md.maxpz) {
+                importData.md.maxpz = vert.z;
+            }
         }
 
         const tinygltf::Accessor & accessor = model.accessors[prim.indices];
@@ -176,7 +215,8 @@ bool CreateGTLFData(std::string importFile, gltfImport & importData/*, nlohmann:
         indexCount += static_cast<uint32_t>(accessor.count);
 
         switch (accessor.componentType) {
-            case TINYGLTF_PARAMETER_TYPE_UNSIGNED_INT: {
+        case TINYGLTF_PARAMETER_TYPE_UNSIGNED_INT:
+            {
                 uint32_t * buf = new uint32_t[accessor.count];
                 memcpy(
                     buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset],
@@ -187,7 +227,8 @@ bool CreateGTLFData(std::string importFile, gltfImport & importData/*, nlohmann:
                 delete[] buf;
                 break;
             }
-            case TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT: {
+        case TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT:
+            {
                 uint16_t * buf = new uint16_t[accessor.count];
                 memcpy(
                     buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset],
@@ -198,7 +239,8 @@ bool CreateGTLFData(std::string importFile, gltfImport & importData/*, nlohmann:
                 delete[] buf;
                 break;
             }
-            case TINYGLTF_PARAMETER_TYPE_UNSIGNED_BYTE: {
+        case TINYGLTF_PARAMETER_TYPE_UNSIGNED_BYTE:
+            {
                 uint8_t * buf = new uint8_t[accessor.count];
                 memcpy(
                     buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset],
@@ -209,14 +251,18 @@ bool CreateGTLFData(std::string importFile, gltfImport & importData/*, nlohmann:
                 delete[] buf;
                 break;
             }
-            default:
-                std::cerr << "Index component type " << accessor.componentType << " not supported!" << std::endl;
-                return false;
+        default:
+            std::cerr << "Index component type " << accessor.componentType << " not supported!" <<
+                std::endl;
+            return false;
         }
 
         importData.md
                   .primitives
-            .push_back({ firstIndex, indexCount, !material_name.empty() ? -1 : prim.material, material_name });
+                  .push_back({
+                      firstIndex, indexCount, !material_name.empty() ? -1 : prim.material,
+                      material_name
+                  });
     }
 
     int ixn = 0;
@@ -247,13 +293,24 @@ bool CreateGTLFData(std::string importFile, gltfImport & importData/*, nlohmann:
             size_t mi = importData.mats.size();
             auto & matd = importData.mats.emplace_back();
 
+            matd.name = m.name;
+
             matd.metallicValue = static_cast<float>(m.pbrMetallicRoughness.metallicFactor);
             matd.roughnessValue = static_cast<float>(m.pbrMetallicRoughness.roughnessFactor);
+
+            matd.transparency = m.alphaMode;
             if (m.pbrMetallicRoughness.baseColorTexture.index >= 0) {
-                matd.colorTextureAssetName = importData.ims[m.pbrMetallicRoughness.baseColorTexture.index].name;
+                matd.colorTextureAssetName = importData.ims[m.pbrMetallicRoughness.baseColorTexture.
+                                                              index].name;
             }
             if (m.emissiveTexture.index >= 0) {
                 matd.emissionTextureAssetName = importData.ims[m.emissiveTexture.index].name;
+            }
+            if (m.emissiveTexture.index >= 0) {
+                matd.emissionTextureAssetName = importData.ims[m.emissiveTexture.index].name;
+            }
+            if (m.normalTexture.index >= 0) {
+                matd.normalTextureAssetName= importData.ims[m.normalTexture.index].name;
             }
         }
     }

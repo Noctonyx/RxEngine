@@ -38,10 +38,7 @@ namespace RxEngine
 
             DirectX::XMStoreFloat4x4(&projView, viewProj);
             DirectX::XMStoreFloat4x4(&iProjView, DirectX::XMMatrixInverse(nullptr, viewProj));
-#if 0
-            auto xxx = DirectX::BoundingFrustum(proj);
-            xxx.Transform(frustum_, iview);
-#endif
+
             updated = true;
         }
 

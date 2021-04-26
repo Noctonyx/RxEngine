@@ -9,6 +9,10 @@
 
 #include "SerialisationData.h"
 
+namespace tinygltf {
+    class Model;
+}
+
 enum AssetType
 {
     GTLF
@@ -20,7 +24,7 @@ std::unordered_map<std::string, AssetType> map{
 #endif
 struct gltfImport
 {
-    RxAssets::MeshData md;
+    RxAssets::MeshSaveData md;
     std::vector<RxAssets::MaterialData> mats;
     std::vector<RxAssets::ImageData> ims;
 };
@@ -30,7 +34,7 @@ struct importList
     std::vector<std::pair<std::string, std::vector<uint8_t>>> items;
 };
 
-bool CreateGTLFData(std::string importFile, gltfImport & importData/*, nlohmann::json & options*/);
+bool CreateGTLFData(std::string importFile, gltfImport & importData/*, nlohmann::json & options*/, tinygltf::Model & model);
 
 void importGltf(
     importList & importList,

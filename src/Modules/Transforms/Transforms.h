@@ -2,10 +2,8 @@
 
 #include "Modules/Module.h"
 #include "RxECS.h"
-#include "imgui.h"
 #include "DirectXCollision.h"
 #include "EngineMain.hpp"
-#include "SerialisationData.h"
 
 struct Sector;
 
@@ -21,6 +19,11 @@ namespace RxEngine
         struct YRotation
         {
             float yRotation;
+        };
+
+        struct XRotation
+        {
+            float xRotation;
         };
 
         struct ScalarScale
@@ -52,6 +55,7 @@ namespace RxEngine
 
         static void worldPositionGui(ecs::EntityHandle e);
         static void yRotationGui(ecs::EntityHandle e);
+        static void xRotationGui(ecs::EntityHandle e);
         static void scalarScaleGui(ecs::EntityHandle e);
     };
 };

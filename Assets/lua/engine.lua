@@ -62,3 +62,7 @@ data.textures = {
 
 data.materials = {
 }
+
+data.meshes = {
+
+}

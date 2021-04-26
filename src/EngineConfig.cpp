@@ -569,7 +569,7 @@ namespace RxEngine
         }
 
         std::string addressU = sampler.get_or("addressU", std::string{"nearest"});
-        if (addressU == "nearest") {
+        if (addressU == "repeat") {
             sd.addressU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
         } else if (addressU == "mirrored-repeat") {
             sd.addressU = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
@@ -583,7 +583,7 @@ namespace RxEngine
         }
 
         std::string addressV = sampler.get_or("addressV", std::string{"nearest"});
-        if (addressV == "nearest") {
+        if (addressV == "repeat") {
             sd.addressV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
         } else if (addressV == "mirrored-repeat") {
             sd.addressV = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;

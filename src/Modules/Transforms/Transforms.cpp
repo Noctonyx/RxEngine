@@ -1,4 +1,5 @@
 #include "Transforms.h"
+#include "imgui.h"
 
 namespace RxEngine
 {
@@ -7,16 +8,19 @@ namespace RxEngine
     void TransformsModule::registerModule()
     {
         world_->set<ComponentGui>(world_->getComponentId<WorldPosition>(),
-                                 {.editor = worldPositionGui});
+                                  {.editor = worldPositionGui});
+        world_->set<ComponentGui>(world_->getComponentId<XRotation>(),
+                                  {.editor = xRotationGui});
         world_->set<ComponentGui>(world_->getComponentId<YRotation>(),
-                                 {.editor = yRotationGui});
+                                  {.editor = yRotationGui});
         world_->set<ComponentGui>(world_->getComponentId<ScalarScale>(),
-                                 {.editor = scalarScaleGui});
+                                  {.editor = scalarScaleGui});
     }
 
     void TransformsModule::deregisterModule()
     {
         world_->remove<ComponentGui>(world_->getComponentId<WorldPosition>());
+        world_->remove<ComponentGui>(world_->getComponentId<XRotation>());
         world_->remove<ComponentGui>(world_->getComponentId<YRotation>());
         world_->remove<ComponentGui>(world_->getComponentId<ScalarScale>());
     }
@@ -25,12 +29,10 @@ namespace RxEngine
     {
         auto position = e.get<WorldPosition>();
 
-        if (position)
-        {
+        if (position) {
             if (ImGui::BeginTable("ComponentGui", 2, /*ImGuiTableFlags_Borders | */
                                   ImGuiTableFlags_Resizable |
-                                  ImGuiTableFlags_Hideable))
-            {
+                                  ImGuiTableFlags_Hideable)) {
                 ImGui::TableSetupColumn("Name");
                 ImGui::TableSetupColumn("Value");
                 //ImGui::TableHeadersRow();
@@ -59,12 +61,10 @@ namespace RxEngine
     void TransformsModule::yRotationGui(ecs::EntityHandle e)
     {
         auto rotation = e.get<YRotation>();
-        if (rotation)
-        {
+        if (rotation) {
             if (ImGui::BeginTable("ComponentGui", 2, /*ImGuiTableFlags_Borders | */
                                   ImGuiTableFlags_Resizable |
-                                  ImGuiTableFlags_Hideable))
-            {
+                                  ImGuiTableFlags_Hideable)) {
                 ImGui::TableSetupColumn("Name");
                 ImGui::TableSetupColumn("Value");
                 //ImGui::TableHeadersRow();
@@ -80,16 +80,36 @@ namespace RxEngine
         }
     }
 
+    void TransformsModule::xRotationGui(ecs::EntityHandle e)
+    {
+        auto rotation = e.get<XRotation>();
+        if (rotation) {
+            if (ImGui::BeginTable("ComponentGui", 2, /*ImGuiTableFlags_Borders | */
+                                  ImGuiTableFlags_Resizable |
+                                  ImGuiTableFlags_Hideable)) {
+                ImGui::TableSetupColumn("Name");
+                ImGui::TableSetupColumn("Value");
+                //ImGui::TableHeadersRow();
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::Text("X Rotation");
+                ImGui::TableNextColumn();
+                ImGui::Text("%.1f", rotation->xRotation);
+
+                ImGui::EndTable();
+            }
+        }
+    }
+
     void TransformsModule::scalarScaleGui(ecs::EntityHandle e)
     {
         auto sc = e.get<ScalarScale>();
 
-        if (sc)
-        {
+        if (sc) {
             if (ImGui::BeginTable("ComponentGui", 2, /*ImGuiTableFlags_Borders | */
                                   ImGuiTableFlags_Resizable |
-                                  ImGuiTableFlags_Hideable))
-            {
+                                  ImGuiTableFlags_Hideable)) {
                 ImGui::TableSetupColumn("Name");
                 ImGui::TableSetupColumn("Value");
                 //ImGui::TableHeadersRow();
