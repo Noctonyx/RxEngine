@@ -66,3 +66,7 @@ data.materials = {
 data.meshes = {
 
 }
+
+data.prototypes = {
+
+}

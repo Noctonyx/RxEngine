@@ -242,7 +242,7 @@ namespace RxEngine
 
     void IMGuiRender::createDescriptorSet()
     {
-        auto layout = pipeline_.getRelated<Render::UsesLayout, Render::PipelineLayout>();
+        auto layout = pipeline_.getRelated<UsesLayout, PipelineLayout>();
 
         auto dp = RxCore::Device::Context()->CreateDescriptorPool(
             {{vk::DescriptorType::eCombinedImageSampler, 1}}, 1);
@@ -353,7 +353,7 @@ namespace RxEngine
         io.DisplaySize = ImVec2(static_cast<float>(wd->width), static_cast<float>(wd->height));
         ImGui::Render();
 
-        auto pipeline = pipeline_.get<Render::UiPipeline>();
+        auto pipeline = pipeline_.get<UiPipeline>();
 
         if (!pipeline) {
             return;
@@ -361,7 +361,7 @@ namespace RxEngine
         assert(pipeline);
         assert(pipeline->pipeline);
 
-        const auto layout = pipeline_.getRelated<Render::UsesLayout, Render::PipelineLayout>();
+        const auto layout = pipeline_.getRelated<UsesLayout, PipelineLayout>();
 
         auto buf = RxCore::JobManager::threadData().getCommandBuffer();
 

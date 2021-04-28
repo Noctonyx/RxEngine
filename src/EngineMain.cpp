@@ -15,43 +15,17 @@
 #include "Modules/Module.h"
 #include "Modules/ImGui/ImGuiRender.hpp"
 #include "Modules/Stats/Stats.h"
+#include "Modules/Prototypes/Prototypes.h"
+#include "Modules/StaticMesh/StaticMesh.h"
 #include "Modules/Transforms/Transforms.h"
-
-//#include <sol/sol.hpp>
-
+#include "Modules/WorldObject/WorldObject.h"
 
 namespace RxEngine
 {
     class StatsModule;
 
-    void EngineMain::startup()
-    {
-        loadConfig();
-        uint32_t height = 1080;
-        uint32_t width = 1920;
-
-        width = getUint32ConfigValue("window", "width", 800);
-        height = getUint32ConfigValue("window", "height", 600);
-
-        if (width <= 0) {
-            width = 800;
-        }
-        if (height <= 0) {
-            height = 600;
-        }
-
-        world = std::make_unique<ecs::World>();
-
-        window_ = std::make_unique<Window>(width, height, "RX", world.get());
-
-        device_ = std::make_unique<RxCore::Device>(window_->GetWindow());
-
-        auto surface = RxCore::Device::Context()->surface;
-
-        swapChain_ = surface->CreateSwapChain();
-        swapChain_->setSwapChainOutOfDate(true);
-
-        timer_ = std::chrono::high_resolution_clock::now();
+    void EngineMain::setupWorld() {
+        window_->setWorld(world.get());
 
         world->newEntity("Pipeline:PreFrame").set<ecs::SystemGroup>({1, false, 0.0f, 0.0f});
         world->newEntity("Pipeline:Early").set<ecs::SystemGroup>({2, false, 0.0f, 0.0f});
@@ -63,16 +37,25 @@ namespace RxEngine
         world->newEntity("Pipeline:PostRender").set<ecs::SystemGroup>({8, false, 0.0f, 0.0f});
         world->newEntity("Pipeline:PostFrame").set<ecs::SystemGroup>({9, false, 0.0f, 0.0f});
 
+        lua = new sol::state();
+
         setupLuaEnvironment();
         loadLuaFile("/lua/engine");
+        for (auto sf : configFiles) {
+            loadLuaFile(sf);
+        }
 
         populateStartupData();
 
         modules.push_back(std::make_shared<Renderer>(device_->VkDevice(), world.get(),
                                                      swapChain_->imageFormat(), this));
+        modules.push_back((std::make_shared<MaterialsModule>(world.get(), this)));
         modules.push_back((std::make_shared<IMGuiRender>(world.get(), this)));
         modules.push_back((std::make_shared<TransformsModule>(world.get(), this)));
         modules.push_back((std::make_shared<StatsModule>(world.get(), this)));
+        modules.push_back((std::make_shared<PrototypesModule>(world.get(), this)));
+        modules.push_back((std::make_shared<StaticMeshModule>(world.get(), this)));
+        modules.push_back((std::make_shared<WorldObjectModule>(world.get(), this)));
 
         for (auto & m: modules) {
             m->registerModule();
@@ -147,11 +130,12 @@ namespace RxEngine
              });
 
         world->createSystem("Engine:ECSMain")
-            .inGroup("Pipeline:UpdateUi")
-            .execute([this](ecs::World* world)
-                {
-                    updateEntityGui();
-                });
+             .inGroup("Pipeline:UpdateUi")
+             .execute([this](ecs::World* world)
+             {
+                 OPTICK_EVENT("Engine GUI")
+                 updateEntityGui();
+             });
 
         world->set<ComponentGui>(world->getComponentId<ecs::Name>(), { .editor = ecsNameGui });
         world->set<ComponentGui>(world->getComponentId<ecs::SystemGroup>(), { .editor = ecsSystemGroupGui });
@@ -159,6 +143,38 @@ namespace RxEngine
         world->set<ComponentGui>(world->getComponentId<EngineTime>(), { .editor = ecsEngineTimeGui });
         world->set<ComponentGui>(world->getComponentId<ecs::StreamComponent>(), { .editor = ecsStreamComponentGui });
         world->set<ComponentGui>(world->getComponentId<ecs::System>(), { .editor = ecsSystemGui });
+    }
+
+    void EngineMain::startup()
+    {
+        loadConfig();
+        uint32_t height = 1080;
+        uint32_t width = 1920;
+
+        width = getUint32ConfigValue("window", "width", 1280);
+        height = getUint32ConfigValue("window", "height", 768);
+
+        if (width <= 0) {
+            width = 800;
+        }
+        if (height <= 0) {
+            height = 600;
+        }
+
+        world = std::make_unique<ecs::World>();
+
+        window_ = std::make_unique<Window>(width, height, "RX");
+
+        device_ = std::make_unique<RxCore::Device>(window_->GetWindow());
+
+        auto surface = RxCore::Device::Context()->surface;
+
+        swapChain_ = surface->CreateSwapChain();
+        swapChain_->setSwapChainOutOfDate(true);
+
+        timer_ = std::chrono::high_resolution_clock::now();
+
+        setupWorld();
     }
 
     void EngineMain::shutdown()
@@ -181,6 +197,9 @@ namespace RxEngine
         modules.clear();
 
         world.reset();
+        if(lua) {
+            delete lua;
+        }
 
         destroySemaphores();
         swapChain_.reset();
@@ -208,36 +227,10 @@ namespace RxEngine
         }
 
         world->setSingleton<EngineTime>({delta_, totalElapsed_});
-        world->step(delta_);
-#if 0
         {
-#if 0
-            OPTICK_EVENT("Scene Render")
-            const auto current_extent = swapChain_->GetExtent();
-
-            auto [next_swap_image_view, next_image_available, next_image_index] =
-                swapChain_->AcquireNextImage();
-#endif
-            {
-                OPTICK_EVENT("Actual Render")
-                renderer_->render(
-                    next_swap_image_view, current_extent, {next_image_available},
-                    {vk::PipelineStageFlagBits::eColorAttachmentOutput},
-                    submitCompleteSemaphores_[next_image_index]);
-            }
-#if 0
-            {
-                OPTICK_GPU_FLIP(nullptr)
-                OPTICK_CATEGORY("Present", Optick::Category::Rendering)
-                swapChain_->PresentImage(
-                    next_swap_image_view,
-                    submitCompleteSemaphores_[next_image_index]);
-            }
-#endif
-            RxCore::JobManager::instance().clean();
-
+            OPTICK_EVENT("Step World")
+            world->step(delta_);
         }
-#endif
     }
 
     void EngineMain::run()
@@ -245,22 +238,8 @@ namespace RxEngine
         while (!window_->ShouldClose()) {
             update();
         }
-        // shutdown();
     }
-#if 0
-    void EngineMain::registerBaseModules()
-    {
-        //ecs_tracing_enable(3);
 
-        ecs_measure_system_time(world_->get_world(), true);
-
-        //        world_.
-
-        world_->import<RxEngine::Mesh>();
-        world_->import<RxEngine::Transforms>();
-        world_->import<RxEngine::Render>();
-    }
-#endif
     void EngineMain::replaceSwapChain()
     {
         RxCore::Device::Context()->WaitIdle();
@@ -291,37 +270,15 @@ namespace RxEngine
         submitCompleteSemaphores_.clear();
     }
 
-#if 0
-    void EngineMain::populateMaterialPipeline(const std::string & name,
-                                              luabridge::LuaRef & value)
-    {
-        auto vertexShader = value["vertexShader"].tostring();
-        auto fragmentShader = value["fragmentShader"].tostring();
-
-        auto depthTestEnable = value["depthTestEnable"].cast<bool>();
-        auto depthWriteEnable = value["depthWriteEnable"].cast<bool>();
-
-        Render::OpaquePipeline opl;
-        Render::MaterialPipeline mpl;
-
-        world_->entity().set<Render::OpaquePipeline>(Render::OpaquePipeline{
-            {
-                .depthTestEnable = depthTestEnable,
-                .depthWriteEnable = depthWriteEnable,
-            }
-        });
-    }
-#endif
-
     void EngineMain::loadConfig()
     {
-        mINI::INIFile file("engine.ini");
+        const mINI::INIFile file("engine.ini");
         file.read(iniData);
     }
 
     void EngineMain::saveConfig()
     {
-        mINI::INIFile file("engine.ini");
+        const mINI::INIFile file("engine.ini");
         file.write(iniData, true);
     }
 
@@ -342,7 +299,7 @@ namespace RxEngine
     uint32_t EngineMain::getUint32ConfigValue(
         const std::string & section,
         const std::string & entry,
-        uint32_t defaultValue)
+        const uint32_t defaultValue)
     {
         uint32_t v; // = defaultValue;
         try {
@@ -353,18 +310,23 @@ namespace RxEngine
         return v;
     }
 
+    void EngineMain::addInitConfigFile(const std::string & config)
+    {
+        configFiles.push_back(config);
+    }
+
     void EngineMain::setUint32ConfigValue(const std::string & section,
                                           const std::string & entry,
-                                          uint32_t value)
+                                          const uint32_t value)
     {
         setConfigValue(section, entry, std::to_string(value));
     }
 
     bool EngineMain::getBoolConfigValue(const std::string & section,
                                         const std::string & entry,
-                                        bool defaultValue)
+                                        const bool defaultValue)
     {
-        std::string v = getConfigValue(section, entry);
+        const std::string v = getConfigValue(section, entry);
         if (v.empty()) {
             return defaultValue;
         }
@@ -373,7 +335,7 @@ namespace RxEngine
 
     void EngineMain::setBoolConfigValue(const std::string & section,
                                         const std::string & entry,
-                                        bool value)
+                                        const bool value)
     {
         setConfigValue(section, entry, value ? "1" : "0");
     }

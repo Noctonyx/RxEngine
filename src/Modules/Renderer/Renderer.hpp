@@ -16,6 +16,7 @@
 #include "RxECS.h"
 #include "Modules/Module.h"
 #include "Modules/Render.h"
+#include "Modules/Materials/Materials.h"
 #include "RxECS.h"
 
 #define NUM_CASCADES 4
@@ -255,8 +256,8 @@ namespace RxEngine
         uint32_t opaqueSubPass;
         vk::RenderPass shadowRenderPass{};
         uint32_t shadowSubPass;
-        vk::RenderPass transportRenderPass{};
-        uint32_t transportSubPass;
+        vk::RenderPass transparentRenderPass{};
+        uint32_t transparentSubPass;
         vk::RenderPass uiRenderPass{};
         uint32_t uiSubPass;
     };
@@ -303,9 +304,9 @@ namespace RxEngine
             std::shared_ptr<RxCore::SecondaryCommandBuffer> buf,
             bool flipY) const;
 
-        vk::Pipeline createUiMaterialPipeline(const Render::MaterialPipelineDetails * mpd,
-                                              const Render::FragmentShader * frag,
-                                              const Render::VertexShader * vert,
+        vk::Pipeline createUiMaterialPipeline(const MaterialPipelineDetails * mpd,
+                                              const FragmentShader * frag,
+                                              const VertexShader * vert,
                                               vk::PipelineLayout layout,
                                               vk::RenderPass rp,
                                               uint32_t subpass);

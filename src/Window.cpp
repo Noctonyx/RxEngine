@@ -4,25 +4,25 @@
 
 namespace RxEngine
 {
-    void callbackKey(GLFWwindow* window,
-        int32_t key,
-        int32_t scancode,
-        int32_t action,
-        int32_t mods)
+    void callbackKey(GLFWwindow * window,
+                     int32_t key,
+                     int32_t scancode,
+                     int32_t action,
+                     int32_t mods)
     {
-        auto wnd = static_cast<Window*>(glfwGetWindowUserPointer(window));
+        auto wnd = static_cast<Window *>(glfwGetWindowUserPointer(window));
         wnd->doKey(key, action, mods);
     }
 
-    void callbackChar(GLFWwindow* window, uint32_t codepoint)
+    void callbackChar(GLFWwindow * window, uint32_t codepoint)
     {
-        auto wnd = static_cast<Window*>(glfwGetWindowUserPointer(window));
+        auto wnd = static_cast<Window *>(glfwGetWindowUserPointer(window));
         wnd->doChar(codepoint);
     }
 
-    void callbackCursorPos(GLFWwindow* window, double xpos, double ypos)
+    void callbackCursorPos(GLFWwindow * window, double xpos, double ypos)
     {
-        auto wnd = static_cast<Window*>(glfwGetWindowUserPointer(window));
+        auto wnd = static_cast<Window *>(glfwGetWindowUserPointer(window));
         int32_t mods = 0;
 
         if (glfwGetKey(window, static_cast<int>(EKey::ShiftLeft)) == GLFW_PRESS) {
@@ -47,17 +47,17 @@ namespace RxEngine
         wnd->mousePosition(static_cast<float>(xpos), static_cast<float>(ypos), mods);
     }
 
-    void callbackMouseButton(GLFWwindow* window, int32_t button, int32_t action, int32_t mods)
+    void callbackMouseButton(GLFWwindow * window, int32_t button, int32_t action, int32_t mods)
     {
-        auto wnd = static_cast<Window*>(glfwGetWindowUserPointer(window));
+        auto wnd = static_cast<Window *>(glfwGetWindowUserPointer(window));
 
         wnd->buttonAction(button, action == GLFW_PRESS, mods);
     }
 
-    void callbackScroll(GLFWwindow* window, double /*xoffset*/, double y_offset)
+    void callbackScroll(GLFWwindow * window, double /*xoffset*/, double y_offset)
     {
-        auto wnd = static_cast<Window*>(glfwGetWindowUserPointer(window));
-       
+        auto wnd = static_cast<Window *>(glfwGetWindowUserPointer(window));
+
         int32_t mods = 0;
 
         if (glfwGetKey(window, static_cast<int>(EKey::ShiftLeft)) == GLFW_PRESS) {
@@ -88,8 +88,7 @@ namespace RxEngine
         w->doResize(width, height);
     }
 
-    Window::Window(uint32_t width, uint32_t height, const std::string & title, ecs::World * world)
-        : world_(world)
+    Window::Window(uint32_t width, uint32_t height, const std::string & title)
     {
         if (!m_GLFWInit) {
             glfwInit();
@@ -114,8 +113,6 @@ namespace RxEngine
 
         glfwSetKeyCallback(GetWindow(), callbackKey);
         glfwSetCharCallback(GetWindow(), callbackChar);
-
-        world->setSingleton<WindowDetails>({ .width = width, .height = height });
     }
 
     Window::~Window()
@@ -173,16 +170,20 @@ namespace RxEngine
     void Window::doResize(uint32_t width, uint32_t height)
     {
         onResize.Broadcast(width, height);
-        world_->getStream<WindowResize>()->add<WindowResize>({width, height});
-        world_->setSingleton<WindowDetails>({ this, width, height });
+        if (world_) {
+            world_->getStream<WindowResize>()->add<WindowResize>({width, height});
+            world_->setSingleton<WindowDetails>({this, width, height});
+        }
     }
 
     void Window::doChar(uint32_t codepoint)
     {
         //onChar.Broadcast(static_cast<char>(codepoint));
 
-        auto s = world_->getStream<KeyboardChar>();
-        s->add<KeyboardChar>({ static_cast<char>(codepoint) });
+        if (world_) {
+            auto s = world_->getStream<KeyboardChar>();
+            s->add<KeyboardChar>({static_cast<char>(codepoint)});
+        }
     }
 
     void Window::doKey(int32_t key, int32_t action, int32_t mods)
@@ -190,40 +191,55 @@ namespace RxEngine
         //  onKey.Broadcast(static_cast<EKey>(key), static_cast<EInputAction>(action),
         //                  static_cast<EInputMod>(mods));
 
-        auto s = world_->getStream<KeyboardKey>();
+        if (world_) {
+            auto s = world_->getStream<KeyboardKey>();
 
-        s->add<KeyboardKey>({
-            static_cast<EKey>(key), static_cast<EInputAction>(action),
-            static_cast<EInputMod>(mods)
+            s->add<KeyboardKey>({
+                static_cast<EKey>(key), static_cast<EInputAction>(action),
+                static_cast<EInputMod>(mods)
             });
+        }
     }
 
 
     void Window::mousePosition(float x_pos, float y_pos, int32_t mods)
     {
-        pos_ = { x_pos, y_pos };
-        //onMousePos.Broadcast(x_pos, y_pos, static_cast<RxEngine::EInputMod>(mods));
+        pos_ = {x_pos, y_pos};
 
-        world_->getStream<MousePosition>()->add<MousePosition>({
-            x_pos, y_pos, static_cast<RxEngine::EInputMod>(mods)
+        if (world_) {
+            world_->getStream<MousePosition>()->add<MousePosition>({
+                x_pos, y_pos, static_cast<RxEngine::EInputMod>(mods)
             });
+        }
     }
 
     void Window::buttonAction(int32_t button, bool pressed, int32_t mods)
     {
-        //onMouseButton.Broadcast(button, pressed, static_cast<RxEngine::EInputMod>(mods));
-
-        world_->getStream<MouseButton>()->add<MouseButton>({
-            button, pressed, static_cast<RxEngine::EInputMod>(mods)
+        if (world_) {
+            world_->getStream<MouseButton>()->add<MouseButton>({
+                button, pressed, static_cast<RxEngine::EInputMod>(mods)
             });
+        }
     }
 
     void Window::scroll(float y_scroll, int32_t mods)
     {
-        //onScroll.Broadcast(y_scroll, static_cast<RxEngine::EInputMod>(mods));
-        world_->getStream<MouseScroll>()->add<MouseScroll>({
-            y_scroll, static_cast<RxEngine::EInputMod>(mods)
+        if (world_) {
+            world_->getStream<MouseScroll>()->add<MouseScroll>({
+                y_scroll, static_cast<RxEngine::EInputMod>(mods)
             });
+        }
+    }
+
+    void Window::setWorld(ecs::World * world)
+    {
+        int w, h;
+        world_ = world;
+        glfwGetWindowSize(m_Window, &w, &h);
+        world->setSingleton<WindowDetails>({
+            .width = static_cast<uint32_t>(w),
+            .height = static_cast<uint32_t>(h)
+        });
     }
 
     void Window::setCursor(ECursorStandard standard)
@@ -249,12 +265,12 @@ namespace RxEngine
             GLFW_CURSOR,
             hidden ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
         if (!hidden) {
-            setPosition(DirectX::XMFLOAT2{ pos_.x, pos_.y });
+            setPosition(DirectX::XMFLOAT2{pos_.x, pos_.y});
         }
         hidden_ = hidden;
     }
 
-    void Window::setPosition(const DirectX::XMFLOAT2& position)
+    void Window::setPosition(const DirectX::XMFLOAT2 & position)
     {
         pos_ = position;
         glfwSetCursorPos(GetWindow(), pos_.x, pos_.y);

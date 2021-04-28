@@ -12,7 +12,7 @@ namespace RxEngine
 
     class StatsModule : public Module
     {
-        ecs::entity_t systemSet_;
+        ecs::entity_t systemSet_{};
 
         float delta_ = 0.f;
         float fps_ = 0.f;

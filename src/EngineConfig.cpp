@@ -110,7 +110,12 @@ namespace RxEngine
     {
         //sol::state lua;
 
-        lua.open_libraries(sol::lib::base);
+        lua->open_libraries(sol::lib::base, sol::lib::string, sol::lib::table);
+
+        lua->set("dofile", [this](std::string f)
+        {
+            loadLuaFile(f);
+        });
 
         //auto w = sol::make_light<flecs::world>(*world_);
         //auto e = sol::make_light<EngineMain>(*this);
@@ -178,11 +183,11 @@ namespace RxEngine
             auto sh = device->createShader(sd.bytes);
 
             if (stage == "vert") {
-                world->newEntity(name.c_str()).set<Render::VertexShader>({
+                world->newEntity(name.c_str()).set<VertexShader>({
                     .shader = sh, .shaderAssetName = spv
                 });
             } else {
-                world->newEntity(name.c_str()).set<Render::FragmentShader>({
+                world->newEntity(name.c_str()).set<FragmentShader>({
                     .shader = sh, .shaderAssetName = spv
                 });
             }
@@ -241,7 +246,7 @@ namespace RxEngine
     }
 
     void populateMaterialPipelineDetails(sol::table & details,
-                                         Render::MaterialPipelineDetails & mpd)
+                                         MaterialPipelineDetails & mpd)
     {
         mpd.depthTestEnable = details.get_or("depthTestEnable", false);
         mpd.depthWriteEnable = details.get_or("depthWriteEnable", false);
@@ -421,7 +426,7 @@ namespace RxEngine
         std::vector<vk::DescriptorSetLayout> dsls{};
         std::vector<vk::PushConstantRange> pcr{};
 
-        Render::PipelineLayout pll;
+        PipelineLayout pll;
 
         sol::table dsLayouts = layout["ds_layouts"];
         for (auto & [dsLayoutKey, dsLayoutValue]: dsLayouts) {
@@ -473,7 +478,7 @@ namespace RxEngine
 
         pll.layout = l;
         world->newEntity(name.c_str())
-             .set<Render::PipelineLayout>(pll);
+             .set<PipelineLayout>(pll);
     }
 
     void loadLayouts(ecs::World * world, RxCore::Device * device, sol::table & layouts)
@@ -496,33 +501,33 @@ namespace RxEngine
         const std::string fs_name = pipeline["fragmentShader"];
         const std::string layout_name = pipeline["layout"];
 
-        Render::MaterialPipelineDetails mpd;
+        MaterialPipelineDetails mpd;
 
         populateMaterialPipelineDetails(pipeline, mpd);
 
         auto vse = world->lookup(vs_name.c_str());
-        if (!vse.isAlive() || !vse.has<Render::VertexShader>()) {
+        if (!vse.isAlive() || !vse.has<VertexShader>()) {
             spdlog::critical("Missing shader for pipeline {}", name.c_str());
             throw RxAssets::AssetException("missing shader:", vs_name);
         }
 
         auto fse = world->lookup(fs_name.c_str());
-        if (!fse.isAlive() || !fse.has<Render::FragmentShader>()) {
+        if (!fse.isAlive() || !fse.has<FragmentShader>()) {
             spdlog::critical("Missing shader for pipeline {}", name.c_str());
             throw RxAssets::AssetException("missing shader:", fs_name);
         }
 
         auto lay = world->lookup(layout_name.c_str());
-        if (!lay.isAlive() || !lay.has<Render::PipelineLayout>()) {
+        if (!lay.isAlive() || !lay.has<PipelineLayout>()) {
             spdlog::critical("Missing layout for pipeline {}", name.c_str());
             throw RxAssets::AssetException("missing shader:", layout_name);
         }
 
         world->newEntity(name.c_str())
-             .set<Render::MaterialPipelineDetails>({mpd})
-             .set<Render::UsesVertexShader>({{vse.id}})
-             .set<Render::UsesFragmentShader>({{fse.id}})
-             .set<Render::UsesLayout>({{lay.id}});
+             .set<MaterialPipelineDetails>({mpd})
+             .set<UsesVertexShader>({{vse.id}})
+             .set<UsesFragmentShader>({{fse.id}})
+             .set<UsesLayout>({{lay.id}});
     }
 
     void loadPipelines(ecs::World * world, RxCore::Device * device, sol::table & pipelines)
@@ -753,59 +758,66 @@ namespace RxEngine
         if (opaquePipeline.has_value()) {
             auto eop = world->lookup(opaquePipeline.value().c_str());
 
-            auto mpd = eop.get<Render::MaterialPipelineDetails>();
+            auto mpd = eop.get<MaterialPipelineDetails>();
             if (!mpd || mpd->stage != RxAssets::PipelineRenderStage::Opaque) {
                 throw RxAssets::AssetException("Not a valid opaquePipeline:", name);
             }
-            e.set<Render::HasOpaquePipeline>({{eop.id}});
+            e.set<HasOpaquePipeline>({{eop.id}});
         }
 
         if (shadowPipeline.has_value()) {
             auto eop = world->lookup(shadowPipeline.value().c_str());
 
-            auto mpd = eop.get<Render::MaterialPipelineDetails>();
+            auto mpd = eop.get<MaterialPipelineDetails>();
             if (!mpd || mpd->stage != RxAssets::PipelineRenderStage::Shadow) {
                 throw RxAssets::AssetException("Not a valid shadowPipeline:", name);
             }
-            e.set<Render::HasShadowPipeline>({{eop.id}});
+            e.set<HasShadowPipeline>({{eop.id}});
         }
 
         if (transparentPipeline.has_value()) {
             auto eop = world->lookup(transparentPipeline.value().c_str());
 
-            auto mpd = eop.get<Render::MaterialPipelineDetails>();
+            auto mpd = eop.get<MaterialPipelineDetails>();
             if (!mpd || mpd->stage != RxAssets::PipelineRenderStage::Transparent) {
                 throw RxAssets::AssetException("Not a valid transparentPipeline:", name);
             }
-            e.set<Render::HasTransparentPipeline>({{eop.id}});
+            e.set<HasTransparentPipeline>({{eop.id}});
         }
 
         if (uiPipeline.has_value()) {
             auto eop = world->lookup(uiPipeline.value().c_str());
 
-            auto mpd = eop.get<Render::MaterialPipelineDetails>();
+            auto mpd = eop.get<MaterialPipelineDetails>();
             if (!mpd || mpd->stage != RxAssets::PipelineRenderStage::UI) {
                 throw RxAssets::AssetException("Not a valid uiPipeline:", name);
             }
-            e.set<Render::HasUiPipeline>({{eop.id}});
+            e.set<HasUiPipeline>({{eop.id}});
         }
 
-        sol::table t = material["textures"];
+        float roughness = material.get_or("roughness", 0.f);
+        float metallic = material.get_or("metallic", 0.f);
 
-        uint32_t ix = 0;
-        for (auto & [key, value]: t) {
-            std::string tn = value.as<std::string>();
+        mi.roughness = roughness;
+        mi.metallic = metallic;
 
-            auto te = world->lookup(tn.c_str());
+        std::optional<std::string> colorTexture = material["color_texture"];
+
+        if(colorTexture.has_value()) {
+            auto te = world->lookup(colorTexture.value().c_str());
             if (te.isAlive() && te.has<Render::MaterialSampler>()) {
-                mi.materialTextures[ix] = te.id;
-            } else {
+                mi.materialTextures[0] = te.id;
+            }
+            else {
                 throw RxAssets::AssetException("Not a valid texture:", name);
             }
-            ix++;
-            if (ix >= 4) {
-                break;
-            }
+        }
+
+        std::string a = material.get_or("alpha_mode", std::string{ "OPAQUE" });
+        if(a == "OPAQUE") {
+            mi.alpha = Render::MaterialAlphaMode::Opaque;
+        } else {
+            mi.alpha = Render::MaterialAlphaMode::Transparent;
         }
 
         e.set<Render::Material>(mi);
@@ -822,11 +834,13 @@ namespace RxEngine
 
     void EngineMain::populateStartupData()
     {
-        sol::table shaders = lua["data"]["shaders"];
-        sol::table layouts = lua["data"]["pipeline_layouts"];
-        sol::table textures = lua["data"]["textures"];
-        sol::table pipelines = lua["data"]["material_pipelines"];
-        sol::table materials = lua["data"]["materials"];
+        sol::table data = lua->get<sol::table>("data");
+
+        sol::table shaders = data["shaders"];
+        sol::table layouts = data["pipeline_layouts"];
+        sol::table textures = data["textures"];
+        sol::table pipelines = data["material_pipelines"];
+        sol::table materials = data["materials"];
 
         loadShaderData(world.get(), device_.get(), shaders);
         loadLayouts(world.get(), device_.get(), layouts);

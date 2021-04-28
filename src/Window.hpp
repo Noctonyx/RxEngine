@@ -231,7 +231,7 @@ namespace RxEngine
     class Window
     {
     public:
-        Window(uint32_t width, uint32_t height, const std::string & title, ecs::World * world);
+        Window(uint32_t width, uint32_t height, const std::string & title);
 
         ~Window();
 
@@ -279,7 +279,10 @@ namespace RxEngine
         void mousePosition(float x_pos, float y_pos, int32_t mods);
         void buttonAction(int32_t button, bool pressed, int32_t mods);
         void scroll(float y_scroll, int32_t mods);
-        
+
+
+        void setWorld(ecs::World * world);
+
     private:
         bool m_GLFWInit = false;
         GLFWwindow * m_Window = nullptr;

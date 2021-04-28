@@ -75,10 +75,7 @@ add_library(RxEngine STATIC
         "src/Modules/RmlUI/RmlFileInterface.h"
         "src/Modules/RmlUI/UiContext.cpp"
         "src/Modules/RmlUI/UiContext.h"
-        
-        
-        
-        
+     
         src/Rendering/MeshBundle.cpp
         src/Rendering/MeshBundle.h
         src/Rendering/RenderCamera.cpp
@@ -93,7 +90,7 @@ add_library(RxEngine STATIC
         src/LuaState.h 
         src/Modules/Render.h
         src/Modules/Render.cpp
-        "src/Modules/Transforms/Transforms.h"
+        src/Modules/Transforms/Transforms.h
         src/EngineConfig.h
         src/EngineConfig.cpp
         src/EngineUI.cpp 
@@ -101,7 +98,19 @@ add_library(RxEngine STATIC
         src/Modules/Stats/Stats.cpp
         src/Modules/Module.h 
         src/Modules/Transforms/Transforms.cpp 
- "src/Modules/RmlUI/RmlUI.h" "src/Modules/RmlUI/RmlUI.cpp" "src/Modules/SceneCamera/SceneCamera.h" "src/Modules/SceneCamera/SceneCamera.cpp")
+        src/Modules/RmlUI/RmlUI.h 
+        src/Modules/RmlUI/RmlUI.cpp
+        src/Modules/SceneCamera/SceneCamera.h
+        src/Modules/SceneCamera/SceneCamera.cpp
+        src/Modules/StaticMesh/StaticMesh.h
+        src/Modules/StaticMesh/StaticMesh.cpp
+        src/Modules/Prototypes/Prototypes.h
+        src/Modules/Prototypes/Prototypes.cpp
+        src/Modules/WorldObject/WorldObject.h
+        src/Modules/WorldObject/WorldObject.cpp 
+        src/Modules/Materials/Materials.h 
+        src/Modules/Materials/Materials.cpp
+        )
 
 target_compile_options(RxEngine PUBLIC -DGLFW_INCLUDE_VULKAN -DVK_USE_PLATFORM_WIN32_KHR -DGLFW_EXPOSE_NATIVE_WIN32 -DNOMINMAX)
 

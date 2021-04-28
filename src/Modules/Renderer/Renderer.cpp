@@ -49,6 +49,8 @@ namespace RxEngine
     {
         createRenderPass();
         createDepthRenderPass();
+
+        world_->setSingleton<RenderPasses>({ renderPass_, 0, depthRenderPass_, 0, renderPass_, 0, renderPass_, 0 });
         createPipelineLayout();
 
         graphicsCommandPool_ = RxCore::Device::Context()->CreateGraphicsCommandPool();
@@ -104,35 +106,36 @@ namespace RxEngine
                       RxCore::Device::Context()->graphicsQueue_->ReleaseCompleted();
                   }
               );
-
+#if 0
         world_->createSystem("Renderer:Pipelines")
               .inGroup("Pipeline:PreFrame")
-              .withQuery<Render::MaterialPipelineDetails>()
-              .without<Render::HasPipeline>()
-              .withRelation<Render::UsesVertexShader, Render::VertexShader>()
-              .withRelation<Render::UsesFragmentShader, Render::FragmentShader>()
-              .withRelation<Render::UsesLayout, Render::PipelineLayout>()
-              .each<Render::MaterialPipelineDetails,
-                    Render::FragmentShader,
-                    Render::VertexShader,
-                    Render::PipelineLayout>(
+              .withQuery<MaterialPipelineDetails>()
+              .without<HasPipeline>()
+              .withRelation<UsesVertexShader, VertexShader>()
+              .withRelation<UsesFragmentShader, FragmentShader>()
+              .withRelation<UsesLayout, PipelineLayout>()
+              .each<MaterialPipelineDetails,
+                    FragmentShader,
+                    VertexShader,
+                    PipelineLayout>(
                   [this](ecs::EntityHandle e,
-                         const Render::MaterialPipelineDetails * mpd,
-                         const Render::FragmentShader * frag,
-                         const Render::VertexShader * vert,
-                         const Render::PipelineLayout * pll)
+                         const MaterialPipelineDetails * mpd,
+                         const FragmentShader * frag,
+                         const VertexShader * vert,
+                         const PipelineLayout * pll)
                   {
                       if (vert && frag && mpd) {
                           if (mpd->stage == RxAssets::PipelineRenderStage::UI) {
                               auto pl = createUiMaterialPipeline(
                                   mpd, frag, vert, pll->layout, renderPass_, 0);
-                              e.setDeferred<Render::UiPipeline>({
+                              e.setDeferred<UiPipeline>({
                                   std::make_shared<RxCore::Pipeline>(pl), renderPass_, 0
                               });
-                              e.addDeferred<Render::HasPipeline>();
+                              e.addDeferred<HasPipeline>();
                           }
                       }
                   });
+#endif
     }
 
     void Renderer::createDepthRenderPass()
@@ -714,9 +717,9 @@ namespace RxEngine
             1.0f);
     }
 
-    vk::Pipeline Renderer::createUiMaterialPipeline(const Render::MaterialPipelineDetails * mpd,
-                                                    const Render::FragmentShader * frag,
-                                                    const Render::VertexShader * vert,
+    vk::Pipeline Renderer::createUiMaterialPipeline(const MaterialPipelineDetails * mpd,
+                                                    const FragmentShader * frag,
+                                                    const VertexShader * vert,
                                                     vk::PipelineLayout layout,
                                                     vk::RenderPass rp,
                                                     uint32_t subpass)

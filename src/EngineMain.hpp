@@ -69,6 +69,7 @@ namespace RxEngine
             shutdown();
         }
 
+        void setupWorld();
         void startup();
         //void setActiveScene(std::shared_ptr<Scene> scene);
         void run();
@@ -108,6 +109,7 @@ namespace RxEngine
                                       uint32_t defaultValue);
 
 
+        void addInitConfigFile(const std::string& config);
 
 
         //void registerBaseModules();
@@ -155,6 +157,7 @@ namespace RxEngine
         //RXAssets::Loader * loader_;
         //std::unique_ptr<IMGuiRender> gui;
 
+        std::vector<std::string> configFiles;
 
         //Rml::Context * rmlContext{};
 
@@ -168,7 +171,7 @@ namespace RxEngine
         float delta_{};
         float totalElapsed_{};
 
-        sol::state lua;
+        sol::state * lua = nullptr;
 
         mINI::INIStructure iniData;
 
@@ -194,7 +197,7 @@ namespace RxEngine
 
 
         const std::string script = RxAssets::vfs()->getStringFile(path);
-        lua.script(script, path.generic_string());
+        lua->script(script, path.generic_string());
         //. load_buffer(script.c_str(), script.length(), path.generic_string().c_str());
 #if 0
         if (r == 0) {
