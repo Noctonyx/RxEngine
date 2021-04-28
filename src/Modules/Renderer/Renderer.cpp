@@ -2,8 +2,6 @@
 #include <algorithm>
 #include <tuple>
 #include "Renderer.hpp"
-#include "Vulkan/Surface.hpp"
-#include "Vulkan/SwapChain.hpp"
 #include "Vulkan/CommandBuffer.hpp"
 #include "Vulkan/Image.hpp"
 #include "Vulkan/Queue.hpp"
@@ -12,8 +10,6 @@
 #include "robin_hood.h"
 #include "DirectXCollision.h"
 #include "Modules/Render.h"
-#include "Vulkan/Pipeline.h"
-#include "Vulkan/Shader.h"
 
 using namespace DirectX;
 
@@ -57,7 +53,15 @@ namespace RxEngine
             renderPass_, 0
         });
 
-        createPipelineLayout();
+        //createPipelineLayout();
+
+        auto pl = world_->lookup("layout/general").get<PipelineLayout>();
+
+        pipelineLayout = pl->layout;
+        dsLayouts.resize(pl->dsls.size());
+        dsLayouts[0] = pl->dsls[0];
+        dsLayouts[1] = pl->dsls[1];
+        dsLayouts[2] = pl->dsls[2];
 
         graphicsCommandPool_ = RxCore::Device::Context()->CreateGraphicsCommandPool();
 
@@ -80,7 +84,7 @@ namespace RxEngine
                 poolTemplate, dsLayouts[2]);
             ds->updateDescriptor(0, vk::DescriptorType::eStorageBuffer, b);
             instanceBuffers.push_back(b);
-            instanceBUfferDS.push_back(ds);
+            instanceBufferDS.push_back(ds);
         }
 
         world_->createSystem("Renderer:Render")
@@ -251,7 +255,7 @@ namespace RxEngine
     std::shared_ptr<const std::vector<RenderEntity>> Renderer::finishUpEntityJobs(
         const std::vector<std::shared_ptr<RxCore::Job<std::vector<RenderEntity>>>> & entityJobs)
     {
-        OPTICK_EVENT();
+        OPTICK_EVENT()
         std::vector<RenderEntity> entities;
 
         std::vector<std::vector<RenderEntityInstance>> entityInstances;
@@ -667,6 +671,7 @@ namespace RxEngine
             1.0f);
     }
 
+#if 0
     void Renderer::createPipelineLayout()
     {
         std::vector<vk::DescriptorSetLayoutBinding> set_0{
@@ -746,6 +751,7 @@ namespace RxEngine
 
         pipelineLayout = device->createPipelineLayout(plci);
     }
+#endif
 
     void Renderer::cullEntitiesProj(
         const XMMATRIX & proj,

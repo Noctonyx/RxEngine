@@ -15,16 +15,18 @@
 //#include "glslang/Public/ShaderLang.h"
 //#include "vulkan/vulkan.h"
 
-#define STB_IMAGE_IMPLEMENTATION
+//#define STB_IMAGE_IMPLEMENTATION
 #define STBI_MSC_SECURE_CRT
 //#define STBI_WRITE_NO_STDIO
 
 #include "stb_image.h"
-
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-
 #include "stb_image_write.h"
 #include "tiny_gltf.h"
+
+//#define STB_IMAGE_WRITE_IMPLEMENTATION
+
+//#include "stb_image_write.h"
+//#include "tiny_gltf.h"
 
 //#include "dds-ktx.h"
 //#include "SamplerConfig.h"

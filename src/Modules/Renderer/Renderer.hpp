@@ -353,7 +353,7 @@ namespace RxEngine
             const vk::ImageView & imageView,
             const vk::Extent2D & extent) const;
 
-        void createPipelineLayout();
+        //void createPipelineLayout();
         void updateDescriptorSet0(const std::shared_ptr<RenderCamera> & renderCamera);
 #if 0
         void cullAndLodEntities(
@@ -380,7 +380,7 @@ namespace RxEngine
             const DirectX::BoundingSphere & sphere);
 
         std::vector<std::shared_ptr<RxCore::Buffer>> instanceBuffers;
-        std::vector<std::shared_ptr<RxCore::DescriptorSet>> instanceBUfferDS;
+        std::vector<std::shared_ptr<RxCore::DescriptorSet>> instanceBufferDS;
         //uint32_t ibCycle{};
         std::mutex ibLock{};
         //ecs::World* world_;

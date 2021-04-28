@@ -12,13 +12,27 @@ namespace RxEngine
     };
 
     struct SubMesh
-    {                
+    {
+        uint32_t firstIndex;
+        uint32_t indexCount;
+    };
+
+    struct UsesMaterial : ecs::Relation
+    {
+        
     };
 
     struct StaticMesh
     {
         std::vector<ecs::entity_t> subMeshes;
         DirectX::BoundingSphere boundSphere;
+    };
+
+    struct MeshObject
+    {
+        uint32_t vertexCount;
+        uint32_t indexCount;
+        std::string meshFile;
     };
 
 #if 0

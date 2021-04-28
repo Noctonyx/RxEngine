@@ -10,6 +10,9 @@ add_executable (ImportGLTF
 
 if (MSVC)
     target_compile_options(ImportGLTF PRIVATE /W3 /wd4275 /wd4305 /wd4310)
+    target_compile_options(ImportGLTF PUBLIC /DTINYGLTF_NO_INCLUDE_STB_IMAGE)
+    target_compile_options(ImportGLTF PUBLIC /DTINYGLTF_NO_INCLUDE_STB_IMAGE_WRITE)
+    #target_compile_options(ImportGLTF PUBLIC /DTINYGLTF_NO_STB_IMAGE)
 endif ()
 
 target_link_libraries(ImportGLTF PRIVATE RxAssets)

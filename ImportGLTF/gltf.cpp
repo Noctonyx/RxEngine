@@ -6,6 +6,8 @@
 #define TINYGLTF_NO_INCLUDE_JSON
 //#define TINYGLTF_NO_STB_IMAGE
 #include <iostream>
+#include "stb_image.h"
+#include "stb_image_write.h"
 #include "tiny_gltf.h"
 //#include "glm/gtc/type_ptr.hpp"
 

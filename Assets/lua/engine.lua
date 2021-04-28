@@ -33,6 +33,74 @@ data.pipeline_layouts = {
                 size = 16
             }
         }
+    },
+    ["layout/general"] = {
+        ds_layouts = {
+            {
+                bindings = {
+                    {
+                        binding = 0,
+                        stage = "both",
+                        count = 1,
+                        type = "uniform-buffer-dynamic"
+                    },
+                    {
+                        binding = 1,
+                        stage = "both",
+                        count = 1,
+                        type = "uniform-buffer-dynamic"
+                    },
+                    {
+                        binding = 2,
+                        stage = "frag",
+                        count = 1,
+                        type = "combined-sampler"
+                    },
+                    {
+                        binding = 3,
+                        stage = "both",
+                        count = 1,
+                        type = "storage-buffer"
+                    },
+                    {
+                        binding = 4,
+                        stage = "frag",
+                        count = 4096,
+                        type = "combined-sampler",
+                        variable = true,
+                        partially_bound = true,
+                        update_after = true
+                    },
+                }
+            },
+            {
+                bindings = {
+                    {
+                        binding = 0,
+                        stage = "vert",
+                        count = 1,
+                        type = "storage-buffer"
+                    },
+                }
+            },
+            {
+                bindings = {
+                    {
+                        binding = 0,
+                        stage = "both",
+                        count = 1,
+                        type = "storage-buffer"
+                    },
+                }
+            }
+        },
+        push_constants = {
+            {
+                stage = "vert",
+                offset = 0,
+                size = 4
+            }
+        }
     }
 };
 

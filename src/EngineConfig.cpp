@@ -6,6 +6,7 @@
 #include "SerialisationData.h"
 #include "Loader.h"
 #include "RxECS.h"
+#include "Modules/StaticMesh/StaticMesh.h"
 
 
 static const auto & script_key_world = "GlobalResource.World";
@@ -398,16 +399,13 @@ namespace RxEngine
     vk::ShaderStageFlags getStageFlags(const std::string & stage)
     {
         if (stage == "both") {
-           return  vk::ShaderStageFlagBits::eFragment |
+            return vk::ShaderStageFlagBits::eFragment |
                 vk::ShaderStageFlagBits::eVertex;
-        }
-        else if (stage == "vert") {
+        } else if (stage == "vert") {
             return vk::ShaderStageFlagBits::eVertex;
-        }
-        else if (stage == "frag") {
+        } else if (stage == "frag") {
             return vk::ShaderStageFlagBits::eFragment;
-        }
-        else {
+        } else {
             throw std::runtime_error(
                 R"(Invalid value for stage - valid values: "both", "frag", "vert")");
         }
@@ -433,11 +431,14 @@ namespace RxEngine
             sol::table dsLayoutData = dsLayoutValue;
 
             std::vector<vk::DescriptorSetLayoutBinding> binding = {};
+            std::vector<vk::DescriptorBindingFlags> binding_flags = {};
 
             sol::table bindings = dsLayoutData["bindings"];
             for (auto & [bindingKey, bindingValue]: bindings) {
                 sol::table bindingData = bindingValue;
                 auto & b = binding.emplace_back();
+                auto & bf = binding_flags.emplace_back();
+
 
                 b.binding = bindingData.get<uint32_t>("binding");
                 b.descriptorCount = bindingData.get_or<uint32_t>("count", 1);
@@ -448,24 +449,51 @@ namespace RxEngine
 
                 if (type == "combined-sampler") {
                     b.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-                }
-                else {
+                } else if (type == "storage-buffer") {
+                    b.descriptorType = vk::DescriptorType::eStorageBuffer;
+                } else if (type == "uniform-buffer") {
+                    b.descriptorType = vk::DescriptorType::eUniformBuffer;
+                } else if (type == "uniform-buffer-dynamic") {
+                    b.descriptorType = vk::DescriptorType::eUniformBufferDynamic;
+                } else if (type == "storage-buffer-dynamic") {
+                    b.descriptorType = vk::DescriptorType::eStorageBufferDynamic;
+                } else {
                     throw std::runtime_error(
-                        R"(Invalid value for stage - valid values: "combined-sampler")");
+                        R"(Invalid value for stage - valid values: "combined-sampler", "storage-buffer", "uniform-buffer", "storage-buffer-dynamic", "uniform-buffer-dynamic")");
+                }
+
+                if (bindingData.get_or("variable", false)) {
+                    bf |= vk::DescriptorBindingFlagBits::eVariableDescriptorCount;
+                }
+                if (bindingData.get_or("partially_bound", false)) {
+                    bf |= vk::DescriptorBindingFlagBits::ePartiallyBound;
+                }
+                if (bindingData.get_or("update_after", false)) {
+                    bf |= vk::DescriptorBindingFlagBits::eUpdateAfterBind;
                 }
             }
 
-            auto dsl = device->createDescriptorSetLayout({{}, binding});
+            vk::DescriptorSetLayoutBindingFlagsCreateInfo dslbfc{};
+            dslbfc.setBindingFlags(binding_flags);
+
+            vk::DescriptorSetLayoutCreateInfo dslci{};
+            dslci.setFlags(vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool);
+
+            dslci.setPNext(&dslbfc);
+            dslci.setBindings(binding);
+
+            auto dsl = device->createDescriptorSetLayout(dslci);
+
             pll.dsls.push_back(dsl);
             dsls.push_back(dsl);
         }
 
         sol::table pushConstants = layout["push_constants"];
-        for (auto& [pcKey, pcValue] : pushConstants) {
+        for (auto & [pcKey, pcValue]: pushConstants) {
             sol::table pcData = pcValue;
 
-            auto& p = pcr.emplace_back();
-            std::string stage = pcData.get_or("stage", std::string{ "both" });
+            auto & p = pcr.emplace_back();
+            std::string stage = pcData.get_or("stage", std::string{"both"});
             p.stageFlags = getStageFlags(stage);
             p.offset = pcData.get<uint32_t>("offset");
             p.size = pcData.get<uint32_t>("size");
@@ -803,18 +831,17 @@ namespace RxEngine
 
         sol::optional<std::string> colorTexture = material["color_texture"];
 
-        if(colorTexture.has_value()) {
+        if (colorTexture.has_value()) {
             auto te = world->lookup(colorTexture.value().c_str());
             if (te.isAlive() && te.has<Render::MaterialSampler>()) {
                 mi.materialTextures[0] = te.id;
-            }
-            else {
+            } else {
                 throw RxAssets::AssetException("Not a valid texture:", name);
             }
         }
 
-        std::string a = material.get_or("alpha_mode", std::string{ "OPAQUE" });
-        if(a == "OPAQUE") {
+        std::string a = material.get_or("alpha_mode", std::string{"OPAQUE"});
+        if (a == "OPAQUE") {
             mi.alpha = MaterialAlphaMode::Opaque;
         } else {
             mi.alpha = MaterialAlphaMode::Transparent;
@@ -832,6 +859,72 @@ namespace RxEngine
         }
     }
 
+    void loadMesh(ecs::World * world,
+                  RxCore::Device * device,
+                  std::string meshName,
+                  sol::table details)
+    {
+        std::string meshFile = details.get_or("mesh", std::string{""});
+        auto vertices = details.get<uint32_t>("vertices");
+        auto indices = details.get<uint32_t>("indices");
+
+        auto me = world->newEntity(meshName.c_str()).set<MeshObject>({
+            .vertexCount = vertices,
+            .indexCount = indices,
+            .meshFile = meshFile
+        });
+
+        sol::table smtab = details["submeshes"];
+        sol::table mtab = details["materials"];
+
+        std::vector<ecs::entity_t> mEntities;
+
+        for (auto & [k, v]: mtab) {
+            std::string mn = v.as<std::string>();
+
+            auto me = world->lookup(mn.c_str());
+            if (me.isAlive() && me.has<Material>()) {
+                mEntities.push_back(me.id);
+            }
+        }
+
+        for (auto & [k, v]: smtab) {
+            sol::table subMeshValue = v;
+
+            uint32_t first_index = subMeshValue.get<uint32_t>("first_index");
+            uint32_t index_count = subMeshValue.get<uint32_t>("index_count");
+            uint32_t material = subMeshValue.get<uint32_t>("material");
+
+            world->newEntity()
+                 .set<ecs::InstanceOf>({{me.id}})
+                 .set<SubMesh>({first_index, index_count})
+                 .set<UsesMaterial>({{mEntities[material]}});
+        }
+    }
+
+    void loadMeshes(ecs::World * world, RxCore::Device * device, sol::table & meshes)
+    {
+        for (auto & [key, value]: meshes) {
+            const std::string name = key.as<std::string>();
+            sol::table details = value;
+            loadMesh(world, device, name, details);
+        }
+    }
+
+    void loadPrototype(ecs::World * world,
+                       RxCore::Device * device,
+                       std::string prototypeName,
+                       sol::table details) { }
+
+    void loadPrototypes(ecs::World * world, RxCore::Device * device, sol::table & prototypes)
+    {
+        for (auto & [key, value]: prototypes) {
+            const std::string name = key.as<std::string>();
+            sol::table details = value;
+            loadPrototype(world, device, name, details);
+        }
+    }
+
     void EngineMain::populateStartupData()
     {
         sol::table data = lua->get<sol::table>("data");
@@ -841,11 +934,15 @@ namespace RxEngine
         sol::table textures = data["textures"];
         sol::table pipelines = data["material_pipelines"];
         sol::table materials = data["materials"];
+        sol::table meshes = data["meshes"];
+        sol::table prototypes = data["prototypes"];
 
         loadShaderData(world.get(), device_.get(), shaders);
         loadLayouts(world.get(), device_.get(), layouts);
         loadPipelines(world.get(), device_.get(), pipelines);
         loadTextures(world.get(), device_.get(), textures);
         loadMaterials(world.get(), device_.get(), materials);
+        loadMeshes(world.get(), device_.get(), meshes);
+        loadPrototypes(world.get(), device_.get(), meshes);
     }
 }

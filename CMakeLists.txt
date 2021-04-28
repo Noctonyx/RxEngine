@@ -15,7 +15,7 @@ add_subdirectory("extern/json")
 add_subdirectory("extern/spdlog")
 
 set(imgui_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/extern/imgui)
-add_subdirectory("extern/bitsery")
+#add_subdirectory("extern/bitsery")
 
 set(tinygltf_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/extern/tinygltf)
 
@@ -40,9 +40,7 @@ add_library(RxEngine STATIC
         src/EngineMain.cpp
         src/Delegates.hpp
         src/Delegates.cpp
-        
-        
-        
+  
         
         src/Window.cpp
         src/Window.hpp
@@ -123,7 +121,9 @@ if (MSVC)
     set_source_files_properties(${imgui_SOURCE_DIR}/imgui_tables.cpp COMPILE_FLAGS /wd5054)
     set_source_files_properties(${imgui_SOURCE_DIR}/imgui_draw.cpp COMPILE_FLAGS /wd5054)
     set_source_files_properties(${imgui_SOURCE_DIR}/misc/freetype/imgui_freetype.cpp COMPILE_FLAGS /wd5054)
-    #set_source_files_properties(${imgui_SOURCE_DIR}/misc/freetype/imgui_freetype.cpp COMPILE_FLAGS -Wno-unused-function)
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        set_source_files_properties(${imgui_SOURCE_DIR}/misc/freetype/imgui_freetype.cpp COMPILE_FLAGS -Wno-unused-function)
+    endif()
 endif ()
 
 target_include_directories(RxEngine PUBLIC "src")
