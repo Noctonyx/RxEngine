@@ -9,7 +9,7 @@
 #include "Modules/Module.h"
 #include <imgui.h>
 #include "Window.hpp"
-#include "RxCore.h"
+#include "RXCore.h"
 #include "RxECS.h"
 
 namespace RxEngine

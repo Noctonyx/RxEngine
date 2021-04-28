@@ -292,7 +292,6 @@ namespace RxEngine
 
     protected:
         void createRenderPass();
-        void ensureMaterialPipelinesExist();
         void createDepthRenderPass();
 
         std::shared_ptr<const std::vector<RenderEntity>> finishUpEntityJobs(

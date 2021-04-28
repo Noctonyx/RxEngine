@@ -309,7 +309,7 @@ namespace RxEngine
                 ImGui::TableNextColumn();
                 ImGui::Text("Name");
                 ImGui::TableNextColumn();
-                ImGui::Text(name->name.c_str());
+                ImGui::Text("%s", name->name.c_str());
 
                 ImGui::EndTable();
             }

@@ -368,27 +368,27 @@ namespace RxEngine
 
             blend.enable = blendData.get_or("enable", false);
 
-            if (std::optional<std::string> f = blendData["sourceFactor"];
+            if (sol::optional<std::string> f = blendData["sourceFactor"];
                 f != sol::nullopt) {
                 blend.sourceFactor = getBlendFactor(f.value());
             }
-            if (std::optional<std::string> f = blendData["destFactor"];
+            if (sol::optional<std::string> f = blendData["destFactor"];
                 f != sol::nullopt) {
                 blend.destFactor = getBlendFactor(f.value());
             }
-            if (std::optional<std::string> f = blendData["sourceAlphaFactor"];
+            if (sol::optional<std::string> f = blendData["sourceAlphaFactor"];
                 f != sol::nullopt) {
                 blend.sourceAlphaFactor = getBlendFactor(f.value());
             }
-            if (std::optional<std::string> f = blendData["destAlphaFactor"];
+            if (sol::optional<std::string> f = blendData["destAlphaFactor"];
                 f != sol::nullopt) {
                 blend.destAlphaFactor = getBlendFactor(f.value());
             }
-            if (std::optional<std::string> f = blendData["colorOp"];
+            if (sol::optional<std::string> f = blendData["colorOp"];
                 f != sol::nullopt) {
                 blend.colorBlendOp = getBlendOp(f.value());
             }
-            if (std::optional<std::string> f = blendData["alphaOp"];
+            if (sol::optional<std::string> f = blendData["alphaOp"];
                 f != sol::nullopt) {
                 blend.alphaBlendOp = getBlendOp(f.value());
             }
@@ -666,7 +666,7 @@ namespace RxEngine
     {
         auto e = world->lookup(name.c_str());
 
-        if (e.isAlive() && e.has<Render::MaterialImage>()) {
+        if (e.isAlive() && e.has<MaterialImage>()) {
             return e;
         }
 
@@ -699,11 +699,11 @@ namespace RxEngine
                 0,
                 j);
         }
-        Render::MaterialImage mi{};
+        MaterialImage mi{};
         mi.image = image;
         mi.imageView = iv;
 
-        return world->newEntity(name.c_str()).set<Render::MaterialImage>(mi);
+        return world->newEntity(name.c_str()).set<MaterialImage>(mi);
     }
 
     void loadTexture(ecs::World * world,
@@ -742,12 +742,12 @@ namespace RxEngine
                       const std::string & name,
                       sol::table & material)
     {
-        std::optional<std::string> opaquePipeline = material["opaquePipeline"];
-        std::optional<std::string> shadowPipeline = material["shadowPipeline"];
-        std::optional<std::string> transparentPipeline = material["transparentPipeline"];
-        std::optional<std::string> uiPipeline = material["uiPipeline"];
+        sol::optional<std::string> opaquePipeline = material["opaquePipeline"];
+        sol::optional<std::string> shadowPipeline = material["shadowPipeline"];
+        sol::optional<std::string> transparentPipeline = material["transparentPipeline"];
+        sol::optional<std::string> uiPipeline = material["uiPipeline"];
 
-        Render::Material mi{};
+        Material mi{};
 
         auto e = world->lookup(name.c_str());
 
@@ -801,7 +801,7 @@ namespace RxEngine
         mi.roughness = roughness;
         mi.metallic = metallic;
 
-        std::optional<std::string> colorTexture = material["color_texture"];
+        sol::optional<std::string> colorTexture = material["color_texture"];
 
         if(colorTexture.has_value()) {
             auto te = world->lookup(colorTexture.value().c_str());
@@ -815,12 +815,12 @@ namespace RxEngine
 
         std::string a = material.get_or("alpha_mode", std::string{ "OPAQUE" });
         if(a == "OPAQUE") {
-            mi.alpha = Render::MaterialAlphaMode::Opaque;
+            mi.alpha = MaterialAlphaMode::Opaque;
         } else {
-            mi.alpha = Render::MaterialAlphaMode::Transparent;
+            mi.alpha = MaterialAlphaMode::Transparent;
         }
 
-        e.set<Render::Material>(mi);
+        e.set<Material>(mi);
     }
 
     void loadMaterials(ecs::World * world, RxCore::Device * device, sol::table & materials)

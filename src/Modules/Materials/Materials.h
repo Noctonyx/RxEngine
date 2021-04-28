@@ -1,11 +1,13 @@
 #pragma once
 
 #include "Modules/Module.h"
-#include "RxCore.h"
+#include "RXCore.h"
 #include "RXAssets.h"
 
 namespace RxEngine
 {
+    struct RenderPasses;
+
     struct ShadowPipeline
     {
         std::shared_ptr<RxCore::Pipeline> pipeline;
@@ -84,6 +86,27 @@ namespace RxEngine
         RxAssets::PipelineRenderStage stage;
     };
 
+    struct MaterialImage
+    {
+        std::shared_ptr<RxCore::Image> image;
+        std::shared_ptr<RxCore::ImageView> imageView;
+    };
+
+    enum class MaterialAlphaMode : uint8_t
+    {
+        Opaque,
+        Transparent
+    };
+
+    struct Material
+    {
+        std::array<ecs::entity_t, 4> materialTextures{ 0, 0, 0, 0 };
+        float roughness;
+        float metallic;
+        MaterialAlphaMode alpha;
+    };
+
+
     class MaterialsModule : public Module
     {
     public:
@@ -93,11 +116,18 @@ namespace RxEngine
         void startup() override;
         void shutdown() override;
 
-        vk::Pipeline createMaterialPipeline(const MaterialPipelineDetails * mpd,
-                                            const FragmentShader * frag,
-                                            const VertexShader * vert,
-                                            vk::PipelineLayout layout,
-                                            vk::RenderPass rp,
-                                            uint32_t subpass);
+        static vk::Pipeline createMaterialPipeline(const MaterialPipelineDetails * mpd,
+                                                   const FragmentShader * frag,
+                                                   const VertexShader * vert,
+                                                   vk::PipelineLayout layout,
+                                                   vk::RenderPass rp,
+                                                   uint32_t subpass);
+
+        static void createPipelines(ecs::EntityHandle e,
+            const MaterialPipelineDetails* mpd,
+            const FragmentShader* frag,
+            const VertexShader* vert,
+            const PipelineLayout* pll,
+            const RenderPasses* rp);
     };
 }

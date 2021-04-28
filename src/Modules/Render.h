@@ -83,13 +83,7 @@ namespace RxEngine
         };
 #endif
 
-        struct MaterialImage
-        {
-            std::shared_ptr<RxCore::Image> image;
-            std::shared_ptr<RxCore::ImageView> imageView;
 
-            //std::string name;
-        };
 #if 0
         struct Texture
         {
@@ -112,19 +106,8 @@ namespace RxEngine
             uint32_t shaderId{9999};
         };
 #endif
-        enum class MaterialAlphaMode : uint8_t
-        {
-            Opaque,
-            Transparent
-        };
 
-        struct Material
-        {
-            std::array<ecs::entity_t, 4> materialTextures{0, 0, 0, 0};
-            float roughness;
-            float metallic;
-            MaterialAlphaMode alpha;
-        };
+
 
         struct MaterialBufferDataEntry
         {

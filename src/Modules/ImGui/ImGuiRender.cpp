@@ -6,7 +6,7 @@
 #include <imgui.h>
 #include <memory>
 #include "ImGuiRender.hpp"
-#include "RxCore.h"
+#include "RXCore.h"
 #include "Window.hpp"
 #include "Scene.h"
 #include "AssetException.h"

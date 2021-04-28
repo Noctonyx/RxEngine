@@ -8,7 +8,7 @@
 #include "Modules/Render.h"
 #include "EngineMain.hpp"
 #include "Scene.h"
-#include "RxCore.h"
+#include "RXCore.h"
 #include "RxECS.h"
 #include "Modules/Renderer/Renderer.hpp"
 

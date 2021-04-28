@@ -1,5 +1,5 @@
 #include "Materials.h"
-#include "RxCore.h"
+#include "RXCore.h"
 #include "Modules/Renderer/Renderer.hpp"
 
 namespace RxEngine
@@ -18,48 +18,7 @@ namespace RxEngine
                     FragmentShader,
                     VertexShader,
                     PipelineLayout,
-                    RenderPasses>(
-                  [this](ecs::EntityHandle e,
-                         const MaterialPipelineDetails * mpd,
-                         const FragmentShader * frag,
-                         const VertexShader * vert,
-                         const PipelineLayout * pll,
-                         const RenderPasses * rp
-              )
-                  {
-                      if (!rp) {
-                          return;
-                      }
-                      if (vert && frag && mpd) {
-                          if (mpd->stage == RxAssets::PipelineRenderStage::UI) {
-                              auto pl = createMaterialPipeline(
-                                  mpd, frag, vert, pll->layout, rp->uiRenderPass, rp->uiSubPass);
-                              e.setDeferred<UiPipeline>({
-                                  std::make_shared<RxCore::Pipeline>(pl), rp->uiRenderPass,
-                                  rp->uiSubPass
-                              });
-                              e.addDeferred<HasPipeline>();
-                          }
-
-                          if (mpd->stage == RxAssets::PipelineRenderStage::Opaque) {
-                              auto pl = createMaterialPipeline(
-                                  mpd, frag, vert, pll->layout, rp->opaqueRenderPass, rp->opaqueSubPass);
-                              e.setDeferred<OpaquePipeline>({
-                                  std::make_shared<RxCore::Pipeline>(pl), rp->opaqueRenderPass,rp->opaqueSubPass
-                                  });
-                              e.addDeferred<HasPipeline>();
-                          }
-
-                          if (mpd->stage == RxAssets::PipelineRenderStage::Shadow) {
-                              auto pl = createMaterialPipeline(
-                                  mpd, frag, vert, pll->layout, rp->shadowRenderPass, rp->shadowSubPass);
-                              e.setDeferred<ShadowPipeline>({
-                                  std::make_shared<RxCore::Pipeline>(pl), rp->shadowRenderPass,rp->shadowSubPass
-                                  });
-                              e.addDeferred<HasPipeline>();
-                          }
-                      }
-                  });
+                    RenderPasses>(&createPipelines);
     }
 
     void MaterialsModule::shutdown() { }
@@ -230,5 +189,62 @@ namespace RxEngine
         assert(rv.result == vk::Result::eSuccess);
 
         return rv.value;
+    }
+
+    void MaterialsModule::createPipelines(
+        ecs::EntityHandle e,
+        const MaterialPipelineDetails * mpd,
+        const FragmentShader * frag,
+        const VertexShader * vert,
+        const PipelineLayout * pll,
+        const RenderPasses * rp)
+    {
+        if (!rp) {
+            return;
+        }
+        if (vert && frag && mpd) {
+            if (mpd->stage == RxAssets::PipelineRenderStage::UI) {
+                auto pl = createMaterialPipeline(
+                    mpd, frag, vert, pll->layout, rp->uiRenderPass, rp->uiSubPass);
+                e.setDeferred<UiPipeline>({
+                    std::make_shared<RxCore::Pipeline>(pl), rp->uiRenderPass,
+                    rp->uiSubPass
+                });
+                e.addDeferred<HasPipeline>();
+            }
+
+            if (mpd->stage == RxAssets::PipelineRenderStage::Opaque) {
+                auto pl = createMaterialPipeline(
+                    mpd, frag, vert, pll->layout, rp->opaqueRenderPass,
+                    rp->opaqueSubPass);
+                e.setDeferred<OpaquePipeline>({
+                    std::make_shared<RxCore::Pipeline>(pl), rp->opaqueRenderPass,
+                    rp->opaqueSubPass
+                });
+                e.addDeferred<HasPipeline>();
+            }
+
+            if (mpd->stage == RxAssets::PipelineRenderStage::Shadow) {
+                auto pl = createMaterialPipeline(
+                    mpd, frag, vert, pll->layout, rp->shadowRenderPass,
+                    rp->shadowSubPass);
+                e.setDeferred<ShadowPipeline>({
+                    std::make_shared<RxCore::Pipeline>(pl), rp->shadowRenderPass,
+                    rp->shadowSubPass
+                });
+                e.addDeferred<HasPipeline>();
+            }
+
+            if (mpd->stage == RxAssets::PipelineRenderStage::Transparent) {
+                auto pl = createMaterialPipeline(
+                    mpd, frag, vert, pll->layout, rp->transparentRenderPass,
+                    rp->transparentSubPass);
+                e.setDeferred<TransparentPipeline>({
+                    std::make_shared<RxCore::Pipeline>(pl), rp->transparentRenderPass,
+                    rp->transparentSubPass
+                });
+                e.addDeferred<HasPipeline>();
+            }
+        }
     }
 }
