@@ -13,9 +13,6 @@
 [submodule "extern/dxmath"]
 	path = extern/dxmath
 	url = https://github.com/microsoft/DirectXMath.git
-[submodule "extern/bitsery"]
-	path = extern/bitsery
-	url = https://github.com/fraillt/bitsery
 [submodule "extern/freetype"]
 	path = extern/freetype
 	url = https://github.com/shanehyde/freetype
