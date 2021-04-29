@@ -120,7 +120,7 @@ namespace RxEngine
         void createSemaphores(uint32_t semaphoreCount);
         void destroySemaphores();
 
-        void populateStartupData();
+        //void populateStartupData();
         //void loadShaderData();
         //void loadPipelineData();
         //void loadTextureData();

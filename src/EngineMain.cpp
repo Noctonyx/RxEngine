@@ -45,7 +45,7 @@ namespace RxEngine
             loadLuaFile(sf);
         }
 
-        populateStartupData();
+        //populateStartupData();
 
         modules.push_back(std::make_shared<Renderer>(device_->VkDevice(), world.get(),
                                                      swapChain_->imageFormat(), this));
@@ -59,6 +59,10 @@ namespace RxEngine
 
         for (auto & m: modules) {
             m->registerModule();
+        }
+
+        for (auto& m : modules) {
+            m->processStartupData(lua, device_.get());
         }
 
         for (auto & m: modules) {

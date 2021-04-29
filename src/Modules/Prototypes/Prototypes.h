@@ -17,5 +17,7 @@ namespace RxEngine
 
         void startup() override;
         void shutdown() override;
+
+        void processStartupData(sol::state * lua, RxCore::Device * device) override;
     };
 }

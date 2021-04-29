@@ -2,6 +2,14 @@
 
 #include "RxECS.h"
 
+namespace RxCore {
+    class Device;
+}
+
+namespace sol {
+    class state;
+}
+
 namespace RxEngine
 {
     class EngineMain;
@@ -31,5 +39,7 @@ namespace RxEngine
         virtual void shutdown() {};
 
         virtual void deregisterModule() {};
+
+        virtual void processStartupData(sol::state* lua, RxCore::Device* device) {};
     };
 }

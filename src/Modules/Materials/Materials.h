@@ -116,6 +116,8 @@ namespace RxEngine
         void startup() override;
         void shutdown() override;
 
+        void processStartupData(sol::state * lua, RxCore::Device* device) override;
+
         static vk::Pipeline createMaterialPipeline(const MaterialPipelineDetails * mpd,
                                                    const FragmentShader * frag,
                                                    const VertexShader * vert,
