@@ -147,6 +147,7 @@ namespace RxEngine
         world->set<ComponentGui>(world->getComponentId<EngineTime>(), { .editor = ecsEngineTimeGui });
         world->set<ComponentGui>(world->getComponentId<ecs::StreamComponent>(), { .editor = ecsStreamComponentGui });
         world->set<ComponentGui>(world->getComponentId<ecs::System>(), { .editor = ecsSystemGui });
+        world->set<ComponentGui>(world->getComponentId<ecs::Component>(), { .editor = ecsComponentGui });
     }
 
     void EngineMain::startup()

@@ -1,14 +1,27 @@
 #include "Materials.h"
 
 #include "AssetException.h"
+#include "EngineMain.hpp"
+#include "imgui.h"
 #include "Loader.h"
 #include "RXCore.h"
 #include "Modules/Renderer/Renderer.hpp"
 #include "sol/state.hpp"
 #include "sol/table.hpp"
+#include "RxECS.h"
 
 namespace RxEngine
 {
+    void MaterialsModule::registerModule()
+    {
+        world_->set<ComponentGui>(world_->getComponentId<Material>(),
+            ComponentGui{ .editor = MaterialsModule::materialGui });
+    }
+    void MaterialsModule::deregisterModule()
+    {
+        
+    }
+
     void MaterialsModule::startup()
     {
         world_->createSystem("Material:Pipelines")
@@ -969,6 +982,34 @@ namespace RxEngine
                     rp->transparentSubPass
                 });
                 e.addDeferred<HasPipeline>();
+            }
+        }
+    }
+
+    void MaterialsModule::materialGui(ecs::EntityHandle e)
+    {
+        auto material = e.get<Material>();
+
+        if (material) {
+            if (ImGui::BeginTable("ComponentGui", 2, /*ImGuiTableFlags_Borders | */
+                ImGuiTableFlags_Resizable |
+                ImGuiTableFlags_Hideable)) {
+                ImGui::TableSetupColumn("Name");
+                ImGui::TableSetupColumn("Value");
+                //ImGui::TableHeadersRow();
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::Text("Roughness");
+                ImGui::TableNextColumn();
+                ImGui::Text("%.3f", material->roughness);
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::Text("Metallic");
+                ImGui::TableNextColumn();
+                ImGui::Text("%.3f", material->metallic);
+
+                ImGui::EndTable();
             }
         }
     }

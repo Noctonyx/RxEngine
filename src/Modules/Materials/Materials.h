@@ -113,6 +113,8 @@ namespace RxEngine
         MaterialsModule(ecs::World* world, EngineMain* engine)
             : Module(world, engine) {}
 
+        void registerModule() override;
+        void deregisterModule() override;
         void startup() override;
         void shutdown() override;
 
@@ -131,5 +133,8 @@ namespace RxEngine
             const VertexShader* vert,
             const PipelineLayout* pll,
             const RenderPasses* rp);
+
+    private:
+        static void materialGui(ecs::EntityHandle e);
     };
 }

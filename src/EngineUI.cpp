@@ -88,30 +88,55 @@ namespace RxEngine
         for (auto c: entity) {
             auto cd = world->getComponentDetails(c);
 
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
-            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4) ImColor::HSV(0.7f, 0.6f, 0.6f));
-            if (ImGui::Button(cd->name.c_str())) {
-                //selectedEntity = id.object();
-            }
-            ImGui::PopStyleColor();
-            ImGui::PopStyleVar(2);
+            if (!cd->isRelation) {
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
+                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0.7f, 0.6f, 0.6f));
+                if (ImGui::Button(cd->name.c_str())) {
+                    //selectedEntity = id.object();
+                }
+                ImGui::PopStyleColor();
+                ImGui::PopStyleVar(2);
 
-            //            ImGui::TableNextColumn();
-            //            if (id.has_role()) {
-            //              ImGui::TextUnformatted(id.role_str());
-            //        }
+                //            ImGui::TableNextColumn();
+                //            if (id.has_role()) {
+                //              ImGui::TextUnformatted(id.role_str());
+                //        }
 
-            //            ImGui::TableNextColumn();
-            //            if (id.is_pair()) {
-            //              ImGui::TextUnformatted(id.relation().name());
-            //        }
+                //            ImGui::TableNextColumn();
+                //            if (id.is_pair()) {
+                //              ImGui::TextUnformatted(id.relation().name());
+                //        }
 
-            ImGui::TableNextColumn();
-            if (world->has<ComponentGui>(c)) {
-                world->get<ComponentGui>(c)->editor(entity);
+                ImGui::TableNextColumn();
+                if (world->has<ComponentGui>(c)) {
+                    world->get<ComponentGui>(c)->editor(entity);
+                }
+            } else {
+                auto r = reinterpret_cast<const ecs::Relation *>(entity.getWorld()->get(entity.id, c));
+                auto object = entity.getHandle(r->entity);
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+                bool open = ImGui::TreeNodeEx(object.description().c_str(),
+                    ImGuiTreeNodeFlags_SpanFullWidth,
+                    "%s(%s)", cd->name.c_str(), object.description().c_str());
+                ImGui::TableNextColumn();
+                if (world->has<ComponentGui>(c)) {
+                    world->get<ComponentGui>(c)->editor(entity);
+                }
+                else {
+//                    ImGui::TableNextColumn();
+  //                  ImGui::TableNextColumn();
+                }
+                if (open) {
+                    //ecsInspectorIsAEntity(object, selectedEntity);
+                    ecsInspectorEntityComponents(object, selectedEntity);
+                    ImGui::TreePop();
+                }
             }
         }
     }
@@ -181,7 +206,7 @@ namespace RxEngine
                     //                  ImGui::TableNextColumn();
 
                     if (open) {
-                        ecsInspectorIsAEntity(entity, selectedEntity);
+                        //ecsInspectorIsAEntity(entity, selectedEntity);
                         ecsInspectorEntityComponents(entity, selectedEntity);
                         ImGui::TreePop();
                     }
@@ -310,6 +335,40 @@ namespace RxEngine
                 ImGui::Text("Name");
                 ImGui::TableNextColumn();
                 ImGui::Text("%s", name->name.c_str());
+
+                ImGui::EndTable();
+            }
+        }
+    }
+
+    void EngineMain::ecsComponentGui(ecs::EntityHandle e)
+    {
+        auto comp = e.get<ecs::Component>();
+        if (comp) {
+            if (ImGui::BeginTable("ComponentGui", 2, /*ImGuiTableFlags_Borders | */
+                ImGuiTableFlags_Resizable |
+                ImGuiTableFlags_Hideable)) {
+                ImGui::TableSetupColumn("Name");
+                ImGui::TableSetupColumn("Value");
+                //ImGui::TableHeadersRow();
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::Text("Name");
+                ImGui::TableNextColumn();
+                ImGui::Text("%s", comp->name.c_str());
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::Text("Is Relation");
+                ImGui::TableNextColumn();
+                ImGui::Text("%s", comp->isRelation ? "True" : "False");
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::Text("Size");
+                ImGui::TableNextColumn();
+                ImGui::Text("%d", comp->size);
 
                 ImGui::EndTable();
             }

@@ -25,6 +25,7 @@
 #include "sol/sol.hpp"
 #include "Window.hpp"
 #include "Modules/Module.h"
+#include "RxECS.h"
 //#include "LuaBridge/detail/LuaRef.h"
 
 //#include <sol/sol.hpp>
@@ -181,6 +182,7 @@ namespace RxEngine
         //std::unique_ptr<World> world;
 
         static void ecsNameGui(ecs::EntityHandle e);
+        static void ecsComponentGui(ecs::EntityHandle e);
         static void ecsSystemGroupGui(ecs::EntityHandle e);
         static void ecsWindowDetailsGui(ecs::EntityHandle e);
         static void ecsEngineTimeGui(ecs::EntityHandle e);
