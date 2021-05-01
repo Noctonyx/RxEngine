@@ -108,7 +108,7 @@ add_library(RxEngine STATIC
         src/Modules/WorldObject/WorldObject.cpp 
         src/Modules/Materials/Materials.h 
         src/Modules/Materials/Materials.cpp
-        )
+         "src/Modules/RTSCamera/RTSCamera.h" "src/Modules/RTSCamera/RTSCamera.cpp")
 
 target_compile_options(RxEngine PUBLIC -DGLFW_INCLUDE_VULKAN -DVK_USE_PLATFORM_WIN32_KHR -DGLFW_EXPOSE_NATIVE_WIN32 -DNOMINMAX)
 

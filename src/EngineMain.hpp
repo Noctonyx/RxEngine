@@ -113,8 +113,14 @@ namespace RxEngine
         void addInitConfigFile(const std::string& config);
 
 
+
         //void registerBaseModules();
         //template<typename T> void registerModule();
+
+        [[nodiscard]] ecs::World * getWorld() const
+        {
+            return world.get();
+        }
 
     protected:
         void replaceSwapChain();
@@ -141,6 +147,8 @@ namespace RxEngine
         void ecsInspectorEntityComponents(ecs::EntityHandle entity, ecs::EntityHandle& selectedEntity);
         void ecsInspectorEntityWindow(bool & show_entity_window);
         void updateEntityGui();
+
+
 
     private:
         //std::vector<std::unique_ptr<Subsystem>> subsystems_;

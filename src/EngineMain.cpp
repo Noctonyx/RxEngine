@@ -16,6 +16,7 @@
 #include "Modules/ImGui/ImGuiRender.hpp"
 #include "Modules/Stats/Stats.h"
 #include "Modules/Prototypes/Prototypes.h"
+#include "Modules/RTSCamera/RTSCamera.h"
 #include "Modules/StaticMesh/StaticMesh.h"
 #include "Modules/Transforms/Transforms.h"
 #include "Modules/WorldObject/WorldObject.h"
@@ -56,6 +57,7 @@ namespace RxEngine
         modules.push_back((std::make_shared<PrototypesModule>(world.get(), this)));
         modules.push_back((std::make_shared<StaticMeshModule>(world.get(), this)));
         modules.push_back((std::make_shared<WorldObjectModule>(world.get(), this)));
+        modules.push_back((std::make_shared<RTSCameraModule>(world.get(), this)));
 
         for (auto & m: modules) {
             m->registerModule();
@@ -202,9 +204,8 @@ namespace RxEngine
         modules.clear();
 
         world.reset();
-        if(lua) {
-            delete lua;
-        }
+
+        delete lua;
 
         destroySemaphores();
         swapChain_.reset();

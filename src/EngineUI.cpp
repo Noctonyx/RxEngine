@@ -43,6 +43,7 @@ namespace RxEngine
         ImGui::PopStyleVar(2);
         for (auto e: *table) {
 
+            ImGui::PushID(e.id);
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
             ImGui::Text("%lld", e.id);
@@ -53,6 +54,7 @@ namespace RxEngine
                 selectedEntity == e)) {
                 selectedEntity = e;
             }
+            ImGui::PopID();
         }
     }
 
@@ -198,7 +200,7 @@ namespace RxEngine
 
                     bool open = ImGui::TreeNodeEx(entity.description().c_str(),
                                                   ImGuiTreeNodeFlags_SpanFullWidth,
-                                                  "%s (%s) #%lld", type.c_str(),
+                                                  "%s (%s) %lld", type.c_str(),
                                                   entity.description().c_str(),
                                                   entity.id);
                     ImGui::TableNextColumn();
