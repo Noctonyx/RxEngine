@@ -8,11 +8,23 @@ using namespace DirectX;
 
 namespace RxEngine
 {
+    void rtsCameraGUI(ecs::World *, void * ptr)
+    {
+        auto rts_camera = static_cast<RTSCamera *>(ptr);
+        if (rts_camera) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Dolly");
+            ImGui::TableNextColumn();
+            ImGui::DragFloat("", &rts_camera->dolly);
+        }
+    }
+
     void RTSCameraModule::startup()
     {
         world_->createSystem("RTSCamera:CalculateMatrix")
               .inGroup("Pipeline:PreRender")
-              .withQuery<RTSCamera,WorldPosition, YRotation, XRotation, CameraProjection>()
+              .withQuery<RTSCamera, WorldPosition, YRotation, XRotation, CameraProjection>()
               .each<RTSCamera, WorldPosition, YRotation, XRotation, CameraProjection>(
                   [](ecs::EntityHandle e,
                      RTSCamera * c,
@@ -105,6 +117,8 @@ namespace RxEngine
               {
                   updateGui(e);
               });
+
+        world_->set<ComponentGui>(world_->getComponentId<RTSCamera>(), {.editor = rtsCameraGUI});
     }
 
     void RTSCameraModule::shutdown()
@@ -112,6 +126,8 @@ namespace RxEngine
         world_->deleteSystem(world_->lookup("RTSCamera:CalculateMatrix").id);
         world_->deleteSystem(world_->lookup("RTSCamera:Stats").id);
         world_->deleteSystem(world_->lookup("RTSCamera:AspectRatio").id);
+
+        world_->remove<ComponentGui>(world_->getComponentId<RTSCamera>());
     }
 
     void RTSCameraModule::updateGui(ecs::EntityHandle e)

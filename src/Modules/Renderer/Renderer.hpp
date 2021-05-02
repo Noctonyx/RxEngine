@@ -170,7 +170,7 @@ namespace RxEngine
     struct FrameStats
     {
         std::vector<FrameStatDetail> frames;
-        uint32_t frameNo;
+        uint64_t frameNo;
         uint32_t index;
     };
 

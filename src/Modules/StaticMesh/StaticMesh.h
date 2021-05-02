@@ -4,16 +4,12 @@
 
 namespace RxEngine
 {
+    class MeshBundle;
+
     struct MeshPrimitive
     {
         uint32_t vertexOffset;
         uint32_t indexOffset;
-        uint32_t indexCount;
-    };
-
-    struct SubMesh
-    {
-        uint32_t firstIndex;
         uint32_t indexCount;
     };
 
@@ -33,6 +29,27 @@ namespace RxEngine
         uint32_t vertexCount;
         uint32_t indexCount;
         std::string meshFile;
+    };
+
+    struct StaticMeshActiveBundle
+    {
+        ecs::entity_t currentBundle = 0;
+    };
+
+    struct StaticMeshBundle
+    {
+        std::shared_ptr<MeshBundle> bundle;
+    };
+
+    struct StaticMeshVertex
+    {
+        DirectX::XMFLOAT3 point;
+        float pad1;
+        DirectX::XMFLOAT3 normal;
+        float pad2;
+        DirectX::XMFLOAT2 uv;
+        float pad3;
+        float pad4;
     };
 
 #if 0
@@ -57,6 +74,7 @@ namespace RxEngine
         StaticMeshModule(ecs::World * world, EngineMain * engine)
             : Module(world, engine) {}
 
+        void registerModule() override;
         void startup() override;
         void shutdown() override;
 

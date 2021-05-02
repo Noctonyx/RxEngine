@@ -1,31 +1,81 @@
 #include "StaticMesh.h"
 
+#include "Loader.h"
 #include "Modules/Materials/Materials.h"
+#include "Rendering/MeshBundle.h"
 #include "sol/state.hpp"
 #include "sol/table.hpp"
 
 namespace RxEngine
 {
-    void StaticMeshModule::startup() { }
+    void StaticMeshModule::registerModule()
+    {
+        world_->addSingleton<StaticMeshActiveBundle>();
+    }
+
+    void StaticMeshModule::startup()
+    {
+        
+    }
 
     void StaticMeshModule::shutdown() { }
+
+    ecs::entity_t getActiveMeshBundle(ecs::World * world)
+    {
+        auto smab = world->getSingleton<StaticMeshActiveBundle>();
+        if (world->isAlive(smab->currentBundle)) {
+            return smab->currentBundle;
+        }
+
+        auto mb = std::make_shared<MeshBundle>(sizeof(StaticMeshVertex), 256 * 1024 * 1024, false);
+        auto mbe = world->newEntity();
+        auto smb = mbe.addAndUpdate<StaticMeshBundle>();
+        smb->bundle = mb;
+
+        world->getSingletonUpdate<StaticMeshActiveBundle>()->currentBundle = mbe.id;
+
+        return mbe.id;
+    }
 
     void loadMesh(ecs::World * world,
                   RxCore::Device * device,
                   std::string meshName,
                   sol::table details)
     {
+        auto mbe = getActiveMeshBundle(world);
+
         std::string meshFile = details.get_or("mesh", std::string{""});
         auto vertices = details.get<uint32_t>("vertices");
         auto indices = details.get<uint32_t>("indices");
+
+        std::vector<StaticMeshVertex> meshVertices(vertices);
+        std::vector<uint32_t> meshIndices(indices);
+
+        RxAssets::MeshSaveData msd;
+
+        RxAssets::Loader::loadMesh(msd, meshFile);
+
+        std::copy(msd.indices.begin(), msd.indices.end(), meshIndices.begin());
+        std::transform(
+            msd.vertices.begin(), msd.vertices.end(), meshVertices.begin(),
+            [](RxAssets::MeshSaveVertex & m)
+            {
+                return StaticMeshVertex{
+                    {m.x, m.y, m.z}, 0.f, {m.nx, m.ny, m.nz}, 0.f, {m.uvx, m.uvy}, 0.f,
+                    0.f
+                };
+            });
+
+        auto b = world->get<StaticMeshBundle>(mbe)->bundle;
+        //if(b->canFit())
 
         auto me = world->newEntity(meshName.c_str()).set<MeshObject>({
             .vertexCount = vertices,
             .indexCount = indices,
             .meshFile = meshFile
         });
-        me.add<StaticMesh>();
-        auto sm = me.getUpdate<StaticMesh>();
+
+        auto sm = me.addAndUpdate<StaticMesh>();
 
         sol::table smtab = details.get<sol::table>("submeshes");
         sol::table mtab = details.get<sol::table>("materials");
@@ -51,7 +101,7 @@ namespace RxEngine
             sm->subMeshes.push_back(
                 world->newEntity()
                      //.set<ecs::InstanceOf>({{me.id}})
-                     .set<SubMesh>({first_index, index_count})
+                     .set<MeshPrimitive>({first_index, index_count, 0})
                      .set<UsesMaterial>({{mEntities[material]}}).id
             );
         }

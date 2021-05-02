@@ -3,6 +3,24 @@
 
 namespace RxEngine
 {
+    void frameStatsGui(ecs::World *, void * ptr)
+    {
+        auto fs = static_cast<FrameStats*>(ptr);
+        if(fs) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Frame ID");
+            ImGui::TableNextColumn();
+            ImGui::Text("%lld", fs->frameNo);
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Frame Index");
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", fs->index);
+        }
+    }
+
     void EngineMain::ecsMainMenu(bool & show_entity_window,
                                  bool & show_systems_window,
                                  bool & show_singletons_window)
@@ -330,12 +348,10 @@ namespace RxEngine
         static bool show_systems_window = getBoolConfigValue("editor", "ecsSystemsWindow", false);
         static bool show_singletons_window = getBoolConfigValue(
             "editor", "ecsSingletonsWindow", false);
-        static bool show_components_window = getBoolConfigValue(
-            "editor", "ecsComponentsWindow", false);
 
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("Subsystems")) {
-                ecsMainMenu(show_entity_window, show_systems_window, show_components_window);
+                ecsMainMenu(show_entity_window, show_systems_window, show_singletons_window);
             }
             ImGui::EndMainMenuBar();
         }
@@ -359,10 +375,7 @@ namespace RxEngine
         if (show_singletons_window) {
             bool is_open = show_singletons_window;
 
-            if (ImGui::Begin("Singletons", &is_open)) {
-                ecsSingletonsWindow(show_singletons_window);
-            }
-            ImGui::End();
+            ecsSingletonsWindow(show_singletons_window);
 
             if (is_open != show_singletons_window) {
                 show_singletons_window = is_open;

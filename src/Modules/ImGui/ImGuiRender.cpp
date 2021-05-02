@@ -113,9 +113,7 @@ namespace RxEngine
               {
                   OPTICK_EVENT()
                   auto & io = ImGui::GetIO();
-                  if (!io.WantCaptureKeyboard) {
-                      return false;
-                  }
+                 
                   if (key->action == EInputAction::Press) {
                       io.KeysDown[static_cast<int>(key->key)] = true;
                   }
@@ -130,6 +128,9 @@ namespace RxEngine
                       io.KeysDown[static_cast<int>(EKey::AltRight)];
                   io.KeySuper = io.KeysDown[static_cast<int>(EKey::SuperLeft)] ||
                       io.KeysDown[static_cast<int>(EKey::SuperRight)];
+                  if (!io.WantCaptureKeyboard) {
+                      return false;
+                  }
                   return true;
               });
 

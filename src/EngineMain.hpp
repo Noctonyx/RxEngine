@@ -12,7 +12,7 @@
 #include "Modules/Renderer/Renderer.hpp"
 //#include <Rendering/EntityManager.h>
 
-#include "Delegates.hpp"
+//#include "Delegates.hpp"
 //#include "Rendering/MaterialManager.h"
 
 //#include "UI/RmlFileInterface.h"
@@ -54,7 +54,7 @@ namespace RxEngine
     };
     struct ComponentGui
     {
-        std::function<void(ecs::World * world, void *)> editor;
+        std::function<void(ecs::World *, void *)> editor;
     };
 
     class EngineMain
@@ -89,8 +89,6 @@ namespace RxEngine
             return window_.get();
         }
 
-        void updateMaterialGui();
-
         void loadConfig();
         void saveConfig();
 
@@ -112,28 +110,18 @@ namespace RxEngine
 
         void addInitConfigFile(const std::string& config);
 
-
-
-        //void registerBaseModules();
-        //template<typename T> void registerModule();
-
         [[nodiscard]] ecs::World * getWorld() const
         {
             return world.get();
         }
 
+        template<class T>
+        void addModule();
 
     protected:
         void replaceSwapChain();
         void createSemaphores(uint32_t semaphoreCount);
         void destroySemaphores();
-
-        //void populateStartupData();
-        //void loadShaderData();
-        //void loadPipelineData();
-        //void loadTextureData();
-        //void populateMaterialPipeline(const std::string& name, luabridge::LuaRef& details);
-        //void populateMaterialPipelineDetails(sol::table& details, Render::MaterialPipelineDetails& mpd);
 
         void createMaterialTexture(std::string textureName, sol::table details);
         void loadLuaFile(const std::filesystem::path & file);
@@ -165,18 +153,8 @@ namespace RxEngine
 
         std::vector<vk::Semaphore> submitCompleteSemaphores_;
         std::chrono::time_point<std::chrono::steady_clock> timer_;
-        //RXAssets::Loader * loader_;
-        //std::unique_ptr<IMGuiRender> gui;
 
         std::vector<std::string> configFiles;
-
-        //Rml::Context * rmlContext{};
-
-        //MulticastDelegate<Subsystem *> onRemoveSubsystem;
-        //MulticastDelegate<Subsystem *> onAddSubsystem;
-        //std::shared_ptr<Scene> scene_;
-
-        //std::shared_ptr<RenderCamera> renderCamera_{};
 
         std::chrono::time_point<std::chrono::steady_clock> startTime;
         float delta_{};
@@ -187,18 +165,13 @@ namespace RxEngine
         mINI::INIStructure iniData;
 
         std::unique_ptr<ecs::World> world;
-        //World* world;
-        //std::unique_ptr<flecs::world> world_;
-        //std::unique_ptr<World> world;
-
-//        static void ecsNameGui(ecs::EntityHandle e);
-        //static void ecsComponentGui(ecs::EntityHandle e);
-        //static void ecsSystemGroupGui(ecs::EntityHandle e);
-        //static void ecsWindowDetailsGui(ecs::EntityHandle e);
-        //static void ecsEngineTimeGui(ecs::EntityHandle e);
-        //static void ecsSystemGui(ecs::EntityHandle e);
-        //static void ecsStreamComponentGui(ecs::EntityHandle e);
     };
+
+    template <class T>
+    void EngineMain::addModule()
+    {
+        modules.push_back(std::make_shared<T>(world.get(), this));
+    }
 
     inline void EngineMain::loadLuaFile(const std::filesystem::path & file)
     {
@@ -232,6 +205,7 @@ namespace RxEngine
     void ecsEngineTimeGui(ecs::World* world, void* ptr);
     void ecsSystemGui(ecs::World* world, void* ptr);
     void ecsStreamComponentGui(ecs::World* world, void* ptr);
+    void frameStatsGui(ecs::World* world, void* ptr);
 
 }
 #endif //RX_ENGINEMAIN_HPP

@@ -48,20 +48,19 @@ namespace RxEngine
             loadLuaFile(sf);
         }
 
-        //populateStartupData();
-
         modules.push_back(std::make_shared<Renderer>(device_->VkDevice(), world.get(),
                                                      swapChain_->imageFormat(), this));
-        modules.push_back((std::make_shared<MaterialsModule>(world.get(), this)));
-        modules.push_back((std::make_shared<IMGuiRender>(world.get(), this)));
-        modules.push_back((std::make_shared<TransformsModule>(world.get(), this)));
-        modules.push_back((std::make_shared<StatsModule>(world.get(), this)));
-        modules.push_back((std::make_shared<StaticMeshModule>(world.get(), this)));
-        modules.push_back((std::make_shared<WorldObjectModule>(world.get(), this)));
-        modules.push_back((std::make_shared<PrototypesModule>(world.get(), this)));
-        modules.push_back((std::make_shared<RTSCameraModule>(world.get(), this)));
-        modules.push_back((std::make_shared<SceneCameraModule>(world.get(), this)));
-        modules.push_back((std::make_shared<EnvironmentModule>(world.get(), this)));
+
+        addModule<MaterialsModule>();
+        addModule<IMGuiRender>();
+        addModule<TransformsModule>();
+        addModule<StatsModule>();
+        addModule<StaticMeshModule>();
+        addModule<WorldObjectModule>();
+        addModule<PrototypesModule>();
+        addModule<RTSCameraModule>();
+        addModule<SceneCameraModule>();
+        addModule<EnvironmentModule>();
 
         for (auto & m: modules) {
             m->registerModule();
@@ -154,6 +153,7 @@ namespace RxEngine
         world->set<ComponentGui>(world->getComponentId<ecs::StreamComponent>(), { .editor = ecsStreamComponentGui });
         world->set<ComponentGui>(world->getComponentId<ecs::System>(), { .editor = ecsSystemGui });
         world->set<ComponentGui>(world->getComponentId<ecs::Component>(), { .editor = ecsComponentGui });
+        world->set<ComponentGui>(world->getComponentId<FrameStats>(), { .editor = frameStatsGui});
     }
 
     void EngineMain::startup()
