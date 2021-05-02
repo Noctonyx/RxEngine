@@ -53,9 +53,9 @@ namespace RxEngine
 
     private:
 
-        static void worldPositionGui(ecs::EntityHandle e);
-        static void yRotationGui(ecs::EntityHandle e);
-        static void xRotationGui(ecs::EntityHandle e);
-        static void scalarScaleGui(ecs::EntityHandle e);
+        //static void worldPositionGui(void * ptr);
+        //static void yRotationGui(void* ptr);
+        //static void xRotationGui(void* ptr);
+        //static void scalarScaleGui(void* ptr);
     };
 };

@@ -42,7 +42,6 @@ namespace RxEngine
     struct ShadowCascade;
     class Renderer;
     class Camera;
-    class SceneCamera;
     class Lighting;
 
     enum ELightType
@@ -161,6 +160,18 @@ namespace RxEngine
     struct UiCommandBuffer
     {
         std::shared_ptr<RxCore::SecondaryCommandBuffer> buf;
+    };
+
+    struct FrameStatDetail
+    {
+        float cpuTime;
+    };
+
+    struct FrameStats
+    {
+        std::vector<FrameStatDetail> frames;
+        uint32_t frameNo;
+        uint32_t index;
     };
 
     struct IRenderProvider

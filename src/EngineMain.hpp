@@ -54,7 +54,7 @@ namespace RxEngine
     };
     struct ComponentGui
     {
-        std::function<void(ecs::EntityHandle e)> editor;
+        std::function<void(ecs::World * world, void *)> editor;
     };
 
     class EngineMain
@@ -122,6 +122,7 @@ namespace RxEngine
             return world.get();
         }
 
+
     protected:
         void replaceSwapChain();
         void createSemaphores(uint32_t semaphoreCount);
@@ -140,12 +141,13 @@ namespace RxEngine
 
         void ecsMainMenu(bool & show_entity_window,
                          bool & show_systems_window,
-                         bool & show_components_window);
+                         bool & show_singletons_window);
         void ecsInspectorShowTableDetails(ecs::EntityHandle& selectedEntity,
                                           ecs::Table * table) const;
         void ecsInspectorIsAEntity(ecs::EntityHandle entity, ecs::EntityHandle& selectedEntity);
         void ecsInspectorEntityComponents(ecs::EntityHandle entity, ecs::EntityHandle& selectedEntity);
         void ecsInspectorEntityWindow(bool & show_entity_window);
+        void ecsSingletonsWindow(bool & show_singletons_window);
         void updateEntityGui();
 
 
@@ -189,13 +191,13 @@ namespace RxEngine
         //std::unique_ptr<flecs::world> world_;
         //std::unique_ptr<World> world;
 
-        static void ecsNameGui(ecs::EntityHandle e);
-        static void ecsComponentGui(ecs::EntityHandle e);
-        static void ecsSystemGroupGui(ecs::EntityHandle e);
-        static void ecsWindowDetailsGui(ecs::EntityHandle e);
-        static void ecsEngineTimeGui(ecs::EntityHandle e);
-        static void ecsSystemGui(ecs::EntityHandle e);
-        static void ecsStreamComponentGui(ecs::EntityHandle e);
+//        static void ecsNameGui(ecs::EntityHandle e);
+        //static void ecsComponentGui(ecs::EntityHandle e);
+        //static void ecsSystemGroupGui(ecs::EntityHandle e);
+        //static void ecsWindowDetailsGui(ecs::EntityHandle e);
+        //static void ecsEngineTimeGui(ecs::EntityHandle e);
+        //static void ecsSystemGui(ecs::EntityHandle e);
+        //static void ecsStreamComponentGui(ecs::EntityHandle e);
     };
 
     inline void EngineMain::loadLuaFile(const std::filesystem::path & file)
@@ -222,5 +224,14 @@ namespace RxEngine
         }
 #endif
     }
+
+    void ecsNameGui(ecs::World* world, void* ptr);
+    void ecsComponentGui(ecs::World* world, void* ptr);
+    void ecsSystemGroupGui(ecs::World* world, void* ptr);
+    void ecsWindowDetailsGui(ecs::World* world, void* ptr);
+    void ecsEngineTimeGui(ecs::World* world, void* ptr);
+    void ecsSystemGui(ecs::World* world, void* ptr);
+    void ecsStreamComponentGui(ecs::World* world, void* ptr);
+
 }
 #endif //RX_ENGINEMAIN_HPP

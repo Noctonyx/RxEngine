@@ -135,6 +135,6 @@ namespace RxEngine
             const RenderPasses* rp);
 
     private:
-        static void materialGui(ecs::EntityHandle e);
+        //static void materialGui(ecs::EntityHandle e);
     };
 }

@@ -12,15 +12,31 @@
 
 namespace RxEngine
 {
+    void materialGui(ecs::World *, void * ptr)
+    {
+        auto material = static_cast<Material *>(ptr);
+
+        if (material) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Roughness");
+            ImGui::TableNextColumn();
+            ImGui::Text("%.3f", material->roughness);
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Metallic");
+            ImGui::TableNextColumn();
+            ImGui::Text("%.3f", material->metallic);
+        }
+    }
+
     void MaterialsModule::registerModule()
     {
         world_->set<ComponentGui>(world_->getComponentId<Material>(),
-            ComponentGui{ .editor = MaterialsModule::materialGui });
+                                  ComponentGui{.editor = materialGui});
     }
-    void MaterialsModule::deregisterModule()
-    {
-        
-    }
+
+    void MaterialsModule::deregisterModule() { }
 
     void MaterialsModule::startup()
     {
@@ -982,34 +998,6 @@ namespace RxEngine
                     rp->transparentSubPass
                 });
                 e.addDeferred<HasPipeline>();
-            }
-        }
-    }
-
-    void MaterialsModule::materialGui(ecs::EntityHandle e)
-    {
-        auto material = e.get<Material>();
-
-        if (material) {
-            if (ImGui::BeginTable("ComponentGui", 2, /*ImGuiTableFlags_Borders | */
-                ImGuiTableFlags_Resizable |
-                ImGuiTableFlags_Hideable)) {
-                ImGui::TableSetupColumn("Name");
-                ImGui::TableSetupColumn("Value");
-                //ImGui::TableHeadersRow();
-
-                ImGui::TableNextRow();
-                ImGui::TableNextColumn();
-                ImGui::Text("Roughness");
-                ImGui::TableNextColumn();
-                ImGui::Text("%.3f", material->roughness);
-                ImGui::TableNextRow();
-                ImGui::TableNextColumn();
-                ImGui::Text("Metallic");
-                ImGui::TableNextColumn();
-                ImGui::Text("%.3f", material->metallic);
-
-                ImGui::EndTable();
             }
         }
     }

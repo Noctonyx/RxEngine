@@ -53,6 +53,13 @@ namespace RxEngine
             renderPass_, 0
         });
 
+        world_->addSingleton<FrameStats>();
+        {
+            auto fs = world_->getSingletonUpdate<FrameStats>();
+            fs->frameNo = 0;
+            fs->index = 0;
+            fs->frames.resize(10);
+        }
         //createPipelineLayout();
 
         auto pl = world_->lookup("layout/general").get<PipelineLayout>();
@@ -88,7 +95,7 @@ namespace RxEngine
         }
 
         world_->createSystem("Renderer:Render")
-              .inGroup("Pipeline:Render")
+              .inGroup("Pipeline:PostRender")
               .after<AcquireImage>()
               .before<PresentImage>()
               .withStream<MainRenderImageInput>()
@@ -466,6 +473,10 @@ namespace RxEngine
 
         const auto end_time = std::chrono::high_resolution_clock::now();
         cpuTime = std::chrono::duration<double, std::milli>((end_time - start_time)).count();
+        auto fs = world_->getSingletonUpdate<FrameStats>();
+        fs->frameNo++;
+        fs->index = (fs->index + 1) % 10;
+        fs->frames[fs->index].cpuTime = cpuTime;
     }
 
     void Renderer::updateDescriptorSet0(const std::shared_ptr<RenderCamera> & renderCamera)
@@ -588,14 +599,9 @@ namespace RxEngine
         return {};
     }
 
-    void Renderer::ensureShadowImages(uint32_t
-                                      shadowMapSize,
-                                      uint32_t numCascades
-    )
+    void Renderer::ensureShadowImages(uint32_t shadowMapSize, uint32_t numCascades)
     {
-        if (
-            shadowMap_ && shadowMap_
-                          ->extent_.width == shadowMapSize) {
+        if (shadowMap_ && shadowMap_->extent_.width == shadowMapSize) {
             return;
         }
         shadowImagesChanged = true;
@@ -609,15 +615,10 @@ namespace RxEngine
         wholeShadowMapView_ = shadowMap_->createImageView(
             vk::ImageViewType::e2DArray, vk::ImageAspectFlagBits::eDepth, 0, numCascades);
 
-        cascadeViews_.
-            resize(numCascades);
-        cascadeFrameBuffers_.
-            resize(numCascades);
+        cascadeViews_.resize(numCascades);
+        cascadeFrameBuffers_.resize(numCascades);
 
-        for (
-            uint32_t i = 0;
-            i < numCascades;
-            ++i) {
+        for (uint32_t i = 0;i < numCascades;++i) {
             cascadeViews_[i] = shadowMap_->
                 createImageView(
                     vk::ImageViewType::e2DArray,
@@ -639,17 +640,12 @@ namespace RxEngine
 
         if (!shadowSampler_) {
             vk::SamplerCreateInfo sci;
-            sci.
-                setMagFilter(vk::Filter::eLinear)
-                .
-                setMinFilter(vk::Filter::eLinear)
-                .
-                setAddressModeU(vk::SamplerAddressMode::eClampToEdge)
-                .
-                setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
-                .setMaxLod(5.0f)
-                .
-                setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
+            sci.setMagFilter(vk::Filter::eLinear)
+               .setMinFilter(vk::Filter::eLinear)
+               .setAddressModeU(vk::SamplerAddressMode::eClampToEdge)
+               .setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
+               .setMaxLod(5.0f)
+               .setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
 
             shadowSampler_ = RxCore::iVulkan()->createSampler(sci);
         }
@@ -671,87 +667,6 @@ namespace RxEngine
             1.0f);
     }
 
-#if 0
-    void Renderer::createPipelineLayout()
-    {
-        std::vector<vk::DescriptorSetLayoutBinding> set_0{
-            {
-                0, vk::DescriptorType::eUniformBufferDynamic, 1,
-                vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment
-            },
-            {
-                1, vk::DescriptorType::eUniformBufferDynamic, 1,
-                vk::ShaderStageFlagBits::eFragment | vk::ShaderStageFlagBits::eVertex
-            },
-            {
-                2, vk::DescriptorType::eCombinedImageSampler, 1,
-                vk::ShaderStageFlagBits::eFragment
-            },
-            {
-                3, vk::DescriptorType::eStorageBuffer, 1,
-                vk::ShaderStageFlagBits::eFragment | vk::ShaderStageFlagBits::eVertex
-            },
-            {
-                4, vk::DescriptorType::eCombinedImageSampler, 4096,
-                vk::ShaderStageFlagBits::eFragment
-            }
-        };
-
-        std::vector<vk::DescriptorBindingFlags> set0_binding_flags = {
-            {},
-            {},
-            {},
-            {},
-            vk::DescriptorBindingFlagBits::eVariableDescriptorCount |
-            vk::DescriptorBindingFlagBits::ePartiallyBound |
-            vk::DescriptorBindingFlagBits::eUpdateAfterBind
-        };
-
-        std::vector<vk::DescriptorSetLayoutBinding> set_1 = {
-            {
-                0, vk::DescriptorType::eStorageBuffer, 1,
-                vk::ShaderStageFlagBits::eVertex
-            },
-        };
-
-        std::vector<vk::DescriptorSetLayoutBinding> set_2 = {
-            {
-                0, vk::DescriptorType::eStorageBuffer, 1,
-                vk::ShaderStageFlagBits::eFragment | vk::ShaderStageFlagBits::eVertex
-            }
-        };
-
-        vk::DescriptorSetLayoutBindingFlagsCreateInfo dslbfc_0{};
-        dslbfc_0.setBindingFlags(set0_binding_flags);
-
-        //vk::DescriptorSetLayoutCreateInfo dslci0{{}, set_0};
-        vk::DescriptorSetLayoutCreateInfo dslci0{
-            vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool, set_0
-        };
-        vk::DescriptorSetLayoutCreateInfo dslci1{{}, set_1};
-        vk::DescriptorSetLayoutCreateInfo dslci2{{}, set_2};
-
-        dslci0.setPNext(&dslbfc_0);
-
-        dsLayouts.resize(3);
-
-        auto device = RxCore::iVulkan();
-
-        dsLayouts[0] = device->createDescriptorSetLayout(dslci0);
-        dsLayouts[1] = device->createDescriptorSetLayout(dslci1);
-        dsLayouts[2] = device->createDescriptorSetLayout(dslci2);
-        //dsLayouts[2] = device->createDescriptorSetLayout(dslci2);
-
-        vk::PipelineLayoutCreateInfo plci;
-        std::vector<vk::PushConstantRange> pcrs{
-            {vk::ShaderStageFlagBits::eVertex, 0, 4}
-        };
-        plci.setPushConstantRanges(pcrs);
-        plci.setSetLayouts(dsLayouts);
-
-        pipelineLayout = device->createPipelineLayout(plci);
-    }
-#endif
 
     void Renderer::cullEntitiesProj(
         const XMMATRIX & proj,

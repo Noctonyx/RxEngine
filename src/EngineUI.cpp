@@ -5,16 +5,16 @@ namespace RxEngine
 {
     void EngineMain::ecsMainMenu(bool & show_entity_window,
                                  bool & show_systems_window,
-                                 bool & show_components_window)
+                                 bool & show_singletons_window)
     {
         if (ImGui::BeginMenu("ECS")) {
             if (ImGui::MenuItem("Entities", nullptr, show_entity_window)) {
                 show_entity_window = !show_entity_window;
                 setBoolConfigValue("editor", "ecsEntityWindow", show_entity_window);
             }
-            if (ImGui::MenuItem("Components", nullptr, show_components_window)) {
-                show_components_window = !show_components_window;
-                setBoolConfigValue("editor", "ecsComponentsWindow", show_components_window);
+            if (ImGui::MenuItem("Singletons", nullptr, show_singletons_window)) {
+                show_singletons_window = !show_singletons_window;
+                setBoolConfigValue("editor", "ecsSingletonsWindow", show_singletons_window);
             }
             if (ImGui::MenuItem("Systems", nullptr, show_systems_window)) {
                 show_systems_window = !show_systems_window;
@@ -99,7 +99,7 @@ namespace RxEngine
                 ImGui::TableNextColumn();
                 ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f));
-                ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0.7f, 0.6f, 0.6f));
+                ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4) ImColor::HSV(0.7f, 0.6f, 0.6f));
                 if (ImGui::Button(cd->name.c_str())) {
                     //selectedEntity = id.object();
                 }
@@ -118,25 +118,46 @@ namespace RxEngine
 
                 ImGui::TableNextColumn();
                 if (world->has<ComponentGui>(c)) {
-                    world->get<ComponentGui>(c)->editor(entity);
+                    if (ImGui::BeginTable("ComponentGui", 2, /*ImGuiTableFlags_Borders | */
+                                          ImGuiTableFlags_Resizable |
+                                          ImGuiTableFlags_Hideable)) {
+                        ImGui::TableSetupColumn("Name");
+                        ImGui::TableSetupColumn("Value");
+
+                        world->get<ComponentGui>(c)->
+                               editor(world.get(), world->getUpdate(entity.id, c));
+
+                        ImGui::EndTable();
+                    }
                 }
             } else {
-                auto r = reinterpret_cast<const ecs::Relation *>(entity.getWorld()->get(entity.id, c));
+                auto r = reinterpret_cast<const ecs::Relation *>(entity.getWorld()->get(
+                    entity.id, c));
                 auto object = entity.getHandle(r->entity);
 
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
                 ImGui::SetNextItemOpen(true, ImGuiCond_Once);
                 bool open = ImGui::TreeNodeEx(object.description().c_str(),
-                    ImGuiTreeNodeFlags_SpanFullWidth,
-                    "%s(%s)", cd->name.c_str(), object.description().c_str());
+                                              ImGuiTreeNodeFlags_SpanFullWidth,
+                                              "%s(%s)", cd->name.c_str(),
+                                              object.description().c_str());
                 ImGui::TableNextColumn();
                 if (world->has<ComponentGui>(c)) {
-                    world->get<ComponentGui>(c)->editor(entity);
-                }
-                else {
-//                    ImGui::TableNextColumn();
-  //                  ImGui::TableNextColumn();
+                    if (ImGui::BeginTable("ComponentGui", 2, /*ImGuiTableFlags_Borders | */
+                                          ImGuiTableFlags_Resizable |
+                                          ImGuiTableFlags_Hideable)) {
+                        ImGui::TableSetupColumn("Name");
+                        ImGui::TableSetupColumn("Value");
+
+                        world->get<ComponentGui>(c)->
+                               editor(world.get(), world->getUpdate(entity.id, c));
+
+                        ImGui::EndTable();
+                    }
+                } else {
+                    //                    ImGui::TableNextColumn();
+                    //                  ImGui::TableNextColumn();
                 }
                 if (open) {
                     //ecsInspectorIsAEntity(object, selectedEntity);
@@ -156,11 +177,14 @@ namespace RxEngine
 
         if (ImGui::Begin("Entities", &is_open)) {
 
-            if(ImGui::BeginCombo("Archetype", world->getTableForArchetype(selectedArchetype)->description().c_str())) {
-                for (auto it : *world) {
+            if (ImGui::BeginCombo("Archetype",
+                                  world->getTableForArchetype(selectedArchetype)->description().
+                                         c_str())) {
+                for (auto it: *world) {
                     auto table = world->getTableForArchetype(it.id);
                     if (table->entities.size() > 0) {
-                        if (ImGui::Selectable(table->description().c_str(), it.id == selectedArchetype)) {
+                        if (ImGui::Selectable(table->description().c_str(),
+                                              it.id == selectedArchetype)) {
                             selectedArchetype = it.id;
                         }
                     }
@@ -181,12 +205,12 @@ namespace RxEngine
                 //for (auto it: *world) {
 
 
-                    //table_index++;
-                    //if (labels[selected_index] == table_type.str().c_str()) {
-                    //                    if (it.count() > 0) {
-                    ecsInspectorShowTableDetails(selectedEntity,
-                                                 world->getTableForArchetype(selectedArchetype));
-                    //                  }
+                //table_index++;
+                //if (labels[selected_index] == table_type.str().c_str()) {
+                //                    if (it.count() > 0) {
+                ecsInspectorShowTableDetails(selectedEntity,
+                                             world->getTableForArchetype(selectedArchetype));
+                //                  }
                 //}
                 ImGui::EndTable();
             }
@@ -242,10 +266,70 @@ namespace RxEngine
         }
     }
 
+    void EngineMain::ecsSingletonsWindow(bool & show_singletons_window)
+    {
+        OPTICK_EVENT()
+        bool is_open = show_singletons_window;
+
+        static ecs::component_id_t selectedSingleton = 0;
+
+        if (ImGui::Begin("Singletons", &is_open)) {
+
+            if (ImGui::BeginTable("Singletons", 1,
+                                  ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit |
+                                  ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg,
+                                  ImVec2(0, 400))) {
+                ImGui::TableSetupColumn("Name");
+                ImGui::TableSetupScrollFreeze(0, 1);
+                ImGui::TableHeadersRow();
+
+                for (auto & [k, v]: world->allSingletons()) {
+                    ImGui::TableNextRow();
+                    ImGui::TableNextColumn();
+                    if (ImGui::Selectable(
+                        world->description(k).c_str(),
+                        selectedSingleton == k)) {
+                        selectedSingleton = k;
+                    };
+                }
+                ImGui::EndTable();
+            }
+            if (ImGui::BeginTable("FocusedSingleton", 2,
+                                  ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuterH |
+                                  ImGuiTableFlags_Resizable | ImGuiWindowFlags_NoBackground |
+                                  ImGuiTableFlags_NoBordersInBody)) {
+                ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
+                //                ImGui::TableSetupColumn("Role", ImGuiTableColumnFlags_NoHide);
+                //ImGui::TableSetupColumn("Relation", ImGuiTableColumnFlags_NoHide);
+                ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_NoHide);
+                ImGui::TableHeadersRow();
+
+                if (selectedSingleton && world->has<ComponentGui>(selectedSingleton)) {
+
+                    ImGui::TableNextRow();
+                    ImGui::TableNextColumn();
+                    world->get<ComponentGui>(selectedSingleton)->editor(
+                        world.get(), world->getSingletonUpdate(selectedSingleton));
+                }
+
+                ImGui::EndTable();
+            }
+        }
+        ImGui::End();
+
+        if (is_open != show_singletons_window) {
+            show_singletons_window = is_open;
+
+            setBoolConfigValue("editor", "ecsSingletonsWindow", show_singletons_window);
+        }
+    }
+
     void EngineMain::updateEntityGui()
     {
         static bool show_entity_window = getBoolConfigValue("editor", "ecsEntityWindow", false);
         static bool show_systems_window = getBoolConfigValue("editor", "ecsSystemsWindow", false);
+        static bool show_singletons_window = getBoolConfigValue(
+            "editor", "ecsSingletonsWindow", false);
         static bool show_components_window = getBoolConfigValue(
             "editor", "ecsComponentsWindow", false);
 
@@ -259,6 +343,7 @@ namespace RxEngine
         if (show_entity_window) {
             ecsInspectorEntityWindow(show_entity_window);
         }
+#if 0
         if (show_components_window) {
             bool is_open = show_components_window;
 
@@ -268,6 +353,20 @@ namespace RxEngine
             if (is_open != show_components_window) {
                 show_components_window = is_open;
                 setBoolConfigValue("editor", "ecsComponentsWindow", show_components_window);
+            }
+        }
+#endif
+        if (show_singletons_window) {
+            bool is_open = show_singletons_window;
+
+            if (ImGui::Begin("Singletons", &is_open)) {
+                ecsSingletonsWindow(show_singletons_window);
+            }
+            ImGui::End();
+
+            if (is_open != show_singletons_window) {
+                show_singletons_window = is_open;
+                setBoolConfigValue("editor", "ecsSingletonsWindow", show_singletons_window);
             }
         }
         if (show_systems_window) {
@@ -337,227 +436,163 @@ namespace RxEngine
         }
     }
 
-    void EngineMain::ecsNameGui(ecs::EntityHandle e)
+    void ecsNameGui(ecs::World *, void * ptr)
     {
-        auto name = e.get<ecs::Name>();
+        auto name = static_cast<ecs::Name *>(ptr);
         if (name) {
-            if (ImGui::BeginTable("ComponentGui", 2, /*ImGuiTableFlags_Borders | */
-                                  ImGuiTableFlags_Resizable |
-                                  ImGuiTableFlags_Hideable)) {
-                ImGui::TableSetupColumn("Name");
-                ImGui::TableSetupColumn("Value");
-                //ImGui::TableHeadersRow();
 
-                ImGui::TableNextRow();
-                ImGui::TableNextColumn();
-                ImGui::Text("Name");
-                ImGui::TableNextColumn();
-                ImGui::Text("%s", name->name.c_str());
-
-                ImGui::EndTable();
-            }
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Name");
+            ImGui::TableNextColumn();
+            ImGui::Text("%s", name->name.c_str());
         }
     }
 
-    void EngineMain::ecsComponentGui(ecs::EntityHandle e)
+    void ecsComponentGui(ecs::World *, void * ptr)
     {
-        auto comp = e.get<ecs::Component>();
+        auto comp = static_cast<ecs::Component *>(ptr);
         if (comp) {
-            if (ImGui::BeginTable("ComponentGui", 2, /*ImGuiTableFlags_Borders | */
-                ImGuiTableFlags_Resizable |
-                ImGuiTableFlags_Hideable)) {
-                ImGui::TableSetupColumn("Name");
-                ImGui::TableSetupColumn("Value");
-                //ImGui::TableHeadersRow();
 
-                ImGui::TableNextRow();
-                ImGui::TableNextColumn();
-                ImGui::Text("Name");
-                ImGui::TableNextColumn();
-                ImGui::Text("%s", comp->name.c_str());
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Name");
+            ImGui::TableNextColumn();
+            ImGui::Text("%s", comp->name.c_str());
 
-                ImGui::TableNextRow();
-                ImGui::TableNextColumn();
-                ImGui::Text("Is Relation");
-                ImGui::TableNextColumn();
-                ImGui::Text("%s", comp->isRelation ? "True" : "False");
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Is Relation");
+            ImGui::TableNextColumn();
+            ImGui::Text("%s", comp->isRelation ? "True" : "False");
 
-                ImGui::TableNextRow();
-                ImGui::TableNextColumn();
-                ImGui::Text("Size");
-                ImGui::TableNextColumn();
-                ImGui::Text("%d", comp->size);
-
-                ImGui::EndTable();
-            }
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Size");
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", comp->size);
         }
     }
 
-    void EngineMain::ecsSystemGroupGui(ecs::EntityHandle e)
+    void ecsSystemGroupGui(ecs::World *, void * ptr)
     {
-        auto group = e.get<ecs::SystemGroup>();
+        auto group = static_cast<ecs::SystemGroup *>(ptr);
         if (group) {
-            if (ImGui::BeginTable("ComponentGui", 2, /*ImGuiTableFlags_Borders | */
-                                  ImGuiTableFlags_Resizable |
-                                  ImGuiTableFlags_Hideable)) {
-                ImGui::TableSetupColumn("Name");
-                ImGui::TableSetupColumn("Value");
-                //ImGui::TableHeadersRow();
 
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Sequence");
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", group->sequence);
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Fixed");
+            ImGui::TableNextColumn();
+            ImGui::Text("%s", group->fixed ? "True" : "False");
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Delta");
+            ImGui::TableNextColumn();
+            ImGui::Text("%.3f", group->delta);
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Rate");
+            ImGui::TableNextColumn();
+            ImGui::Text("%.3f", group->rate);
+        }
+    }
+
+    void ecsWindowDetailsGui(ecs::World *, void * ptr)
+    {
+        auto window_details = static_cast<WindowDetails *>(ptr);
+        if (window_details) {
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Width");
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", window_details->width);
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Height");
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", window_details->height);
+        }
+    }
+
+    void ecsEngineTimeGui(ecs::World *, void * ptr)
+    {
+        auto engine_time = static_cast<EngineTime *>(ptr);
+        if (engine_time) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Delta (ms)");
+            ImGui::TableNextColumn();
+            ImGui::Text("%.3f", engine_time->delta * 1000.0f);
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Total (s)");
+            ImGui::TableNextColumn();
+            ImGui::Text("%.1f", engine_time->totalElapsed);
+        }
+    }
+
+    void ecsSystemGui(ecs::World * w, void * ptr)
+    {
+        auto system = static_cast<ecs::System *>(ptr);
+        if (system) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Type");
+            ImGui::TableNextColumn();
+            ImGui::Text("%s", system->query
+                                  ? "Query"
+                                  : (system->stream ? "Stream" : "Execute"));
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Group");
+            ImGui::TableNextColumn();
+            ImGui::Text("%s", w->description(system->groupId).c_str());
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Thread");
+            ImGui::TableNextColumn();
+            ImGui::Text("%s", system->thread ? "True" : "False");
+
+            if (system->stream) {
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
-                ImGui::Text("Sequence");
+                ImGui::Text("Stream");
                 ImGui::TableNextColumn();
-                ImGui::Text("%d", group->sequence);
+                ImGui::Text("%s", w->description(system->stream).c_str());
+            }
 
+            if (system->query) {
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
-                ImGui::Text("Fixed");
+                ImGui::Text("Query");
                 ImGui::TableNextColumn();
-                ImGui::Text("%s", group->fixed ? "True" : "False");
-
-                ImGui::TableNextRow();
-                ImGui::TableNextColumn();
-                ImGui::Text("Delta");
-                ImGui::TableNextColumn();
-                ImGui::Text("%.3f", group->delta);
-
-                ImGui::TableNextRow();
-                ImGui::TableNextColumn();
-                ImGui::Text("Rate");
-                ImGui::TableNextColumn();
-                ImGui::Text("%.3f", group->rate);
-
-                ImGui::EndTable();
+                ImGui::Text("%s", w->description(system->query).c_str());
             }
         }
     }
 
-    void EngineMain::ecsWindowDetailsGui(ecs::EntityHandle e)
+    void ecsStreamComponentGui(ecs::World *, void * ptr)
     {
-        auto comp = e.get<WindowDetails>();
+        auto comp = static_cast<ecs::StreamComponent *>(ptr);
         if (comp) {
-            if (ImGui::BeginTable("ComponentGui", 2, /*ImGuiTableFlags_Borders | */
-                                  ImGuiTableFlags_Resizable |
-                                  ImGuiTableFlags_Hideable)) {
-                ImGui::TableSetupColumn("Name");
-                ImGui::TableSetupColumn("Value");
-                //ImGui::TableHeadersRow();
-
-                ImGui::TableNextRow();
-                ImGui::TableNextColumn();
-                ImGui::Text("Width");
-                ImGui::TableNextColumn();
-                ImGui::Text("%d", comp->width);
-
-                ImGui::TableNextRow();
-                ImGui::TableNextColumn();
-                ImGui::Text("Height");
-                ImGui::TableNextColumn();
-                ImGui::Text("%d", comp->height);
-
-                ImGui::EndTable();
-            }
-        }
-    }
-
-    void EngineMain::ecsEngineTimeGui(ecs::EntityHandle e)
-    {
-        auto comp = e.get<EngineTime>();
-        if (comp) {
-            if (ImGui::BeginTable("ComponentGui", 2, /*ImGuiTableFlags_Borders | */
-                                  ImGuiTableFlags_Resizable |
-                                  ImGuiTableFlags_Hideable)) {
-                ImGui::TableSetupColumn("Name");
-                ImGui::TableSetupColumn("Value");
-                //ImGui::TableHeadersRow();
-
-                ImGui::TableNextRow();
-                ImGui::TableNextColumn();
-                ImGui::Text("Delta (ms)");
-                ImGui::TableNextColumn();
-                ImGui::Text("%.3f", comp->delta * 1000.0f);
-
-                ImGui::TableNextRow();
-                ImGui::TableNextColumn();
-                ImGui::Text("Total (s)");
-                ImGui::TableNextColumn();
-                ImGui::Text("%.1f", comp->totalElapsed);
-
-                ImGui::EndTable();
-            }
-        }
-    }
-
-    void EngineMain::ecsSystemGui(ecs::EntityHandle e)
-    {
-        auto comp = e.get<ecs::System>();
-        if (comp) {
-            if (ImGui::BeginTable("ComponentGui", 2, /*ImGuiTableFlags_Borders | */
-                                  ImGuiTableFlags_Resizable |
-                                  ImGuiTableFlags_Hideable)) {
-                ImGui::TableSetupColumn("Name");
-                ImGui::TableSetupColumn("Value");
-                //ImGui::TableHeadersRow();
-
-                ImGui::TableNextRow();
-                ImGui::TableNextColumn();
-                ImGui::Text("Type");
-                ImGui::TableNextColumn();
-                ImGui::Text("%s", comp->query ? "Query" : (comp->stream ? "Stream" : "Execute"));
-
-                ImGui::TableNextRow();
-                ImGui::TableNextColumn();
-                ImGui::Text("Group");
-                ImGui::TableNextColumn();
-                ImGui::Text("%s", e.world->description(comp->groupId).c_str());
-
-                ImGui::TableNextRow();
-                ImGui::TableNextColumn();
-                ImGui::Text("Thread");
-                ImGui::TableNextColumn();
-                ImGui::Text("%s", comp->thread ? "True" : "False");
-
-                if (comp->stream) {
-                    ImGui::TableNextRow();
-                    ImGui::TableNextColumn();
-                    ImGui::Text("Stream");
-                    ImGui::TableNextColumn();
-                    ImGui::Text("%s", e.world->description(comp->stream).c_str());
-                }
-
-                if (comp->query) {
-                    ImGui::TableNextRow();
-                    ImGui::TableNextColumn();
-                    ImGui::Text("Query");
-                    ImGui::TableNextColumn();
-                    ImGui::Text("%s", e.world->description(comp->query).c_str());
-                }
-
-                ImGui::EndTable();
-            }
-        }
-    }
-
-    void EngineMain::ecsStreamComponentGui(ecs::EntityHandle e)
-    {
-        auto comp = e.get<ecs::StreamComponent>();
-        if (comp) {
-            if (ImGui::BeginTable("ComponentGui", 2, /*ImGuiTableFlags_Borders | */
-                                  ImGuiTableFlags_Resizable |
-                                  ImGuiTableFlags_Hideable)) {
-                ImGui::TableSetupColumn("Name");
-                ImGui::TableSetupColumn("Value");
-                //ImGui::TableHeadersRow();
-
-                ImGui::TableNextRow();
-                ImGui::TableNextColumn();
-                ImGui::Text("Count");
-                ImGui::TableNextColumn();
-                ImGui::Text("%d", comp->ptr->column->count);
-
-                ImGui::EndTable();
-            }
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Count");
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", comp->ptr->column->count);
         }
     }
 }

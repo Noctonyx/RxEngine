@@ -18,6 +18,7 @@
 #include "Modules/Stats/Stats.h"
 #include "Modules/Prototypes/Prototypes.h"
 #include "Modules/RTSCamera/RTSCamera.h"
+#include "Modules/SceneCamera/SceneCamera.h"
 #include "Modules/StaticMesh/StaticMesh.h"
 #include "Modules/Transforms/Transforms.h"
 #include "Modules/WorldObject/WorldObject.h"
@@ -59,6 +60,7 @@ namespace RxEngine
         modules.push_back((std::make_shared<WorldObjectModule>(world.get(), this)));
         modules.push_back((std::make_shared<PrototypesModule>(world.get(), this)));
         modules.push_back((std::make_shared<RTSCameraModule>(world.get(), this)));
+        modules.push_back((std::make_shared<SceneCameraModule>(world.get(), this)));
         modules.push_back((std::make_shared<EnvironmentModule>(world.get(), this)));
 
         for (auto & m: modules) {
@@ -97,7 +99,7 @@ namespace RxEngine
              });
 
         world->createSystem("Engine:AcquireImage")
-             .inGroup("Pipeline:Render")
+             .inGroup("Pipeline:PostRender")
              .label<AcquireImage>()
              .execute([this](ecs::World * world)
              {
@@ -116,7 +118,7 @@ namespace RxEngine
              });
 
         world->createSystem("Engine:PresentImage")
-             .inGroup("Pipeline:Render")
+             .inGroup("Pipeline:PostRender")
              .label<PresentImage>()
              .withStream<MainRenderImageOutput>()
              .execute<MainRenderImageOutput>(
