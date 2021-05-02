@@ -34,14 +34,12 @@ add_subdirectory("RxECS")
 add_subdirectory("ImportGLTF")
 
 add_library(RxEngine STATIC 
-        "src/Modules/ImGui/ImGuiRender.cpp"
-        "src/Modules/ImGui/ImGuiRender.hpp"
+        src/Modules/ImGui/ImGuiRender.cpp
+        src/Modules/ImGui/ImGuiRender.hpp
         src/EngineMain.hpp
         src/EngineMain.cpp
         src/Delegates.hpp
         src/Delegates.cpp
-  
-        
         src/Window.cpp
         src/Window.hpp
         src/Scene.h
@@ -51,29 +49,24 @@ add_library(RxEngine STATIC
         src/Rendering/RenderMesh.h
         src/Rendering/Mesh.cpp
         src/Rendering/Mesh.hpp
-        "src/Modules/Renderer/Renderer.hpp"
-        "src/Modules/Renderer/Renderer.cpp"
+        src/Modules/Renderer/Renderer.hpp
+        src/Modules/Renderer/Renderer.cpp
         src/Rendering/RenderData.h
         src/Subsystems/SceneCamera.h
         src/Subsystems/SceneCamera.cpp
-        
-        
         src/FastNoiseLite.h
         src/Subsystems/Lighting.h
         src/Subsystems/Lighting.cpp
         src/Geometry/Camera.hpp
-        
-        
         src/Rendering/ILightingManager.h
-        "src/Modules/RmlUI/RmlSystemInterface.cpp"
-        "src/Modules/RmlUI/RmlSystemInterface.h"
-        "src/Modules/RmlUI/RmlRenderInterface.cpp"
-        "src/Modules/RmlUI/RmlRenderInterface.h"
-        "src/Modules/RmlUI/RmlFileInterface.cpp"
-        "src/Modules/RmlUI/RmlFileInterface.h"
-        "src/Modules/RmlUI/UiContext.cpp"
-        "src/Modules/RmlUI/UiContext.h"
-     
+        src/Modules/RmlUI/RmlSystemInterface.cpp
+        src/Modules/RmlUI/RmlSystemInterface.h
+        src/Modules/RmlUI/RmlRenderInterface.cpp
+        src/Modules/RmlUI/RmlRenderInterface.h
+        src/Modules/RmlUI/RmlFileInterface.cpp
+        src/Modules/RmlUI/RmlFileInterface.h
+        src/Modules/RmlUI/UiContext.cpp
+        src/Modules/RmlUI/UiContext.h
         src/Rendering/MeshBundle.cpp
         src/Rendering/MeshBundle.h
         src/Rendering/RenderCamera.cpp
@@ -108,7 +101,11 @@ add_library(RxEngine STATIC
         src/Modules/WorldObject/WorldObject.cpp 
         src/Modules/Materials/Materials.h 
         src/Modules/Materials/Materials.cpp
-         "src/Modules/RTSCamera/RTSCamera.h" "src/Modules/RTSCamera/RTSCamera.cpp")
+        src/Modules/RTSCamera/RTSCamera.h 
+        src/Modules/RTSCamera/RTSCamera.cpp 
+        src/Modules/Environment/Environment.h
+        src/Modules/Environment/Environment.cpp
+        )
 
 target_compile_options(RxEngine PUBLIC -DGLFW_INCLUDE_VULKAN -DVK_USE_PLATFORM_WIN32_KHR -DGLFW_EXPOSE_NATIVE_WIN32 -DNOMINMAX)
 

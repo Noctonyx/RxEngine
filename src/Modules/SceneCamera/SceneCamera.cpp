@@ -14,8 +14,6 @@ namespace RxEngine
 
         camera->setPerspective(
             60.0f, static_cast<float>(wd->width) / static_cast<float>(wd->height), 0.1f, 256.f);
-
-
     }
 
     void SceneCameraModule::shutdown() {}

@@ -9,6 +9,8 @@ namespace RxEngine
         
     };
 
+    struct HasSubMesh: ecs::Relation {};
+
     class PrototypesModule : public Module
     {
     public:

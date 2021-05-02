@@ -13,6 +13,7 @@
 #include "Modules/Renderer/Renderer.hpp"
 
 #include "Modules/Module.h"
+#include "Modules/Environment/Environment.h"
 #include "Modules/ImGui/ImGuiRender.hpp"
 #include "Modules/Stats/Stats.h"
 #include "Modules/Prototypes/Prototypes.h"
@@ -54,10 +55,11 @@ namespace RxEngine
         modules.push_back((std::make_shared<IMGuiRender>(world.get(), this)));
         modules.push_back((std::make_shared<TransformsModule>(world.get(), this)));
         modules.push_back((std::make_shared<StatsModule>(world.get(), this)));
-        modules.push_back((std::make_shared<PrototypesModule>(world.get(), this)));
         modules.push_back((std::make_shared<StaticMeshModule>(world.get(), this)));
         modules.push_back((std::make_shared<WorldObjectModule>(world.get(), this)));
+        modules.push_back((std::make_shared<PrototypesModule>(world.get(), this)));
         modules.push_back((std::make_shared<RTSCameraModule>(world.get(), this)));
+        modules.push_back((std::make_shared<EnvironmentModule>(world.get(), this)));
 
         for (auto & m: modules) {
             m->registerModule();

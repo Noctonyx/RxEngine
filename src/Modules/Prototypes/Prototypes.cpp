@@ -1,5 +1,7 @@
 #include "Prototypes.h"
 
+#include "Modules/StaticMesh/StaticMesh.h"
+#include "Modules/Transforms/Transforms.h"
 #include "sol/state.hpp"
 #include "sol/table.hpp"
 
@@ -12,7 +14,25 @@ namespace RxEngine
     void loadPrototype(ecs::World * world,
                        RxCore::Device * device,
                        std::string prototypeName,
-                       sol::table details) { }
+                       sol::table details)
+    {
+        auto e = world->newEntity(prototypeName.c_str()).add<ecs::Prefab>();
+        e.add<Transforms::WorldPosition>();
+        e.add<Transforms::YRotation>();
+
+        sol::table mesh = details.get<sol::table>("mesh");
+
+        if (mesh) {
+            std::string m = mesh.get<std::string>(1);
+            uint32_t sm = mesh.get<uint32_t>(2);
+
+            auto meshEntity = world->lookup(m).get<StaticMesh>();
+            assert(meshEntity->subMeshes.size() > sm);
+
+            auto se = e.getHandle(meshEntity->subMeshes[sm]);
+            e.set<HasSubMesh>({ {se.id} });
+        }
+    }
 
     void loadPrototypes(ecs::World * world, RxCore::Device * device, sol::table & prototypes)
     {

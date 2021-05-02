@@ -1,5 +1,6 @@
 #include "RTSCamera.h"
 
+#include "imgui.h"
 #include "Modules/Transforms/Transforms.h"
 
 using namespace RxEngine::Transforms;
@@ -11,8 +12,7 @@ namespace RxEngine
     {
         world_->createSystem("RTSCamera:CalculateMatrix")
               .inGroup("Pipeline:PreRender")
-              .withQuery<RTSCamera>()
-              .with<WorldPosition, YRotation, XRotation, CameraProjection>()
+              .withQuery<RTSCamera,WorldPosition, YRotation, XRotation, CameraProjection>()
               .each<RTSCamera, WorldPosition, YRotation, XRotation, CameraProjection>(
                   [](ecs::EntityHandle e,
                      RTSCamera * c,
@@ -22,6 +22,7 @@ namespace RxEngine
                      const CameraProjection * proj
               )
                   {
+                      OPTICK_EVENT("Update Camera")
                       XMFLOAT3 rot(xrot->xRotation, yrot->yRotation, 0.f);
                       XMFLOAT3 dolly(0.f, 0.f, c->dolly);
 
@@ -73,7 +74,7 @@ namespace RxEngine
                   return false;
               });
 
-        CameraProjection def;
+        CameraProjection def{};
         def.fov = 60.f;
         def.farZ = 256.0f;
         def.nearZ = 0.1f;
@@ -96,10 +97,70 @@ namespace RxEngine
               .add<RTSCamera>()
               .set<CameraProjection>(def)
               .add<ecs::Prefab>();
+
+        world_->createSystem("RTSCamera:Stats")
+              .inGroup("Pipeline:UpdateUi")
+              .withQuery<RTSCamera>()
+              .each<>([](ecs::EntityHandle e)
+              {
+                  updateGui(e);
+              });
     }
 
     void RTSCameraModule::shutdown()
     {
         world_->deleteSystem(world_->lookup("RTSCamera:CalculateMatrix").id);
+        world_->deleteSystem(world_->lookup("RTSCamera:Stats").id);
+        world_->deleteSystem(world_->lookup("RTSCamera:AspectRatio").id);
+    }
+
+    void RTSCameraModule::updateGui(ecs::EntityHandle e)
+    {
+        auto camera = e.get<RTSCamera>();
+        auto pos = e.get<WorldPosition>();
+        auto xrot = e.get<XRotation>();
+        auto yrot = e.get<YRotation>();
+
+        const float DISTANCE = 5.0f;
+
+        auto & io = ImGui::GetIO();
+        ImVec2 window_pos = ImVec2(
+            io.DisplaySize.x - 2 * DISTANCE,
+            io.DisplaySize.y - 2 * DISTANCE);
+
+        ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, ImVec2(1.0f, 1.0f));
+        ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
+        if (ImGui::Begin(
+            "Camera Overlay",
+            nullptr,
+            (ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
+                ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing |
+                ImGuiWindowFlags_NoNav))) {
+
+            DirectX::XMFLOAT3 fwd;
+            DirectX::XMFLOAT3 up;
+            DirectX::XMFLOAT3 right;
+            DirectX::XMStoreFloat3(&fwd, camera->getForward());
+            DirectX::XMStoreFloat3(&up, camera->getUp());
+            DirectX::XMStoreFloat3(&right, camera->getRight());
+            ImGui::Text(
+                "Base Position: %.3f, %.3f, %.3f", pos->position.x,
+                pos->position.y,
+                pos->position.z);
+            ImGui::Text(
+                "Cam Position: %.3f, %.3f, %.3f", camera->viewPos.x,
+                camera->viewPos.y,
+                camera->viewPos.z);
+            ImGui::Text(
+                "X/Y/Z Rotation: %.3f, %.3f, %.3f",
+                xrot->xRotation,
+                yrot->yRotation,
+                0.f);
+            ImGui::Text("Arm Length: %.3f", camera->dolly);
+            ImGui::Text("Forward: %.3f, %.3f, %.3f", fwd.x, fwd.y, fwd.z);
+            ImGui::Text("Up: %.3f, %.3f, %.3f", up.x, up.y, up.z);
+            ImGui::Text("Right: %.3f, %.3f, %.3f", right.x, right.y, right.z);
+        }
+        ImGui::End();
     }
 }

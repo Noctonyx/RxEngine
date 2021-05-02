@@ -28,9 +28,11 @@ namespace RxEngine
     void EngineMain::ecsInspectorShowTableDetails(ecs::EntityHandle & selectedEntity,
                                                   ecs::Table * table) const
     {
+        OPTICK_EVENT()
         if (table->entities.size() == 0) {
             return;
         }
+#if 0
         ImGui::TableNextRow();
         ImGui::TableNextColumn();
         ImGui::TableNextColumn();
@@ -41,6 +43,7 @@ namespace RxEngine
         ImGui::Button(table->description().c_str());
         ImGui::PopStyleColor();
         ImGui::PopStyleVar(2);
+#endif
         for (auto e: *table) {
 
             ImGui::PushID(e.id);
@@ -87,6 +90,7 @@ namespace RxEngine
     void EngineMain::ecsInspectorEntityComponents(ecs::EntityHandle entity,
                                                   ecs::EntityHandle & selectedEntity)
     {
+        OPTICK_EVENT()
         for (auto c: entity) {
             auto cd = world->getComponentDetails(c);
 
@@ -145,11 +149,24 @@ namespace RxEngine
 
     void EngineMain::ecsInspectorEntityWindow(bool & show_entity_window)
     {
+        OPTICK_EVENT()
         bool is_open = show_entity_window;
         static ecs::EntityHandle selectedEntity;
+        static uint16_t selectedArchetype = 0;
 
         if (ImGui::Begin("Entities", &is_open)) {
 
+            if(ImGui::BeginCombo("Archetype", world->getTableForArchetype(selectedArchetype)->description().c_str())) {
+                for (auto it : *world) {
+                    auto table = world->getTableForArchetype(it.id);
+                    if (table->entities.size() > 0) {
+                        if (ImGui::Selectable(table->description().c_str(), it.id == selectedArchetype)) {
+                            selectedArchetype = it.id;
+                        }
+                    }
+                }
+                ImGui::EndCombo();
+            }
             if (ImGui::BeginTable("Entities", 2,
                                   ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit |
                                   ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg,
@@ -161,19 +178,18 @@ namespace RxEngine
 
                 //world_->type()
 
-                for (auto it: *world) {
+                //for (auto it: *world) {
 
 
                     //table_index++;
                     //if (labels[selected_index] == table_type.str().c_str()) {
                     //                    if (it.count() > 0) {
                     ecsInspectorShowTableDetails(selectedEntity,
-                                                 world->getTableForArchetype(it.id));
+                                                 world->getTableForArchetype(selectedArchetype));
                     //                  }
-                }
+                //}
                 ImGui::EndTable();
             }
-
             if (ImGui::BeginTable("FocusedEntity", 2,
                                   ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuterH |
                                   ImGuiTableFlags_Resizable | ImGuiWindowFlags_NoBackground |

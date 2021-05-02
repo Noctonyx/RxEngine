@@ -24,6 +24,8 @@ namespace RxEngine
             .indexCount = indices,
             .meshFile = meshFile
         });
+        me.add<StaticMesh>();
+        auto sm = me.getUpdate<StaticMesh>();
 
         sol::table smtab = details.get<sol::table>("submeshes");
         sol::table mtab = details.get<sol::table>("materials");
@@ -46,10 +48,12 @@ namespace RxEngine
             uint32_t index_count = subMeshValue.get<uint32_t>("index_count");
             const uint32_t material = subMeshValue.get<uint32_t>("material");
 
-            world->newEntity()
-                 .set<ecs::InstanceOf>({{me.id}})
-                 .set<SubMesh>({first_index, index_count})
-                 .set<UsesMaterial>({{mEntities[material]}});
+            sm->subMeshes.push_back(
+                world->newEntity()
+                     //.set<ecs::InstanceOf>({{me.id}})
+                     .set<SubMesh>({first_index, index_count})
+                     .set<UsesMaterial>({{mEntities[material]}}).id
+            );
         }
     }
 
