@@ -2,24 +2,13 @@
 
 #include "imgui.h"
 #include "Modules/Transforms/Transforms.h"
+#include "RxECS.h"
 
 using namespace RxEngine::Transforms;
 using namespace DirectX;
 
 namespace RxEngine
 {
-    void rtsCameraGUI(ecs::World *, void * ptr)
-    {
-        auto rts_camera = static_cast<RTSCamera *>(ptr);
-        if (rts_camera) {
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("Dolly");
-            ImGui::TableNextColumn();
-            ImGui::DragFloat("", &rts_camera->dolly);
-        }
-    }
-
     void RTSCameraModule::startup()
     {
         world_->createSystem("RTSCamera:CalculateMatrix")
@@ -118,7 +107,7 @@ namespace RxEngine
                   updateGui(e);
               });
 
-        world_->set<ComponentGui>(world_->getComponentId<RTSCamera>(), {.editor = rtsCameraGUI});
+        world_->set<ComponentGui>(world_->getComponentId<RTSCamera>(), {.editor = RTSCamera::rtsCameraGUI});
     }
 
     void RTSCameraModule::shutdown()

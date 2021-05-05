@@ -22,12 +22,14 @@
 #include "Modules/StaticMesh/StaticMesh.h"
 #include "Modules/Transforms/Transforms.h"
 #include "Modules/WorldObject/WorldObject.h"
+#include "Vulkan/ThreadResources.h"
 
 namespace RxEngine
 {
     class StatsModule;
 
-    void EngineMain::setupWorld() {
+    void EngineMain::setupWorld()
+    {
         window_->setWorld(world.get());
 
         world->newEntity("Pipeline:PreFrame").set<ecs::SystemGroup>({1, false, 0.0f, 0.0f});
@@ -44,7 +46,7 @@ namespace RxEngine
 
         setupLuaEnvironment();
         loadLuaFile("/lua/engine");
-        for (auto sf : configFiles) {
+        for (auto sf: configFiles) {
             loadLuaFile(sf);
         }
 
@@ -66,7 +68,7 @@ namespace RxEngine
             m->registerModule();
         }
 
-        for (auto& m : modules) {
+        for (auto & m: modules) {
             m->processStartupData(lua, device_.get());
         }
 
@@ -135,25 +137,29 @@ namespace RxEngine
              .execute([](ecs::World * world)
              {
                  RxCore::JobManager::instance().clean();
-                 RxCore::JobManager::threadData().freeAllResources();
+                 RxCore::threadResources.freeAllResources();
              });
 
         world->createSystem("Engine:ECSMain")
              .inGroup("Pipeline:UpdateUi")
-             .execute([this](ecs::World* world)
+             .execute([this](ecs::World * world)
              {
                  OPTICK_EVENT("Engine GUI")
                  updateEntityGui();
              });
 
-        world->set<ComponentGui>(world->getComponentId<ecs::Name>(), { .editor = ecsNameGui });
-        world->set<ComponentGui>(world->getComponentId<ecs::SystemGroup>(), { .editor = ecsSystemGroupGui });
-        world->set<ComponentGui>(world->getComponentId<WindowDetails>(), { .editor = ecsWindowDetailsGui });
-        world->set<ComponentGui>(world->getComponentId<EngineTime>(), { .editor = ecsEngineTimeGui });
-        world->set<ComponentGui>(world->getComponentId<ecs::StreamComponent>(), { .editor = ecsStreamComponentGui });
-        world->set<ComponentGui>(world->getComponentId<ecs::System>(), { .editor = ecsSystemGui });
-        world->set<ComponentGui>(world->getComponentId<ecs::Component>(), { .editor = ecsComponentGui });
-        world->set<ComponentGui>(world->getComponentId<FrameStats>(), { .editor = frameStatsGui});
+        world->set<ComponentGui>(world->getComponentId<ecs::Name>(), {.editor = ecsNameGui});
+        world->set<ComponentGui>(world->getComponentId<ecs::SystemGroup>(),
+                                 {.editor = ecsSystemGroupGui});
+        world->set<ComponentGui>(world->getComponentId<WindowDetails>(),
+                                 {.editor = ecsWindowDetailsGui});
+        world->set<ComponentGui>(world->getComponentId<EngineTime>(), {.editor = ecsEngineTimeGui});
+        world->set<ComponentGui>(world->getComponentId<ecs::StreamComponent>(),
+                                 {.editor = ecsStreamComponentGui});
+        world->set<ComponentGui>(world->getComponentId<ecs::System>(), {.editor = ecsSystemGui});
+        world->set<ComponentGui>(world->getComponentId<ecs::Component>(),
+                                 {.editor = ecsComponentGui});
+        world->set<ComponentGui>(world->getComponentId<FrameStats>(), {.editor = frameStatsGui});
     }
 
     void EngineMain::startup()
@@ -179,6 +185,16 @@ namespace RxEngine
         device_ = std::make_unique<RxCore::Device>(window_->GetWindow());
 
         auto surface = RxCore::Device::Context()->surface;
+
+        RxCore::JobManager::instance().freeAllResourcesFunction = []()
+        {
+            RxCore::threadResources.freeAllResources();
+        };
+
+        RxCore::JobManager::instance().freeResourcesFunction = []()
+        {
+            RxCore::threadResources.freeUnused();
+        };
 
         swapChain_ = surface->CreateSwapChain();
         swapChain_->setSwapChainOutOfDate(true);

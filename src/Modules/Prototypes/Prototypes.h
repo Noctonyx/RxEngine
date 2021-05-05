@@ -1,12 +1,13 @@
 #pragma once
 
 #include "Modules/Module.h"
+#include "DirectXCollision.h"
 
 namespace RxEngine
 {
     struct Prototype
     {
-        
+        DirectX::BoundingSphere boundingSphere;
     };
 
     struct HasSubMesh: ecs::Relation {};

@@ -10,6 +10,7 @@
 #include "robin_hood.h"
 #include "DirectXCollision.h"
 #include "Modules/Render.h"
+#include "Vulkan/ThreadResources.h"
 
 using namespace DirectX;
 
@@ -87,7 +88,7 @@ namespace RxEngine
             );
 
             b->getMemory()->map();
-            auto ds = RxCore::JobManager::threadData().getDescriptorSet(
+            auto ds = RxCore::threadResources.getDescriptorSet(
                 poolTemplate, dsLayouts[2]);
             ds->updateDescriptor(0, vk::DescriptorType::eStorageBuffer, b);
             instanceBuffers.push_back(b);

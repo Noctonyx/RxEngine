@@ -1,12 +1,15 @@
 #pragma once
 #include "DirectXMath.h"
+#include "imgui.h"
 #include "Modules/Module.h"
+#include "RxECS.h"
 
 namespace RxEngine
 {
     struct RTSCamera
     {
         float dolly;
+
         DirectX::XMFLOAT4X4 view;
         DirectX::XMFLOAT4X4 iView;
 
@@ -41,6 +44,18 @@ namespace RxEngine
                 XMVector3TransformNormal(
                     DirectX::XMVectorSet(1.f, 0.f, 0.f, 0.f),
                     XMLoadFloat4x4(&iView)));
+        }
+
+        static void rtsCameraGUI(ecs::World*, void* ptr)
+        {
+            auto rts_camera = static_cast<RTSCamera*>(ptr);
+            if (rts_camera) {
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::Text("Dolly");
+                ImGui::TableNextColumn();
+                ImGui::DragFloat("", &rts_camera->dolly);
+            }
         }
     };
 

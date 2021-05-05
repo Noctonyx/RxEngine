@@ -8,6 +8,7 @@
 #include "MeshBundle.h"
 #include "Vulkan/CommandBuffer.hpp"
 #include "Vulkan/DescriptorSet.hpp"
+#include "Vulkan/ThreadResources.h"
 
 #define RX_INVALID_ID  std::numeric_limits<uint32_t>::max()
 
@@ -53,7 +54,7 @@ namespace RxEngine
             return;
         }
 
-        descriptorSet_ = RxCore::JobManager::threadData().getDescriptorSet(poolTemplate, layout);
+        descriptorSet_ = RxCore::threadResources.getDescriptorSet(poolTemplate, layout);
 
         descriptorSet_->updateDescriptor(0, vk::DescriptorType::eStorageBuffer, vertexBuffer_);
     }

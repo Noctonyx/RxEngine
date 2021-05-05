@@ -35,6 +35,11 @@ namespace RxEngine
             std::shared_ptr<RxCore::SecondaryCommandBuffer> buf;
         };
 
+        struct OpaqueRenderCommand
+        {
+            std::shared_ptr<RxCore::SecondaryCommandBuffer> buf;
+        };
+
 #if 0
         struct ShaderModule
         {

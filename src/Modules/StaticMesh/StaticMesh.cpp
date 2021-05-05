@@ -1,24 +1,188 @@
 #include "StaticMesh.h"
 
+#include "EngineMain.hpp"
+#include "imgui.h"
 #include "Loader.h"
 #include "Modules/Materials/Materials.h"
-#include "Rendering/MeshBundle.h"
+#include "Modules/Transforms/Transforms.h"
+#include "Modules/WorldObject/WorldObject.h"
 #include "sol/state.hpp"
 #include "sol/table.hpp"
+#include "Vulkan/ThreadResources.h"
 
 namespace RxEngine
 {
+    void staticMeshBundleGui(ecs::World *, void * ptr)
+    {
+        auto mesh_bundle = static_cast<StaticMeshBundle *>(ptr);
+
+        if (mesh_bundle) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Vertex Size");
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", mesh_bundle->vertexSize);
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Vertex Count");
+            ImGui::TableNextColumn();
+            ImGui::Text("%d/%d", mesh_bundle->vertexCount, mesh_bundle->maxVertexCount);
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Index Count");
+            ImGui::TableNextColumn();
+            ImGui::Text("%d/%d", mesh_bundle->indexCount, mesh_bundle->maxIndexCount);
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Mesh Count");
+            ImGui::TableNextColumn();
+            ImGui::Text("%lld", mesh_bundle->entries.size());
+        }
+    }
+
+    void meshPrimitiveGui(ecs::World *, void * ptr)
+    {
+        auto mesh = static_cast<StaticMesh *>(ptr);
+
+        if (mesh) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Vertex Offset");
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", mesh->vertexOffset);
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Index Offset");
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", mesh->indexOffset);
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Index Count");
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", mesh->indexCount);
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("SphereBounds");
+            ImGui::TableNextColumn();
+            ImGui::Text("(%.2f,%.2f,%.2f) %.2f", mesh->boundSphere.Center.x,
+                        mesh->boundSphere.Center.y, mesh->boundSphere.Center.z,
+                        mesh->boundSphere.Radius);
+        }
+    }
+
+    void subMeshGui(ecs::World *, void * ptr)
+    {
+        auto sub_mesh = static_cast<SubMesh *>(ptr);
+
+        if (sub_mesh) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Index Offset");
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", sub_mesh->indexOffset);
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Index Count");
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", sub_mesh->indexCount);
+        }
+    }
+
     void StaticMeshModule::registerModule()
     {
         world_->addSingleton<StaticMeshActiveBundle>();
+        world_->set<ComponentGui>(world_->getComponentId<StaticMeshBundle>(),
+                                  ComponentGui{.editor = staticMeshBundleGui});
+        world_->set<ComponentGui>(world_->getComponentId<StaticMesh>(),
+                                  ComponentGui{.editor = meshPrimitiveGui});
+        world_->set<ComponentGui>(world_->getComponentId<SubMesh>(),
+                                  ComponentGui{.editor = subMeshGui});
     }
 
     void StaticMeshModule::startup()
     {
-        
+        world_->createSystem("StaticMesh:Render")
+              .inGroup("Pipeline:PreRender")
+              .execute([this](ecs::World *)
+              {
+                  OPTICK_EVENT("StaticMesh:Render")
+                  createOpaqueRenderCommands();
+              });
+
+        world_->createSystem("StaticMesh:PrepareMeshes")
+              .inGroup("Pipeline:PreFrame")
+              .withQuery<SubMesh>()
+              .without<RenderDetailCache>()
+              .each<SubMesh>([](ecs::EntityHandle e, const SubMesh * )
+              {
+                  RenderDetailCache rdc{};
+
+                  auto sme = e.getRelatedEntity<SubMeshOf>();
+                  if (!sme) {
+                      return;
+                  }
+
+                  auto sm = sme.get<StaticMesh>();
+
+                  rdc.vertexOffset = sm->vertexOffset;
+                  rdc.indexCount = sm->indexCount;
+                  rdc.indexOffset = sm->indexOffset;
+                  rdc.boundSphere = sm->boundSphere;
+
+                  auto be = sme.getRelatedEntity<InBundle>();
+                  if(!be) {
+                      return;
+                  }
+                  rdc.bundle = be;
+
+                  auto m = e.getRelatedEntity<UsesMaterial>();
+                  if(!m) {
+                      return;
+                  }
+
+                  rdc.material = m;
+
+                  rdc.opaquePipeline = m.getRelatedEntity<HasOpaquePipeline>();
+                  rdc.shadowPipeline = m.getRelatedEntity<HasShadowPipeline>();
+                  rdc.transparentPipeline = m.getRelatedEntity<HasTransparentPipeline>();
+
+                  e.setDeferred(rdc);
+              });
+
+        worldObjects = world_->createQuery()
+                             .with<WorldObject, Transforms::WorldPosition>()
+                             .withInheritance(true).id;
+
+        pipeline_ = world_->lookup("pipeline/staticmesh_opaque");
     }
 
     void StaticMeshModule::shutdown() { }
+
+    ecs::entity_t createStaticMeshBundle(ecs::World * world)
+    {
+        auto mbe = world->newEntity();
+
+        auto mb = mbe.addAndUpdate<StaticMeshBundle>();
+
+        mb->vertexCount = 0;
+        mb->indexCount = 0;
+        mb->vertexSize = sizeof(StaticMeshVertex);
+        mb->useDescriptor = false;
+        mb->maxVertexCount = (256 * 1024 * 1024 / mb->vertexSize);
+        mb->maxIndexCount = mb->maxVertexCount;
+
+        mb->vertexBuffer = RxCore::iVulkan()->createBuffer(
+            vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eVertexBuffer |
+            vk::BufferUsageFlagBits::eTransferDst,
+            VMA_MEMORY_USAGE_GPU_ONLY, mb->maxVertexCount * mb->vertexSize);
+
+        mb->indexBuffer = RxCore::iVulkan()->createIndexBuffer(
+            VMA_MEMORY_USAGE_GPU_ONLY, static_cast<uint32_t>(mb->maxVertexCount * sizeof(uint32_t)),
+            false);
+
+        world->getSingletonUpdate<StaticMeshActiveBundle>()->currentBundle = mbe.id;
+        return mbe.id;
+    }
 
     ecs::entity_t getActiveMeshBundle(ecs::World * world)
     {
@@ -27,14 +191,30 @@ namespace RxEngine
             return smab->currentBundle;
         }
 
-        auto mb = std::make_shared<MeshBundle>(sizeof(StaticMeshVertex), 256 * 1024 * 1024, false);
-        auto mbe = world->newEntity();
-        auto smb = mbe.addAndUpdate<StaticMeshBundle>();
-        smb->bundle = mb;
+        return createStaticMeshBundle(world);
+    }
 
-        world->getSingletonUpdate<StaticMeshActiveBundle>()->currentBundle = mbe.id;
+    void copyToBuffers(const std::vector<StaticMeshVertex> & meshVertices,
+                       const std::vector<uint32_t> & meshIndices,
+                       StaticMeshBundle * smb)
+    {
+        size_t v_size = meshVertices.size() * sizeof(StaticMeshVertex);
+        size_t i_size = meshIndices.size() * sizeof(uint32_t);
 
-        return mbe.id;
+        auto cb = RxCore::iVulkan()->transferCommandPool_->createTransferCommandBuffer();
+        cb->begin();
+
+        const auto b1 = RxCore::iVulkan()->createStagingBuffer(v_size, meshVertices.data());
+        const auto b2 = RxCore::iVulkan()->createStagingBuffer(i_size, meshIndices.data());
+
+        cb->copyBuffer(b1, smb->vertexBuffer, 0, smb->vertexCount * smb->vertexSize, v_size);
+        cb->copyBuffer(b2, smb->indexBuffer, 0, smb->indexCount * sizeof(uint32_t), i_size);
+
+        smb->vertexCount += static_cast<uint32_t>(meshVertices.size());
+        smb->indexCount += static_cast<uint32_t>(meshIndices.size());
+
+        cb->end();
+        cb->submitAndWait();
     }
 
     void loadMesh(ecs::World * world,
@@ -42,7 +222,7 @@ namespace RxEngine
                   std::string meshName,
                   sol::table details)
     {
-        auto mbe = getActiveMeshBundle(world);
+        //auto mbe = getActiveMeshBundle(world);
 
         std::string meshFile = details.get_or("mesh", std::string{""});
         auto vertices = details.get<uint32_t>("vertices");
@@ -66,16 +246,33 @@ namespace RxEngine
                 };
             });
 
-        auto b = world->get<StaticMeshBundle>(mbe)->bundle;
-        //if(b->canFit())
+        auto mb = getActiveMeshBundle(world);
+        {
+            auto smb = world->get<StaticMeshBundle>(mb);
 
-        auto me = world->newEntity(meshName.c_str()).set<MeshObject>({
-            .vertexCount = vertices,
-            .indexCount = indices,
-            .meshFile = meshFile
-        });
+            if (meshVertices.size() + smb->vertexCount > smb->maxVertexCount || meshIndices.size() +
+                smb->indexCount > smb->maxIndexCount) {
+                mb = createStaticMeshBundle(world);
+                world->getSingletonUpdate<StaticMeshActiveBundle>()->currentBundle = mb;
+            }
+        }
 
-        auto sm = me.addAndUpdate<StaticMesh>();
+        auto smb = world->getUpdate<StaticMeshBundle>(mb);
+
+
+        auto static_mesh_entity = world->newEntity(meshName.c_str())
+                                       .set<StaticMesh>({
+                                           .vertexOffset = smb->vertexCount,
+                                           .indexOffset = smb->indexCount,
+                                           .indexCount = static_cast<uint32_t>(meshIndices.size())
+                                       })
+                                       .set<InBundle>({{mb}});
+
+        copyToBuffers(meshVertices, meshIndices, smb);
+
+        smb->entries.push_back(static_mesh_entity.id);
+
+        //auto sm = mesh_prim_entity.addAndUpdate<StaticMesh>();
 
         sol::table smtab = details.get<sol::table>("submeshes");
         sol::table mtab = details.get<sol::table>("materials");
@@ -91,6 +288,8 @@ namespace RxEngine
             }
         }
 
+        auto smu = static_mesh_entity.getUpdate<StaticMesh>();
+
         for (auto & [k, v]: smtab) {
             sol::table subMeshValue = v;
 
@@ -98,10 +297,12 @@ namespace RxEngine
             uint32_t index_count = subMeshValue.get<uint32_t>("index_count");
             const uint32_t material = subMeshValue.get<uint32_t>("material");
 
-            sm->subMeshes.push_back(
+            //sm->subMeshes.push_back(
+            smu->subMeshes.push_back(
                 world->newEntity()
                      //.set<ecs::InstanceOf>({{me.id}})
-                     .set<MeshPrimitive>({first_index, index_count, 0})
+                     .set<SubMesh>({first_index, index_count})
+                     .set<SubMeshOf>({{static_mesh_entity.id}})
                      .set<UsesMaterial>({{mEntities[material]}}).id
             );
         }
@@ -123,5 +324,38 @@ namespace RxEngine
         sol::table meshes = data.get<sol::table>("meshes");
 
         loadMeshes(world_, device, meshes);
+    }
+
+    void StaticMeshModule::createOpaqueRenderCommands()
+    {
+        OPTICK_CATEGORY("Render Static", ::Optick::Category::Rendering);
+
+        auto pipeline = pipeline_.get<OpaquePipeline>();
+
+        if (!pipeline) {
+            return;
+        }
+        assert(pipeline);
+        assert(pipeline->pipeline);
+
+        const auto layout = pipeline_.getRelated<UsesLayout, PipelineLayout>();
+
+        auto res = world_->getResults(worldObjects);
+        // res.each<>
+
+        auto buf = RxCore::threadResources.getCommandBuffer();
+
+        buf->begin(pipeline->renderPass, pipeline->subPass);
+        {
+            buf->useLayout(layout->layout);
+            OPTICK_GPU_CONTEXT(buf->Handle());
+            OPTICK_GPU_EVENT("Draw StaticMesh");
+
+            buf->BindPipeline(pipeline->pipeline->Handle());
+        }
+        buf->end();
+
+        world_->getStream<Render::OpaqueRenderCommand>()
+              ->add<Render::OpaqueRenderCommand>({buf});
     }
 }

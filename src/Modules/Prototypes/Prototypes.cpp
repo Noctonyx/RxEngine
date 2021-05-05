@@ -17,8 +17,12 @@ namespace RxEngine
                        sol::table details)
     {
         auto e = world->newEntity(prototypeName.c_str()).add<ecs::Prefab>();
-        e.add<Transforms::WorldPosition>();
-        e.add<Transforms::YRotation>();
+        if(details.get_or("world_position", false)) {
+            e.add<Transforms::WorldPosition>();
+        }
+        if (details.get_or("y_rotation", false)) {
+            e.add<Transforms::YRotation>();
+        }
 
         sol::table mesh = details.get<sol::table>("mesh");
 
@@ -31,6 +35,7 @@ namespace RxEngine
 
             auto se = e.getHandle(meshEntity->subMeshes[sm]);
             e.set<HasSubMesh>({ {se.id} });
+            e.set<Prototype>({ .boundingSphere =  meshEntity->boundSphere });
         }
     }
 

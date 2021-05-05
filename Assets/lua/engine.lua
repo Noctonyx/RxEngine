@@ -10,6 +10,14 @@ data.shaders = {
         shader = "/shaders/shdr_imgui_frag.spv",
         stage = "frag"
     },
+    ["shader/staticmesh_opaque_vert"] = {
+        shader = "/shaders/staticmesh_opaque_vert.spv",
+        stage = "vert"
+    },
+    ["shader/staticmesh_opaque_frag"] = {
+        shader = "/shaders/staticmesh_opaque_frag.spv",
+        stage = "frag"
+    },
 }
 
 data.pipeline_layouts = {
@@ -120,6 +128,17 @@ data.material_pipelines = {
             { type="float", count=2, offset=0 },
             { type="float", count=2, offset=8 },
             { type="byte",  count=4, offset=16},
+        }      
+    },
+    ["pipeline/staticmesh_opaque"] = {
+        layout = "layout/general",
+        vertexShader = "shader/staticmesh_opaque_vert",
+        fragmentShader = "shader/staticmesh_opaque_frag",
+        blends = {
+            {enable = false}
+        },
+        renderStage = "opaque",
+        vertices = {
         }      
     },
 };

@@ -11,6 +11,7 @@
 #include "Scene.h"
 #include "AssetException.h"
 #include "Vfs.h"
+#include "Vulkan/ThreadResources.h"
 
 namespace RxEngine
 {
@@ -364,7 +365,7 @@ namespace RxEngine
 
         const auto layout = pipeline_.getRelated<UsesLayout, PipelineLayout>();
 
-        auto buf = RxCore::JobManager::threadData().getCommandBuffer();
+        auto buf = RxCore::threadResources.getCommandBuffer();
 
         const auto dd = ImGui::GetDrawData();
         if (dd->TotalVtxCount == 0) {

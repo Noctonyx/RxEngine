@@ -12,7 +12,7 @@
 
 namespace RxEngine
 {
-    void materialGui(ecs::World *, void * ptr)
+    void materialUi(ecs::World *, void * ptr)
     {
         auto material = static_cast<Material *>(ptr);
 
@@ -33,7 +33,7 @@ namespace RxEngine
     void MaterialsModule::registerModule()
     {
         world_->set<ComponentGui>(world_->getComponentId<Material>(),
-                                  ComponentGui{.editor = materialGui});
+                                  ComponentGui{.editor = materialUi});
     }
 
     void MaterialsModule::deregisterModule() { }
@@ -681,6 +681,15 @@ namespace RxEngine
             e = world->newEntity(name.c_str());
         }
 
+
+        std::string a = material.get_or("alpha_mode", std::string{ "OPAQUE" });
+        if (a == "OPAQUE") {
+            mi.alpha = MaterialAlphaMode::Opaque;
+        }
+        else {
+            mi.alpha = MaterialAlphaMode::Transparent;
+        }
+
         if (opaquePipeline.has_value()) {
             auto eop = world->lookup(opaquePipeline.value().c_str());
 
@@ -689,6 +698,14 @@ namespace RxEngine
                 throw RxAssets::AssetException("Not a valid opaquePipeline:", name);
             }
             e.set<HasOpaquePipeline>({{eop.id}});
+        } else if(mi.alpha == MaterialAlphaMode::Opaque) {
+            auto eop = world->lookup("pipeline/staticmesh_opaque");
+
+            auto mpd = eop.get<MaterialPipelineDetails>();
+            if (!mpd || mpd->stage != RxAssets::PipelineRenderStage::Opaque) {
+                throw RxAssets::AssetException("Not a valid opaquePipeline:", name);
+            }
+            e.set<HasOpaquePipeline>({ {eop.id} });
         }
 
         if (shadowPipeline.has_value()) {
@@ -700,7 +717,17 @@ namespace RxEngine
             }
             e.set<HasShadowPipeline>({{eop.id}});
         }
+#if 0
+        else if (mi.alpha == MaterialAlphaMode::Opaque) {
+            auto eop = world->lookup("pipeline/staticmesh_shadow");
 
+            auto mpd = eop.get<MaterialPipelineDetails>();
+            if (!mpd || mpd->stage != RxAssets::PipelineRenderStage::Shadow) {
+                throw RxAssets::AssetException("Not a valid opaquePipeline:", name);
+            }
+            e.set<HasShadpwPipeline>({ {eop.id} });
+        }
+#endif
         if (transparentPipeline.has_value()) {
             auto eop = world->lookup(transparentPipeline.value().c_str());
 
@@ -709,6 +736,14 @@ namespace RxEngine
                 throw RxAssets::AssetException("Not a valid transparentPipeline:", name);
             }
             e.set<HasTransparentPipeline>({{eop.id}});
+        }   else if (mi.alpha == MaterialAlphaMode::Transparent) {
+            auto eop = world->lookup("pipeline/staticmesh_transparent");
+
+            auto mpd = eop.get<MaterialPipelineDetails>();
+            if (!mpd || mpd->stage != RxAssets::PipelineRenderStage::Transparent) {
+                throw RxAssets::AssetException("Not a valid opaquePipeline:", name);
+            }
+            e.set<HasTransparentPipeline>({ {eop.id} });
         }
 
         if (uiPipeline.has_value()) {
@@ -737,13 +772,6 @@ namespace RxEngine
             } else {
                 throw RxAssets::AssetException("Not a valid texture:", name);
             }
-        }
-
-        std::string a = material.get_or("alpha_mode", std::string{"OPAQUE"});
-        if (a == "OPAQUE") {
-            mi.alpha = MaterialAlphaMode::Opaque;
-        } else {
-            mi.alpha = MaterialAlphaMode::Transparent;
         }
 
         e.set<Material>(mi);
