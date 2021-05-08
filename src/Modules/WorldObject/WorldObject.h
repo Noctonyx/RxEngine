@@ -1,12 +1,17 @@
 #pragma once
 #include "Modules/Module.h"
-#include "DirectXCollision.h"
+#include "DirectXMath.h"
 
 namespace RxEngine
 {
     struct WorldObject
     {
         
+    };
+
+    struct WorldTransform
+    {
+        DirectX::XMFLOAT4X4 transform;
     };
 
     class WorldObjectModule : public Module

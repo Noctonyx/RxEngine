@@ -1,4 +1,5 @@
 #pragma once
+#include "DirectXCollision.h"
 #include "DirectXMath.h"
 #include "imgui.h"
 #include "Modules/Module.h"
@@ -15,6 +16,7 @@ namespace RxEngine
 
         DirectX::XMFLOAT3 viewPos;
 
+        DirectX::XMFLOAT4X4 proj;
         DirectX::XMFLOAT4X4 viewProj;
         DirectX::XMFLOAT4X4 iViewProj;
 
@@ -65,6 +67,11 @@ namespace RxEngine
         float fov;
         float nearZ;
         float farZ;
+    };
+
+    struct CameraFrustum
+    {
+        DirectX::BoundingFrustum frustum;
     };
 
     class RTSCameraModule : public Module

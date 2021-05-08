@@ -4,14 +4,21 @@
 #include "imgui.h"
 #include "Loader.h"
 #include "Modules/Materials/Materials.h"
+#include "Modules/Prototypes/Prototypes.h"
+#include "Modules/RTSCamera/RTSCamera.h"
 #include "Modules/Transforms/Transforms.h"
 #include "Modules/WorldObject/WorldObject.h"
 #include "sol/state.hpp"
 #include "sol/table.hpp"
 #include "Vulkan/ThreadResources.h"
+#include "Modules/SceneCamera/SceneCamera.h"
+
+using namespace DirectX;
 
 namespace RxEngine
 {
+    struct SceneCamera;
+
     void staticMeshBundleGui(ecs::World *, void * ptr)
     {
         auto mesh_bundle = static_cast<StaticMeshBundle *>(ptr);
@@ -113,7 +120,7 @@ namespace RxEngine
               .inGroup("Pipeline:PreFrame")
               .withQuery<SubMesh>()
               .without<RenderDetailCache>()
-              .each<SubMesh>([](ecs::EntityHandle e, const SubMesh * )
+              .each<SubMesh>([](ecs::EntityHandle e, const SubMesh *)
               {
                   RenderDetailCache rdc{};
 
@@ -130,13 +137,13 @@ namespace RxEngine
                   rdc.boundSphere = sm->boundSphere;
 
                   auto be = sme.getRelatedEntity<InBundle>();
-                  if(!be) {
+                  if (!be) {
                       return;
                   }
                   rdc.bundle = be;
 
                   auto m = e.getRelatedEntity<UsesMaterial>();
-                  if(!m) {
+                  if (!m) {
                       return;
                   }
 
@@ -149,8 +156,13 @@ namespace RxEngine
                   e.setDeferred(rdc);
               });
 
+        //        world_->createSystem("StaticMesh:Render")
+        //      .inGroup("Pipeline:PreRender")
+        //     .withQuery<Sta>()
+
         worldObjects = world_->createQuery()
-                             .with<WorldObject, Transforms::WorldPosition>()
+                             .with<WorldObject, WorldTransform>()
+                             .withRelation<HasVisiblePrototype, VisiblePrototype>()
                              .withInheritance(true).id;
 
         pipeline_ = world_->lookup("pipeline/staticmesh_opaque");
@@ -340,8 +352,35 @@ namespace RxEngine
 
         const auto layout = pipeline_.getRelated<UsesLayout, PipelineLayout>();
 
+        auto scene_camera = world_->getSingleton<SceneCamera>();
+        auto frustum = world_->get<CameraFrustum>(scene_camera->camera);
+
+        std::vector<ecs::entity_t> entities;
+
         auto res = world_->getResults(worldObjects);
-        // res.each<>
+        res.each<WorldTransform, VisiblePrototype>(
+            [&](ecs::EntityHandle e,
+                const WorldTransform * wt,
+                const VisiblePrototype * vp)
+            {
+                if (!vp) {
+                    return;
+                }
+                BoundingSphere bs;
+                auto tx = XMLoadFloat4x4(&wt->transform);
+                vp->boundingSphere.Transform(bs, tx);
+
+                if (!frustum->frustum.Intersects(bs)) {
+                    return;
+                }
+                for (auto & sm: vp->subMeshEntities) {
+                    auto rdc = world_->get<RenderDetailCache>(sm);
+                    if (!rdc || !rdc->opaquePipeline) {
+                        return;
+                    }
+
+                }
+            });
 
         auto buf = RxCore::threadResources.getCommandBuffer();
 

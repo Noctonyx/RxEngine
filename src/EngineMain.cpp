@@ -37,10 +37,11 @@ namespace RxEngine
         world->newEntity("Pipeline:FixedUpdate").set<ecs::SystemGroup>({3, true, 0.0f, 0.02f});
         world->newEntity("Pipeline:Update").set<ecs::SystemGroup>({4, false, 0.0f, 0.0f});
         world->newEntity("Pipeline:UpdateUi").set<ecs::SystemGroup>({5, false, 0.0f, 0.0f});
-        world->newEntity("Pipeline:PreRender").set<ecs::SystemGroup>({6, false, 0.0f, 0.0f});
-        world->newEntity("Pipeline:Render").set<ecs::SystemGroup>({7, false, 0.0f, 0.0f});
-        world->newEntity("Pipeline:PostRender").set<ecs::SystemGroup>({8, false, 0.0f, 0.0f});
-        world->newEntity("Pipeline:PostFrame").set<ecs::SystemGroup>({9, false, 0.0f, 0.0f});
+        world->newEntity("Pipeline:PostUpdate").set<ecs::SystemGroup>({6, false, 0.0f, 0.0f});
+        world->newEntity("Pipeline:PreRender").set<ecs::SystemGroup>({7, false, 0.0f, 0.0f});
+        world->newEntity("Pipeline:Render").set<ecs::SystemGroup>({8, false, 0.0f, 0.0f});
+        world->newEntity("Pipeline:PostRender").set<ecs::SystemGroup>({9, false, 0.0f, 0.0f});
+        world->newEntity("Pipeline:PostFrame").set<ecs::SystemGroup>({10, false, 0.0f, 0.0f});
 
         lua = new sol::state();
 

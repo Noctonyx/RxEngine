@@ -13,14 +13,17 @@ namespace RxEngine
     {
         world_->createSystem("RTSCamera:CalculateMatrix")
               .inGroup("Pipeline:PreRender")
-              .withQuery<RTSCamera, WorldPosition, YRotation, XRotation, CameraProjection>()
-              .each<RTSCamera, WorldPosition, YRotation, XRotation, CameraProjection>(
+              .withQuery<RTSCamera, WorldPosition, YRotation, XRotation, CameraProjection,
+                         CameraFrustum>()
+              .each<RTSCamera, WorldPosition, YRotation, XRotation, CameraProjection,
+                    CameraFrustum>(
                   [](ecs::EntityHandle e,
                      RTSCamera * c,
                      const WorldPosition * wp,
                      const YRotation * yrot,
                      const XRotation * xrot,
-                     const CameraProjection * proj
+                     const CameraProjection * proj,
+                     CameraFrustum * fru
               )
                   {
                       OPTICK_EVENT("Update Camera")
@@ -50,10 +53,13 @@ namespace RxEngine
 
                       XMStoreFloat4x4(&c->viewProj, viewProj);
                       XMStoreFloat4x4(&c->iViewProj, XMMatrixInverse(nullptr, viewProj));
+
+                      const BoundingFrustum frustum(pr, true);
+
+                      frustum.Transform(fru->frustum, XMMatrixInverse(nullptr, view));
                   });
 
         cameraQuery = world_->createQuery().with<CameraProjection>().id;
-
 
         world_->createSystem("RTSCamera:AspectRatio")
               .inGroup("Pipeline:Update")
@@ -97,6 +103,7 @@ namespace RxEngine
               .add<YRotation>()
               .add<RTSCamera>()
               .set<CameraProjection>(def)
+              .add<CameraFrustum>()
               .add<ecs::Prefab>();
 
         world_->createSystem("RTSCamera:Stats")
@@ -107,7 +114,8 @@ namespace RxEngine
                   updateGui(e);
               });
 
-        world_->set<ComponentGui>(world_->getComponentId<RTSCamera>(), {.editor = RTSCamera::rtsCameraUI});
+        world_->set<ComponentGui>(world_->getComponentId<RTSCamera>(),
+                                  {.editor = RTSCamera::rtsCameraUI});
     }
 
     void RTSCameraModule::shutdown()
