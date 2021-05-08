@@ -5,12 +5,19 @@
 
 namespace RxEngine
 {
-    struct Prototype
+    struct VisiblePrototype
     {
         DirectX::BoundingSphere boundingSphere;
+        std::vector<ecs::entity_t> subMeshEntities;
+    };
+
+    struct Prototype
+    {
+        //ecs::entity_t visiblePrototype;
     };
 
     struct HasSubMesh: ecs::Relation {};
+    struct HasVisiblePrototype: ecs::Relation {};
 
     class PrototypesModule : public Module
     {

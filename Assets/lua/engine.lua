@@ -157,3 +157,7 @@ data.meshes = {
 data.prototypes = {
 
 }
+
+data.visibles = {
+
+}

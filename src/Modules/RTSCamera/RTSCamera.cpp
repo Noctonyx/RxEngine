@@ -107,7 +107,7 @@ namespace RxEngine
                   updateGui(e);
               });
 
-        world_->set<ComponentGui>(world_->getComponentId<RTSCamera>(), {.editor = RTSCamera::rtsCameraGUI});
+        world_->set<ComponentGui>(world_->getComponentId<RTSCamera>(), {.editor = RTSCamera::rtsCameraUI});
     }
 
     void RTSCameraModule::shutdown()

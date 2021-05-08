@@ -24,7 +24,7 @@ namespace RxEngine
             v = XMVector3TransformNormal(
                 v,
                 XMLoadFloat4x4(&iView));
-            v = DirectX::XMVector3Normalize(v);
+            //v = DirectX::XMVector3Normalize(v);
             return v;
         }
 
@@ -34,7 +34,7 @@ namespace RxEngine
             v = XMVector3TransformNormal(
                 v,
                 XMLoadFloat4x4(&iView));
-            v = DirectX::XMVector3Normalize(v);
+            //v = DirectX::XMVector3Normalize(v);
             return v;
         }
 
@@ -46,7 +46,7 @@ namespace RxEngine
                     XMLoadFloat4x4(&iView)));
         }
 
-        static void rtsCameraGUI(ecs::World*, void* ptr)
+        static void rtsCameraUI(ecs::World*, void* ptr)
         {
             auto rts_camera = static_cast<RTSCamera*>(ptr);
             if (rts_camera) {
