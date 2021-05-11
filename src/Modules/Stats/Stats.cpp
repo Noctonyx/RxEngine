@@ -14,8 +14,7 @@ namespace RxEngine
 
         world_->createSystem("Stats:Ui")
               .withSet(systemSet_)
-              .inGroup("Pipeline:UpdateUi")
-              .after<Update>()
+              .inGroup("Pipeline:UpdateUi")           
               .execute([this](ecs::World * w)
                   {
                       delta_ = w->deltaTime();
@@ -26,8 +25,7 @@ namespace RxEngine
 
         world_->createSystem("Stats:Mem")
               .withSet(systemSet_)
-              .inGroup("Pipeline:Update")
-              .label<Update>()
+              .inGroup("Pipeline:Update")              
               .execute([this](ecs::World *)
               {
                   RxCore::iVulkan()->getMemBudget(heaps_);

@@ -97,9 +97,10 @@ namespace RxEngine
 
         world_->createSystem("Renderer:Render")
               .inGroup("Pipeline:PostRender")
-              .after<AcquireImage>()
-              .before<PresentImage>()
+              //.after<AcquireImage>()
+              //.before<PresentImage>()
               .withStream<MainRenderImageInput>()
+              .withWrite<MainRenderImageOutput>()
               .execute<MainRenderImageInput>(
                   [this](ecs::World * world, const MainRenderImageInput * mri)
                   {
@@ -619,7 +620,7 @@ namespace RxEngine
         cascadeViews_.resize(numCascades);
         cascadeFrameBuffers_.resize(numCascades);
 
-        for (uint32_t i = 0;i < numCascades;++i) {
+        for (uint32_t i = 0; i < numCascades; ++i) {
             cascadeViews_[i] = shadowMap_->
                 createImageView(
                     vk::ImageViewType::e2DArray,

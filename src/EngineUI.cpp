@@ -594,6 +594,12 @@ namespace RxEngine
                 ImGui::TableNextColumn();
                 ImGui::Text("%s", w->description(system->query).c_str());
             }
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Count");
+            ImGui::TableNextColumn();
+            ImGui::Text("%lld", system->count);
         }
     }
 

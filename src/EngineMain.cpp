@@ -103,6 +103,7 @@ namespace RxEngine
         world->createSystem("Engine:AcquireImage")
              .inGroup("Pipeline:PostRender")
              .label<AcquireImage>()
+             .withWrite<MainRenderImageInput>()
              .execute([this](ecs::World * world)
              {
                  OPTICK_EVENT("AcquireImage")

@@ -25,7 +25,7 @@ namespace RxEngine
                           XMStoreFloat4x4(&wtt.transform, nm);
 
                           e.addDeferred<WorldTransform>();
-                          e.setDeferred<WorldTransform>(std::move(wtt));
+                          e.setDeferred<WorldTransform>(wtt);
                           return;
                       }
                       XMStoreFloat4x4(&wt->transform, nm);

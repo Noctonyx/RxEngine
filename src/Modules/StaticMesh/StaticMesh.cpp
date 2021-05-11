@@ -106,6 +106,42 @@ namespace RxEngine
                                   ComponentGui{.editor = subMeshGui});
     }
 
+    void cacheMeshRenderDetails(ecs::EntityHandle e)
+    {
+        RenderDetailCache rdc{};
+
+        auto sme = e.getRelatedEntity<SubMeshOf>();
+        if (!sme) {
+            return;
+        }
+
+        auto sm = sme.get<StaticMesh>();
+
+        rdc.vertexOffset = sm->vertexOffset;
+        rdc.indexCount = sm->indexCount;
+        rdc.indexOffset = sm->indexOffset;
+        rdc.boundSphere = sm->boundSphere;
+
+        auto be = sme.getRelatedEntity<InBundle>();
+        if (!be) {
+            return;
+        }
+        rdc.bundle = be;
+
+        auto m = e.getRelatedEntity<UsesMaterial>();
+        if (!m) {
+            return;
+        }
+
+        rdc.material = m;
+
+        rdc.opaquePipeline = m.getRelatedEntity<HasOpaquePipeline>();
+        rdc.shadowPipeline = m.getRelatedEntity<HasShadowPipeline>();
+        rdc.transparentPipeline = m.getRelatedEntity<HasTransparentPipeline>();
+
+        e.setDeferred(rdc);
+    }
+
     void StaticMeshModule::startup()
     {
         world_->createSystem("StaticMesh:Render")
@@ -117,44 +153,10 @@ namespace RxEngine
               });
 
         world_->createSystem("StaticMesh:PrepareMeshes")
-              .inGroup("Pipeline:PreFrame")
-              .withQuery<SubMesh>()
-              .without<RenderDetailCache>()
-              .each<SubMesh>([](ecs::EntityHandle e, const SubMesh *)
-              {
-                  RenderDetailCache rdc{};
-
-                  auto sme = e.getRelatedEntity<SubMeshOf>();
-                  if (!sme) {
-                      return;
-                  }
-
-                  auto sm = sme.get<StaticMesh>();
-
-                  rdc.vertexOffset = sm->vertexOffset;
-                  rdc.indexCount = sm->indexCount;
-                  rdc.indexOffset = sm->indexOffset;
-                  rdc.boundSphere = sm->boundSphere;
-
-                  auto be = sme.getRelatedEntity<InBundle>();
-                  if (!be) {
-                      return;
-                  }
-                  rdc.bundle = be;
-
-                  auto m = e.getRelatedEntity<UsesMaterial>();
-                  if (!m) {
-                      return;
-                  }
-
-                  rdc.material = m;
-
-                  rdc.opaquePipeline = m.getRelatedEntity<HasOpaquePipeline>();
-                  rdc.shadowPipeline = m.getRelatedEntity<HasShadowPipeline>();
-                  rdc.transparentPipeline = m.getRelatedEntity<HasTransparentPipeline>();
-
-                  e.setDeferred(rdc);
-              });
+            .inGroup("Pipeline:PreFrame")
+            .withQuery<SubMesh>()
+            .without<RenderDetailCache>()
+            .each(cacheMeshRenderDetails);
 
         //        world_->createSystem("StaticMesh:Render")
         //      .inGroup("Pipeline:PreRender")
