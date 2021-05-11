@@ -1,6 +1,7 @@
 #pragma once
 #include "Modules/Module.h"
 #include "DirectXCollision.h"
+#include "Modules/Renderer/Renderer.hpp"
 #include "Vulkan/DescriptorSet.hpp"
 #include "Vulkan/IndexBuffer.hpp"
 
@@ -97,6 +98,18 @@ namespace RxEngine
         DirectX::BoundingSphere boundSphere;
     };
 
+    struct RenderingInstance
+    {
+        ecs::entity_t pipeline;
+        ecs::entity_t bundle;
+        uint32_t vertexOffset;
+        uint32_t indexOffset;
+        uint32_t indexCount;
+        ecs::entity_t material;
+        uint32_t matrixIndex;
+        //DirectX::XMFLOAT4X4 mat;
+    };
+
 #if 0
     struct LodEntry
     {
@@ -127,6 +140,8 @@ namespace RxEngine
 
     protected:
         void createOpaqueRenderCommands();
+        void renderIndirectDraws(IndirectDrawSet ids,
+                                 const std::shared_ptr<RxCore::SecondaryCommandBuffer> & buf) const;
 
     private:
         std::shared_ptr<RxCore::DescriptorSet> set0_;

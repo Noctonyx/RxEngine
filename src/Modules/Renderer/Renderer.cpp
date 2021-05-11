@@ -478,7 +478,7 @@ namespace RxEngine
         auto fs = world_->getSingletonUpdate<FrameStats>();
         fs->frameNo++;
         fs->index = (fs->index + 1) % 10;
-        fs->frames[fs->index].cpuTime = cpuTime;
+        fs->frames[fs->index].cpuTime = static_cast<float>(cpuTime);
     }
 
     void Renderer::updateDescriptorSet0(const std::shared_ptr<RenderCamera> & renderCamera)

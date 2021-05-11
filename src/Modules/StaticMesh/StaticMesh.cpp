@@ -146,6 +146,7 @@ namespace RxEngine
     {
         world_->createSystem("StaticMesh:Render")
               .inGroup("Pipeline:PreRender")
+              .withWrite<Render::OpaqueRenderCommand>()
               .execute([this](ecs::World *)
               {
                   OPTICK_EVENT("StaticMesh:Render")
@@ -153,10 +154,10 @@ namespace RxEngine
               });
 
         world_->createSystem("StaticMesh:PrepareMeshes")
-            .inGroup("Pipeline:PreFrame")
-            .withQuery<SubMesh>()
-            .without<RenderDetailCache>()
-            .each(cacheMeshRenderDetails);
+              .inGroup("Pipeline:PreFrame")
+              .withQuery<SubMesh>()
+              .without<RenderDetailCache>()
+              .each(cacheMeshRenderDetails);
 
         //        world_->createSystem("StaticMesh:Render")
         //      .inGroup("Pipeline:PreRender")
@@ -359,6 +360,9 @@ namespace RxEngine
 
         std::vector<ecs::entity_t> entities;
 
+        std::vector<RenderingInstance> instances;
+        std::vector<DirectX::XMFLOAT4X4> mats;
+
         auto res = world_->getResults(worldObjects);
         res.each<WorldTransform, VisiblePrototype>(
             [&](ecs::EntityHandle e,
@@ -380,10 +384,92 @@ namespace RxEngine
                     if (!rdc || !rdc->opaquePipeline) {
                         return;
                     }
+                    size_t ix = mats.size();
+                    mats.push_back(wt->transform);
 
+                    instances.push_back({
+                        rdc->opaquePipeline, rdc->bundle, rdc->vertexOffset, rdc->indexOffset,
+                        rdc->indexCount, rdc->material, static_cast<uint32_t>(ix)
+                    });
                 }
             });
 
+        std::ranges::sort(
+            instances,
+            [](const auto & a, const auto & b)
+            {
+                if (a.pipeline < b.pipeline) {
+                    return true;
+                }
+                if (a.pipeline > b.pipeline) {
+                    return false;
+                }
+                if (a.bundle < b.bundle) {
+                    return true;
+                }
+                if (a.bundle > b.bundle) {
+                    return false;
+                }
+                return a.vertexOffset < b.vertexOffset;
+            }
+        );
+
+        IndirectDrawSet ids;
+
+        {
+            OPTICK_EVENT("Build Draw Commands")
+            ecs::entity_t prevPL = 0;
+            ecs::entity_t prevBundle = 0;
+            //uint32_t prevMix = RX_INVALID_ID;
+            uint32_t prevVertexOffset = std::numeric_limits<uint32_t>::max();
+
+            uint32_t headerIndex = 0;
+            uint32_t commandIndex = 0;
+
+            for (auto & instance: instances) {
+                if (prevPL != instance.pipeline || instance.bundle != prevBundle) {
+
+                    headerIndex = static_cast<uint32_t>(ids.headers.size());
+                    ids.headers
+                       .push_back(IndirectDrawCommandHeader{
+                           instance.pipeline,
+                           instance.bundle,
+                           static_cast<uint32_t>(ids.commands.size()),
+                           0
+                       });
+
+                    prevPL = instance.pipeline;
+                    prevBundle = instance.bundle;
+                    //prevVertexOffset = instance.vertexOffset;
+                }
+
+                if (instance.vertexOffset != prevVertexOffset) {
+                    commandIndex = static_cast<uint32_t>(ids.commands.size());
+                    //auto mesh = bundle->getEntry(mix);
+                    ids.commands.push_back({
+                            instance.indexCount,
+                            instance.vertexOffset,
+                            instance.indexOffset, 0, static_cast<uint32_t>(ids.instances.size())
+                        }
+                    );
+                    ids.headers[headerIndex].commandCount++;
+                    prevVertexOffset = instance.vertexOffset;
+                }
+                //auto& e = (*entities)[eix];
+
+                ids.instances.push_back({mats[instance.matrixIndex], 0, 0, 0, 0});
+                ids.commands[commandIndex].instanceCount++;
+
+                if (ids.instances.size() > 19990) {
+                    spdlog::info("too many instances");
+                    break;
+                }
+            }
+        }
+
+        if (ids.instances.empty()) {
+            return;
+        }
         auto buf = RxCore::threadResources.getCommandBuffer();
 
         buf->begin(pipeline->renderPass, pipeline->subPass);
@@ -398,5 +484,64 @@ namespace RxEngine
 
         world_->getStream<Render::OpaqueRenderCommand>()
               ->add<Render::OpaqueRenderCommand>({buf});
+    }
+
+
+    void StaticMeshModule::renderIndirectDraws(
+        IndirectDrawSet ids,
+        const std::shared_ptr<RxCore::SecondaryCommandBuffer> & buf) const
+    {
+        OPTICK_EVENT()
+        ecs::entity_t current_pipeline{};
+        ecs::entity_t prevBundle = 0;
+
+        for (auto & h: ids.headers) {
+            OPTICK_EVENT("IDS Header")
+            if (h.commandCount == 0) {
+                continue;
+            }
+            {
+                OPTICK_EVENT("Set Pipeline and buffers")
+                if (h.pipelineId != current_pipeline) {
+
+                    auto pl = world_->get<OpaquePipeline>(h.pipelineId);
+
+                    // Check the pipeline has been created (no cereate it earlier)
+                    //auto & pl = materialManager_->getMaterialPipeline(h.pipelineId);
+                    // bind the pipeline
+                    buf->BindPipeline(pl->pipeline->Handle());
+                    current_pipeline = h.pipelineId;
+                }
+                if (h.bundle != prevBundle) {
+
+                    OPTICK_EVENT("Bind Bundle")
+                    auto bund = world_->get<StaticMeshBundle>(h.bundle);
+                    {
+                        if (bund->useDescriptor) {
+                            OPTICK_EVENT("Bind Ds")
+                            buf->BindDescriptorSet(1, bund->descriptorSet);
+                        } else {
+                            OPTICK_EVENT("Bind VB")
+                            buf->BindVertexBuffer(bund->vertexBuffer);
+                        }
+                    }
+                    {
+                        OPTICK_EVENT("Bind IB")
+                        buf->BindIndexBuffer(bund->indexBuffer);
+                    }
+                    // bind bundle descriptorSet
+                    prevBundle = h.bundle;
+                }
+            }
+            {
+                OPTICK_EVENT("Draw Indexed")
+                for (uint32_t i = 0; i < h.commandCount; i++) {
+                    auto & c = ids.commands[i + h.commandStart];
+                    buf->DrawIndexed(
+                        c.indexCount, c.instanceCount, c.indexOffset, c.vertexOffset,
+                        c.instanceOffset);
+                }
+            }
+        }
     }
 }

@@ -114,7 +114,7 @@ namespace RxEngine
     struct IndirectDrawInstance
     {
         DirectX::XMFLOAT4X4 transform;
-        DirectX::XMFLOAT4 params;
+        //DirectX::XMFLOAT4 params;
         uint32_t materialId;
         uint32_t pad0;
         uint32_t pad1;
@@ -124,7 +124,7 @@ namespace RxEngine
     struct IndirectDrawCommandHeader
     {
         ecs::entity_t pipelineId;
-        MeshBundle * bundle;
+        ecs::entity_t bundle;
         uint32_t commandStart;
         uint32_t commandCount;
     };
