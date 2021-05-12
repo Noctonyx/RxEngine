@@ -41,6 +41,7 @@ namespace RxEngine
     {
         uint32_t indexOffset;
         uint32_t indexCount;
+        uint32_t subMeshIndex;
     };
 
     struct InBundle : ecs::Relation
@@ -88,6 +89,7 @@ namespace RxEngine
 
     struct RenderDetailCache {
         ecs::entity_t bundle;
+        uint32_t bundleEntry;
         ecs::entity_t shadowPipeline;
         ecs::entity_t opaquePipeline;
         ecs::entity_t transparentPipeline;

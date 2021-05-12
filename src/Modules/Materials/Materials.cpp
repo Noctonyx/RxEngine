@@ -43,7 +43,7 @@ namespace RxEngine
         world_->createSystem("Material:Pipelines")
               .inGroup("Pipeline:PreFrame")
               .withQuery<MaterialPipelineDetails>()
-              .without<HasPipeline>()
+              .without<GraphicsPipeline>()
               .withRelation<UsesVertexShader, VertexShader>()
               .withRelation<UsesFragmentShader, FragmentShader>()
               .withRelation<UsesLayout, PipelineLayout>()
@@ -819,7 +819,6 @@ namespace RxEngine
         vk::PipelineViewportStateCreateInfo pvsci{};
         vk::PipelineInputAssemblyStateCreateInfo piasci{};
         vk::PipelineVertexInputStateCreateInfo pvisci;
-        //std::shared_ptr<PipelineLayout> pipelineLayout_;
         std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
         std::vector<vk::PipelineColorBlendAttachmentState> attachments;
         std::vector<vk::DynamicState> dynamicStates;
@@ -856,14 +855,7 @@ namespace RxEngine
                 "main"
             }
         );
-#if 0
-        vk::PipelineShaderStageCreateInfo& st = shaderStages.emplace_back();
-        st.setStage(vk::ShaderStageFlagBits::eVertex).setModule(mp.vertexShader);
-        st.setPName("main");
-        st = shaderStages.emplace_back();
-        st.setStage(vk::ShaderStageFlagBits::eFragment).setModule(mp.fragmentShader);
-        st.setPName("main");
-#endif
+
         for (auto & mpa: mpd->blends) {
             auto & at = attachments.emplace_back();
             at.setColorWriteMask(
@@ -988,44 +980,40 @@ namespace RxEngine
             if (mpd->stage == RxAssets::PipelineRenderStage::UI) {
                 auto pl = createMaterialPipeline(
                     mpd, frag, vert, pll->layout, rp->uiRenderPass, rp->uiSubPass);
-                e.setDeferred<UiPipeline>({
+                e.setDeferred<GraphicsPipeline>({
                     std::make_shared<RxCore::Pipeline>(pl), rp->uiRenderPass,
                     rp->uiSubPass
                 });
-                e.addDeferred<HasPipeline>();
             }
 
             if (mpd->stage == RxAssets::PipelineRenderStage::Opaque) {
                 auto pl = createMaterialPipeline(
                     mpd, frag, vert, pll->layout, rp->opaqueRenderPass,
                     rp->opaqueSubPass);
-                e.setDeferred<OpaquePipeline>({
+                e.setDeferred<GraphicsPipeline>({
                     std::make_shared<RxCore::Pipeline>(pl), rp->opaqueRenderPass,
                     rp->opaqueSubPass
                 });
-                e.addDeferred<HasPipeline>();
             }
 
             if (mpd->stage == RxAssets::PipelineRenderStage::Shadow) {
                 auto pl = createMaterialPipeline(
                     mpd, frag, vert, pll->layout, rp->shadowRenderPass,
                     rp->shadowSubPass);
-                e.setDeferred<ShadowPipeline>({
+                e.setDeferred<GraphicsPipeline>({
                     std::make_shared<RxCore::Pipeline>(pl), rp->shadowRenderPass,
                     rp->shadowSubPass
                 });
-                e.addDeferred<HasPipeline>();
             }
 
             if (mpd->stage == RxAssets::PipelineRenderStage::Transparent) {
                 auto pl = createMaterialPipeline(
                     mpd, frag, vert, pll->layout, rp->transparentRenderPass,
                     rp->transparentSubPass);
-                e.setDeferred<TransparentPipeline>({
+                e.setDeferred<GraphicsPipeline>({
                     std::make_shared<RxCore::Pipeline>(pl), rp->transparentRenderPass,
                     rp->transparentSubPass
                 });
-                e.addDeferred<HasPipeline>();
             }
         }
     }

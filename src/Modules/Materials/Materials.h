@@ -8,6 +8,13 @@ namespace RxEngine
 {
     struct RenderPasses;
 
+    struct GraphicsPipeline
+    {
+        std::shared_ptr<RxCore::Pipeline> pipeline;
+        vk::RenderPass renderPass;
+        uint32_t subPass;
+    };
+#if 0
     struct ShadowPipeline
     {
         std::shared_ptr<RxCore::Pipeline> pipeline;
@@ -35,7 +42,7 @@ namespace RxEngine
         vk::RenderPass renderPass;
         uint32_t subPass;
     };
-
+#endif
     struct VertexShader
     {
         std::shared_ptr<RxCore::Shader> shader;
@@ -62,7 +69,7 @@ namespace RxEngine
     struct HasShadowPipeline : ecs::Relation { };
     struct HasTransparentPipeline : ecs::Relation { };
     struct HasUiPipeline : ecs::Relation { };
-    struct HasPipeline {};
+    //struct HasPipeline {};
 
     struct MaterialPipelineDetails
     {

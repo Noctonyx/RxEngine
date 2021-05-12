@@ -106,40 +106,40 @@ namespace RxEngine
                                   ComponentGui{.editor = subMeshGui});
     }
 
-    void cacheMeshRenderDetails(ecs::EntityHandle e)
+    void cacheMeshRenderDetails(ecs::EntityHandle subMeshEntity)
     {
         RenderDetailCache rdc{};
 
-        auto sme = e.getRelatedEntity<SubMeshOf>();
-        if (!sme) {
+        auto static_mesh_entity = subMeshEntity.getRelatedEntity<SubMeshOf>();
+        if (!static_mesh_entity) {
             return;
         }
 
-        auto sm = sme.get<StaticMesh>();
+        auto static_mesh = static_mesh_entity.get<StaticMesh>();
 
-        rdc.vertexOffset = sm->vertexOffset;
-        rdc.indexCount = sm->indexCount;
-        rdc.indexOffset = sm->indexOffset;
-        rdc.boundSphere = sm->boundSphere;
+        rdc.vertexOffset = static_mesh->vertexOffset;
+        rdc.indexCount = static_mesh->indexCount;
+        rdc.indexOffset = static_mesh->indexOffset;
+        rdc.boundSphere = static_mesh->boundSphere;
 
-        auto be = sme.getRelatedEntity<InBundle>();
-        if (!be) {
+        const auto bundle_entity = static_mesh_entity.getRelatedEntity<InBundle>();
+        if (!bundle_entity) {
             return;
         }
-        rdc.bundle = be;
+        rdc.bundle = bundle_entity;
 
-        auto m = e.getRelatedEntity<UsesMaterial>();
-        if (!m) {
+        auto material_entity = subMeshEntity.getRelatedEntity<UsesMaterial>();
+        if (!material_entity) {
             return;
         }
 
-        rdc.material = m;
+        rdc.material = material_entity;
 
-        rdc.opaquePipeline = m.getRelatedEntity<HasOpaquePipeline>();
-        rdc.shadowPipeline = m.getRelatedEntity<HasShadowPipeline>();
-        rdc.transparentPipeline = m.getRelatedEntity<HasTransparentPipeline>();
+        rdc.opaquePipeline = material_entity.getRelatedEntity<HasOpaquePipeline>();
+        rdc.shadowPipeline = material_entity.getRelatedEntity<HasShadowPipeline>();
+        rdc.transparentPipeline = material_entity.getRelatedEntity<HasTransparentPipeline>();
 
-        e.setDeferred(rdc);
+        subMeshEntity.setDeferred(rdc);
     }
 
     void StaticMeshModule::startup()
@@ -305,6 +305,7 @@ namespace RxEngine
 
         auto smu = static_mesh_entity.getUpdate<StaticMesh>();
 
+        uint32_t ix = 0;
         for (auto & [k, v]: smtab) {
             sol::table subMeshValue = v;
 
@@ -316,7 +317,7 @@ namespace RxEngine
             smu->subMeshes.push_back(
                 world->newEntity()
                      //.set<ecs::InstanceOf>({{me.id}})
-                     .set<SubMesh>({first_index, index_count})
+                     .set<SubMesh>({first_index, index_count, ix++})
                      .set<SubMeshOf>({{static_mesh_entity.id}})
                      .set<UsesMaterial>({{mEntities[material]}}).id
             );
@@ -345,7 +346,7 @@ namespace RxEngine
     {
         OPTICK_CATEGORY("Render Static", ::Optick::Category::Rendering);
 
-        auto pipeline = pipeline_.get<OpaquePipeline>();
+        auto pipeline = pipeline_.get<GraphicsPipeline>();
 
         if (!pipeline) {
             return;
@@ -361,7 +362,7 @@ namespace RxEngine
         std::vector<ecs::entity_t> entities;
 
         std::vector<RenderingInstance> instances;
-        std::vector<DirectX::XMFLOAT4X4> mats;
+        std::vector<XMFLOAT4X4> mats;
 
         auto res = world_->getResults(worldObjects);
         res.each<WorldTransform, VisiblePrototype>(
@@ -478,7 +479,7 @@ namespace RxEngine
             OPTICK_GPU_CONTEXT(buf->Handle());
             OPTICK_GPU_EVENT("Draw StaticMesh");
 
-            buf->BindPipeline(pipeline->pipeline->Handle());
+            //buf->BindPipeline(pipeline->pipeline->Handle());
         }
         buf->end();
 
@@ -504,11 +505,7 @@ namespace RxEngine
                 OPTICK_EVENT("Set Pipeline and buffers")
                 if (h.pipelineId != current_pipeline) {
 
-                    auto pl = world_->get<OpaquePipeline>(h.pipelineId);
-
-                    // Check the pipeline has been created (no cereate it earlier)
-                    //auto & pl = materialManager_->getMaterialPipeline(h.pipelineId);
-                    // bind the pipeline
+                    auto pl = world_->get<GraphicsPipeline>(h.pipelineId);
                     buf->BindPipeline(pl->pipeline->Handle());
                     current_pipeline = h.pipelineId;
                 }
