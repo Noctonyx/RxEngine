@@ -1,16 +1,16 @@
 #pragma once
-#include "Modules/Render.h"
-#include "RxECS.h"
+//#include "Modules/Render.h"
+//#include "RxECS.h"
 
 namespace RxEngine
 {
+#if 0
     struct MaterialPipelineLua
     {
         ecs::entity_t id;
         int x{ 2 };
 
         MaterialPipelineLua(ecs::entity_t & e) : id(e) {};
-#if 0
         float getLineWidth()
         {
             auto e = id.get<Render::MaterialPipeline>();
@@ -24,6 +24,6 @@ namespace RxEngine
             m->lineWidth = value;
             e.modified<Render::MaterialPipeline>();
         }
-#endif
     };
+#endif
 }

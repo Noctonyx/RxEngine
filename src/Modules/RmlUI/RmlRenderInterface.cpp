@@ -480,20 +480,12 @@ namespace RxEngine
             VMA_MEMORY_USAGE_CPU_TO_GPU,
             static_cast<uint32_t>(indices_.size()), false);
 
-        vb->getMemory()->map();
-        ib->getMemory()->map();
-
-        memcpy(
-            vb->getMemory()->getPtr(),
-            vertices_.data(),
-            vertices_.size() * static_cast<uint32_t>(sizeof(Rml::Vertex)));
-        memcpy(
-            ib->getMemory()->getPtr(),
-            indices_.data(),
-            indices_.size() * static_cast<uint32_t>(sizeof(uint32_t)));
-
-        vb->getMemory()->unmap();
-        ib->getMemory()->unmap();
+        vb->map();
+        ib->map();
+        vb->update(vertices_.data(), vertices_.size() * static_cast<uint32_t>(sizeof(Rml::Vertex)));
+        ib->update(indices_.data(), indices_.size() * static_cast<uint32_t>(sizeof(uint32_t)));
+        vb->unmap();
+        ib->unmap();
 
         return std::tuple<std::shared_ptr<RxCore::VertexBuffer>, std::shared_ptr<
                               RxCore::IndexBuffer>>(vb, ib);

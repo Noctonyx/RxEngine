@@ -4,8 +4,6 @@
 
 #pragma once
 
-//#include <Rendering/Renderer.hpp>
-#include <Subsystem.h>
 #include <RmlUi/Core/Context.h>
 #include <RmlUi/Core/Input.h>
 #include "Window.hpp"

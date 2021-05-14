@@ -32,7 +32,7 @@ namespace RxEngine
         void createRenderCommands();
 
     private:
-        std::vector<DelegateHandle> delegates_{};
+        //std::vector<DelegateHandle> delegates_{};
         std::shared_ptr<RxCore::Image> fontImage_{};
 
         Window * window_{};

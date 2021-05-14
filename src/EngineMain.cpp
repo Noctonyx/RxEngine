@@ -7,7 +7,6 @@
 #include <memory>
 #include "Modules/Render.h"
 #include "EngineMain.hpp"
-#include "Scene.h"
 #include "RXCore.h"
 #include "RxECS.h"
 #include "Modules/Renderer/Renderer.hpp"
@@ -23,6 +22,7 @@
 #include "Modules/Transforms/Transforms.h"
 #include "Modules/WorldObject/WorldObject.h"
 #include "Vulkan/ThreadResources.h"
+#include "Vulkan/Device.h"
 
 namespace RxEngine
 {
@@ -81,14 +81,17 @@ namespace RxEngine
             m->enable();
         }
 
-        window_->onResize.AddLambda(
-            [&](int w, int h)
-            {
-                setUint32ConfigValue("window", "width", w);
-                setUint32ConfigValue("window", "height", h);
-            });
-
         startTime = std::chrono::high_resolution_clock::now();
+
+        world->createSystem("Engine:OnResize")
+             .withStream<WindowResize>()
+             .inGroup("Pipeline:PostUpdate")
+             .execute<WindowResize>([this](ecs::World *, const WindowResize * rs)
+             {
+                 setUint32ConfigValue("window", "width", rs->width);
+                 setUint32ConfigValue("window", "height", rs->height);
+                 return false;
+             });
 
         world->createSystem("Engine:CheckSwapchain")
              .inGroup("Pipeline:PreFrame")
@@ -263,9 +266,21 @@ namespace RxEngine
 
     void EngineMain::run()
     {
-        while (!window_->ShouldClose()) {
+        while (!window_->shouldClose()) {
             update();
         }
+    }
+
+    size_t EngineMain::getUniformBufferAlignment(size_t size) const
+    {
+        return device_->getUniformBufferAlignment(size);
+    }
+
+    std::shared_ptr<RxCore::Buffer> EngineMain::createUniformBuffer(size_t size) const
+    {
+        return device_->createBuffer(
+            vk::BufferUsageFlagBits::eUniformBuffer,
+            VMA_MEMORY_USAGE_CPU_TO_GPU, size);
     }
 
     void EngineMain::replaceSwapChain()

@@ -4,7 +4,6 @@
 #include <memory>
 #include <optional>
 #include "Rendering/RenderData.h"
-#include <Jobs/JobManager.hpp>
 //#include "ILightingManager.h"
 //#include "MaterialManager.h"
 //#include "EntityManager.h"
@@ -18,6 +17,7 @@
 #include "Modules/Render.h"
 #include "Modules/Materials/Materials.h"
 #include "RxECS.h"
+#include <Jobs/JobManager.hpp>
 
 #define NUM_CASCADES 4
 
@@ -173,7 +173,7 @@ namespace RxEngine
         uint64_t frameNo;
         uint32_t index;
     };
-
+#if 0
     struct IRenderProvider
     {
     public:
@@ -184,6 +184,7 @@ namespace RxEngine
             const std::shared_ptr<RxCore::DescriptorSet> & set,
             uint32_t binding) const {}
     };
+#endif
 #if 0
     class IRenderable
     {
@@ -273,6 +274,17 @@ namespace RxEngine
         uint32_t uiSubPass;
     };
 
+    struct DescriptorSet
+    {
+        std::shared_ptr<RxCore::DescriptorSet> ds{};
+    };
+#if 0
+    struct Descriptors
+    {
+        bool newDescriptor;
+        std::shared_ptr<RxCore::DescriptorSet> ds0 {};
+    };
+#endif
     class Renderer : public RxCore::DeviceObject, public Module
     {
     public:
@@ -297,7 +309,7 @@ namespace RxEngine
         );
         void shutdown();
 
-        [[nodiscard]] RenderStage getSequenceRenderStage(ERenderSequence seq) const;
+        //[[nodiscard]] RenderStage getSequenceRenderStage(ERenderSequence seq) const;
         //void setLightingManager(std::shared_ptr<Lighting> lm);
         //void setTextureBundle(const std::shared_ptr<TextureBundle> & textureBundle);
 
@@ -351,8 +363,8 @@ namespace RxEngine
         vk::Sampler shadowSampler_;
 
         //std::shared_ptr<Lighting> lightingManager_;
-        vk::PipelineLayout pipelineLayout;
-        std::vector<vk::DescriptorSetLayout> dsLayouts;
+        //vk::PipelineLayout pipelineLayout;
+        //std::vector<vk::DescriptorSetLayout> dsLayouts;
 
         void ensureDepthBufferExists(vk::Extent2D & extent);
         void ensureShadowImages(uint32_t shadowMapSize, uint32_t numCascades);
@@ -365,7 +377,7 @@ namespace RxEngine
             const vk::Extent2D & extent) const;
 
         //void createPipelineLayout();
-        void updateDescriptorSet0(const std::shared_ptr<RenderCamera> & renderCamera);
+        //void updateDescriptorSet0(const std::shared_ptr<RenderCamera> & renderCamera);
 #if 0
         void cullAndLodEntities(
             const glm::mat4 & projView,

@@ -1,4 +1,5 @@
 #include "Window.hpp"
+#include <GLFW/glfw3.h>
 #include "ini.h"
 #include "RxECS.h"
 
@@ -121,28 +122,38 @@ namespace RxEngine
         glfwTerminate();
     }
 
-    uint32_t Window::GetWidth() const
+    void Window::Update()
+    {
+        glfwPollEvents();
+    }
+
+    uint32_t Window::getWidth() const
     {
         int height, width;
         glfwGetFramebufferSize(m_Window, &width, &height);
         return width;
     }
 
-    uint32_t Window::GetHeight() const
+    uint32_t Window::getHeight() const
     {
         int height, width;
         glfwGetFramebufferSize(m_Window, &width, &height);
         return height;
     }
 
-    float Window::GetAspectRatio() const
+    float Window::getAspectRatio() const
     {
         int height, width;
         glfwGetFramebufferSize(m_Window, &width, &height);
         return float(width) / float(height);
     }
 
-    void Window::SetMouseVisible(bool visible)
+    bool Window::shouldClose() const
+    {
+        return glfwWindowShouldClose(m_Window);
+    }
+
+    void Window::setMouseVisible(bool visible)
     {
         m_IsMouseVisible = visible;
         if (visible) {
@@ -152,12 +163,12 @@ namespace RxEngine
         }
     }
 
-    bool Window::GetMouseVisible() const
+    bool Window::getMouseVisible() const
     {
         return m_IsMouseVisible;
     }
 
-    void Window::SetTitle(std::string & title)
+    void Window::setTitle(std::string & title)
     {
         glfwSetWindowTitle(m_Window, title.c_str());
     }
@@ -169,7 +180,7 @@ namespace RxEngine
 
     void Window::doResize(uint32_t width, uint32_t height)
     {
-        onResize.Broadcast(width, height);
+        //onResize.Broadcast(width, height);
         if (world_) {
             world_->getStream<WindowResize>()->add<WindowResize>({width, height});
             world_->setSingleton<WindowDetails>({this, width, height});
@@ -204,7 +215,8 @@ namespace RxEngine
 
     void Window::mousePosition(float x_pos, float y_pos, int32_t mods)
     {
-        pos_ = {x_pos, y_pos};
+        cursorX = x_pos;
+        cursorY = y_pos;
 
         if (world_) {
             world_->getStream<MousePosition>()->add<MousePosition>({
@@ -265,14 +277,16 @@ namespace RxEngine
             GLFW_CURSOR,
             hidden ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
         if (!hidden) {
-            setPosition(DirectX::XMFLOAT2{pos_.x, pos_.y});
+            setCursorPosition(cursorX, cursorY);// DirectX::XMFLOAT2{ pos_.x, pos_.y });
         }
         hidden_ = hidden;
     }
 
-    void Window::setPosition(const DirectX::XMFLOAT2 & position)
+    void Window::setCursorPosition(int32_t x, int32_t y)
     {
-        pos_ = position;
-        glfwSetCursorPos(GetWindow(), pos_.x, pos_.y);
+        cursorX = x;
+        cursorY = y;
+
+        glfwSetCursorPos(GetWindow(), cursorX, cursorY);
     }
 } // namespace RXCore

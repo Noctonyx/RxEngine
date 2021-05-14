@@ -42,21 +42,15 @@ add_library(RxEngine STATIC
         src/Delegates.cpp
         src/Window.cpp
         src/Window.hpp
-        src/Scene.h
-        src/Scene.cpp
-        src/Example/TestMesh.cpp
-        src/Example/TestMesh.hpp
+        #src/Example/TestMesh.cpp
+        #src/Example/TestMesh.hpp
         src/Rendering/RenderMesh.h
         src/Rendering/Mesh.cpp
         src/Rendering/Mesh.hpp
         src/Modules/Renderer/Renderer.hpp
         src/Modules/Renderer/Renderer.cpp
         src/Rendering/RenderData.h
-        src/Subsystems/SceneCamera.h
-        src/Subsystems/SceneCamera.cpp
-        src/FastNoiseLite.h
-        src/Subsystems/Lighting.h
-        src/Subsystems/Lighting.cpp
+        #src/FastNoiseLite.h
         src/Geometry/Camera.hpp
         src/Rendering/ILightingManager.h
         src/Modules/RmlUI/RmlSystemInterface.cpp
@@ -75,10 +69,8 @@ add_library(RxEngine STATIC
         src/ini.h
         src/Rendering/MaterialManager.h
         src/Rendering/Defines.h
-        src/Rendering/EntityManager.cpp
-        src/Rendering/EntityManager.h 
-        src/LuaState.cpp 
-        src/LuaState.h 
+        #src/LuaState.cpp 
+        #src/LuaState.h 
         src/Modules/Render.h
         src/Modules/Render.cpp
         src/Modules/Transforms/Transforms.h

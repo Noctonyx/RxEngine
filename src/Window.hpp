@@ -1,13 +1,10 @@
 #pragma once
 
 #include <string>
-#include <memory>
 #include <string>
-#include <GLFW/glfw3.h>
 
-#include "Delegates.hpp"
-#include "DirectXMath.h"
-#include "RxECS.h"
+struct GLFWwindow;
+struct GLFWcursor;
 
 namespace ecs {
     class World;
@@ -243,35 +240,27 @@ namespace RxEngine
 
         Window & operator=(Window && other) noexcept = delete;
 
-        void Update() { glfwPollEvents(); }
+        void Update();
 
-        [[nodiscard]] uint32_t GetWidth() const;
+        [[nodiscard]] uint32_t getWidth() const;
 
-        [[nodiscard]] uint32_t GetHeight() const;
+        [[nodiscard]] uint32_t getHeight() const;
 
-        [[nodiscard]] float GetAspectRatio() const;
+        [[nodiscard]] float getAspectRatio() const;
 
-        [[nodiscard]] bool ShouldClose() const { return glfwWindowShouldClose(m_Window); }
+        [[nodiscard]] bool shouldClose() const;
 
-        void SetMouseVisible(bool visible);
+        void setMouseVisible(bool visible);
 
-        [[nodiscard]] bool GetMouseVisible() const;
+        [[nodiscard]] bool getMouseVisible() const;
 
-        void SetTitle(std::string & title);
+        void setTitle(std::string & title);
 
         [[nodiscard]] GLFWwindow * GetWindow() const;
 
-        //std::shared_ptr<Mouse> mouse;
-        //std::shared_ptr<Keyboard> keyboard;
-
-        MulticastDelegate<int, int> onResize;
-     
-
         void setCursor(ECursorStandard standard);
         void hideCursor(bool hidden);
-        void setPosition(const DirectX::XMFLOAT2& position);
-
-        [[nodiscard]] const DirectX::XMFLOAT2& getPosition() const { return pos_; }
+        void setCursorPosition(int32_t x, int32_t y);
 
         void doResize(uint32_t width, uint32_t height);
         void doChar(uint32_t codepoint);
@@ -280,7 +269,6 @@ namespace RxEngine
         void buttonAction(int32_t button, bool pressed, int32_t mods);
         void scroll(float y_scroll, int32_t mods);
 
-
         void setWorld(ecs::World * world);
 
     private:
@@ -288,7 +276,8 @@ namespace RxEngine
         GLFWwindow * m_Window = nullptr;
         bool m_IsMouseVisible = true;
         ecs::World* world_ = nullptr;
-        DirectX::XMFLOAT2 pos_{};
+        float cursorX;
+        float cursorY;
         GLFWcursor* cursor_ = nullptr;
         ECursorStandard cursorStandard_{};
         bool hidden_ = false;

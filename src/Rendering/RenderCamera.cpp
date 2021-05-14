@@ -10,6 +10,7 @@
 #include "Vulkan/DescriptorSet.hpp"
 #include "Geometry/Camera.hpp"
 
+#if 0
 #define CAMERA_BUFFER_WINDOW_COUNT 5
 
 namespace RxEngine
@@ -48,3 +49,4 @@ namespace RxEngine
                       ->update(&(camera_->cameraShaderData), ix_ * bufferAlignment_, sizeof(CameraShaderData));
     }
 }
+#endif

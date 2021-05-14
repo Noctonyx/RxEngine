@@ -8,6 +8,7 @@
 #include <memory>
 #include "DirectXMath.h"
 
+#if 0
 namespace RxCore
 {
     class Buffer;
@@ -42,4 +43,5 @@ namespace RxEngine
         uint32_t ix_;
     };
 }
+#endif
 #endif //RX_RENDERCAMERA_H

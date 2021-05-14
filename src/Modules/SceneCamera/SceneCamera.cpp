@@ -1,20 +1,17 @@
 #include "SceneCamera.h"
 
 #include "EngineMain.hpp"
-#include "imgui.h"
-#include "Window.hpp"
 #include "Geometry/Camera.hpp"
-#include "Vulkan/Buffer.hpp"
-#include "Vulkan/Device.h"
+#include "Modules/RTSCamera/RTSCamera.h"
 
-#define CAMERA_BUFFER_WINDOW_COUNT 5
+constexpr int camera_buffer_count = 5;
 
 namespace RxEngine
 {
     void sceneCameraGUI(ecs::World * w, void * ptr)
     {
-        auto sc = static_cast<SceneCamera*>(ptr);
-        if(sc) {
+        auto sc = static_cast<SceneCamera *>(ptr);
+        if (sc) {
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
             ImGui::Text("Index");
@@ -24,7 +21,7 @@ namespace RxEngine
             ImGui::TableNextColumn();
             ImGui::Text("Camera");
             ImGui::TableNextColumn();
-            if(w->isAlive(sc->camera)) {
+            if (w->isAlive(sc->camera)) {
                 ImGui::Text("%s", w->description(sc->camera).c_str());
             } else {
                 ImGui::Text("%lld", sc->camera);
@@ -33,28 +30,77 @@ namespace RxEngine
     }
 
     void SceneCameraModule::startup()
-    {        
+    {
         world_->addSingleton<SceneCamera>();
         auto sc = world_->getSingletonUpdate<SceneCamera>();
 
-        sc->bufferAlignment = RxCore::iVulkan()->
-            getUniformBufferAlignment(sizeof(CameraShaderData));
-        sc->camBuffer = RxCore::iVulkan()->createBuffer(
-            vk::BufferUsageFlagBits::eUniformBuffer,
-            VMA_MEMORY_USAGE_CPU_TO_GPU, CAMERA_BUFFER_WINDOW_COUNT * sc->bufferAlignment);
-        sc->camBuffer->getMemory()->map();
+        sc->bufferAlignment = engine_->getUniformBufferAlignment(sizeof(SceneCameraShaderData));
+        sc->camBuffer = engine_->createUniformBuffer(camera_buffer_count * sc->bufferAlignment);
+        sc->camBuffer->map();
         sc->ix = 0;
 
         world_->createSystem("SceneCamera:NextFrame")
               .inGroup("Pipeline:PreRender")
+              .withWrite<SceneCamera>()
+              .withRead<RTSCamera>()
               .execute([](ecs::World * world)
                   {
                       const auto sc = world->getSingletonUpdate<SceneCamera>();
-                      sc->ix = (sc->ix + 1) % CAMERA_BUFFER_WINDOW_COUNT;
+                      const auto c = world->get<RTSCamera>(sc->camera);
+
+                      sc->shaderData.view = c->view;
+                      sc->shaderData.projection = c->proj;
+                      sc->shaderData.viewPos = c->viewPos;
+
+                      sc->ix = (sc->ix + 1) % camera_buffer_count;
+                      sc->camBuffer->update(&sc->shaderData,
+                                                         sc->ix * sc->bufferAlignment,
+                                                         sizeof(SceneCameraShaderData));
                   }
               );
 
-        world_->set<ComponentGui>(world_->getComponentId<SceneCamera>(), { .editor = sceneCameraGUI });
+        world_->createSystem("SceneCamera:setDescriptor")
+              .inGroup("Pipeline:PreFrame")
+              .withQuery<DescriptorSet>()
+              .without<SceneCameraDescriptor>()
+              .withRead<SceneCamera>()
+              .each<DescriptorSet>([](ecs::EntityHandle e, DescriptorSet * ds)
+              {
+                  auto sc = e.world->getSingleton<SceneCamera>();
+
+                  ds->ds->updateDescriptor(0, vk::DescriptorType::eUniformBufferDynamic,
+                                           sc->camBuffer, sizeof(SceneCameraShaderData),
+                                           static_cast<uint32_t>(sc->ix * sc->bufferAlignment));
+
+                  e.addDeferred<SceneCameraDescriptor>();
+              });
+
+        world_->createSystem("SceneCamera:updateDescriptor")
+              .inGroup("Pipeline:PreRender")
+              .withQuery<DescriptorSet, SceneCameraDescriptor>()
+              .withRead<SceneCamera>()
+              .withRead<SceneCameraShaderData>()
+              .each<DescriptorSet>([](ecs::EntityHandle e, const DescriptorSet * ds)
+              {
+                  auto sc = e.world->getSingleton<SceneCamera>();
+                  ds->ds->setDescriptorOffset(0, sc->getDescriptorOffset());
+              });
+#if 0
+        world_->createSystem("SceneCamera:UpdateDescriptor")
+            .inGroup("Pipeline:PreRender")
+            .withWrite<Descriptors>()
+            .withRead<Descriptors>()
+            .withRead<SceneCamera>()
+            .execute([](ecs::World* world)
+                {
+                    auto ds = world->getSingletonUpdate<Descriptors>();
+                    auto sc = world->getSingleton<SceneCamera>();
+                
+                    ds->ds0->setDescriptorOffset(0, sc->getDescriptorOffset());
+                });
+#endif
+        world_->set<ComponentGui>(world_->getComponentId<SceneCamera>(),
+                                  {sceneCameraGUI});
     }
 
     void SceneCameraModule::shutdown()

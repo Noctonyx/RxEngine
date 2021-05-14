@@ -10,8 +10,6 @@ namespace RxEngine
     {
         systemSet_ = world_->newEntity().set<ecs::SystemSet>({false}).id;
 
-        struct Update {};
-
         world_->createSystem("Stats:Ui")
               .withSet(systemSet_)
               .inGroup("Pipeline:UpdateUi")           

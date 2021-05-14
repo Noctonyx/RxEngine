@@ -8,7 +8,7 @@
 #include <RmlUi/Debugger/Debugger.h>
 #include "UiContext.h"
 #include "Window.hpp"
-#include "Scene.h"
+#include "optick/optick.h"
 
 namespace RxEngine
 {

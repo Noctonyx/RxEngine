@@ -25,7 +25,7 @@
 #include "sol/sol.hpp"
 #include "Window.hpp"
 #include "Modules/Module.h"
-#include "RxECS.h"
+#include "imgui.h"
 //#include "LuaBridge/detail/LuaRef.h"
 
 //#include <sol/sol.hpp>
@@ -117,6 +117,9 @@ namespace RxEngine
 
         template<class T>
         void addModule();
+
+        [[nodiscard]] size_t getUniformBufferAlignment(size_t size) const;
+        [[nodiscard]] std::shared_ptr<RxCore::Buffer> createUniformBuffer(size_t size) const;
 
     protected:
         void replaceSwapChain();

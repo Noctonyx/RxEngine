@@ -5,6 +5,7 @@
 #ifndef RX_ILIGHTINGMANAGER_H
 #define RX_ILIGHTINGMANAGER_H
 
+#if 0
 #include <memory>
 #include "Geometry/Camera.hpp"
 
@@ -40,4 +41,5 @@ namespace RxEngine
         virtual void setShadowMap(std::shared_ptr<RxCore::ImageView> shadowMap) = 0;
     };
 }
+#endif
 #endif //RX_ILIGHTINGMANAGER_H

@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <optional>
+#if 0
 #include "Vulkan/Vulk.hpp"
 
 namespace RxCore
@@ -49,5 +50,5 @@ namespace RxEngine
     //typedef std::pair<RenderPass::ptr, uint32_t> RenderStage;
     typedef std::optional<std::shared_ptr<RxCore::SecondaryCommandBuffer>> RenderResponse;
 }
-
+#endif
 #endif //RX_RENDERDATA_H

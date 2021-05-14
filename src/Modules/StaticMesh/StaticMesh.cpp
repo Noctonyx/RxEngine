@@ -506,7 +506,7 @@ namespace RxEngine
                 if (h.pipelineId != current_pipeline) {
 
                     auto pl = world_->get<GraphicsPipeline>(h.pipelineId);
-                    buf->BindPipeline(pl->pipeline->Handle());
+                    buf->bindPipeline(pl->pipeline->Handle());
                     current_pipeline = h.pipelineId;
                 }
                 if (h.bundle != prevBundle) {
@@ -519,12 +519,12 @@ namespace RxEngine
                             buf->BindDescriptorSet(1, bund->descriptorSet);
                         } else {
                             OPTICK_EVENT("Bind VB")
-                            buf->BindVertexBuffer(bund->vertexBuffer);
+                            buf->bindVertexBuffer(bund->vertexBuffer);
                         }
                     }
                     {
                         OPTICK_EVENT("Bind IB")
-                        buf->BindIndexBuffer(bund->indexBuffer);
+                        buf->bindIndexBuffer(bund->indexBuffer);
                     }
                     // bind bundle descriptorSet
                     prevBundle = h.bundle;

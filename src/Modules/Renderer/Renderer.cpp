@@ -63,13 +63,13 @@ namespace RxEngine
         }
         //createPipelineLayout();
 
-        auto pl = world_->lookup("layout/general").get<PipelineLayout>();
+        //auto pl = world_->lookup("layout/general").get<PipelineLayout>();
 
-        pipelineLayout = pl->layout;
-        dsLayouts.resize(pl->dsls.size());
-        dsLayouts[0] = pl->dsls[0];
-        dsLayouts[1] = pl->dsls[1];
-        dsLayouts[2] = pl->dsls[2];
+        //pipelineLayout = pl->layout;
+        //  dsLayouts.resize(pl->dsls.size());
+        //dsLayouts[0] = pl->dsls[0];
+        //dsLayouts[1] = pl->dsls[1];
+        //dsLayouts[2] = pl->dsls[2];
 
         graphicsCommandPool_ = RxCore::Device::Context()->CreateGraphicsCommandPool();
 
@@ -79,7 +79,7 @@ namespace RxEngine
         qpci.queryCount = 128;
 
         queryPool_ = RxCore::Device::VkDevice().createQueryPool(qpci);
-
+#if 0
         for (uint32_t i = 0; i < 20; i++) {
             auto b = RxCore::iVulkan()->createBuffer(
                 vk::BufferUsageFlagBits::eStorageBuffer,
@@ -94,7 +94,7 @@ namespace RxEngine
             instanceBuffers.push_back(b);
             instanceBufferDS.push_back(ds);
         }
-
+#endif
         world_->createSystem("Renderer:Render")
               .inGroup("Pipeline:PostRender")
               //.after<AcquireImage>()
@@ -125,6 +125,25 @@ namespace RxEngine
                       RxCore::Device::Context()->graphicsQueue_->ReleaseCompleted();
                   }
               );
+
+        //auto q = world_->createQuery().with<DescriptorSet>().id;
+
+        world_->createSystem("Renderer:CreateMainDescriptor")
+              .withQuery<DescriptorSet>()
+              .inGroup("Pipeline:PreFrame")
+              .withRead<PipelineLayout>()
+              .withWrite<DescriptorSet>()
+              .executeIfNone([this](ecs::World * world)
+              {
+                  auto pl = world_->lookup("layout/general").get<PipelineLayout>();
+                  auto ds0_ = RxCore::threadResources.getDescriptorSet(
+                      poolTemplate,
+                      pl->dsls[0], {1000});
+
+                  auto x = world->newEntity().addAndUpdate<DescriptorSet>();
+                  x->ds = ds0_;
+              });
+        //world_->addSingleton<Descriptors>();
     }
 
     void Renderer::createDepthRenderPass()
@@ -315,9 +334,9 @@ namespace RxEngine
         //  updateDescriptorSet0(renderCamera);
         //entityManager_->ensureDescriptors(poolTemplate, dsLayouts[1]);
 
-        std::vector<std::shared_ptr<RxCore::Job<RenderResponse>>> shadow_jobs;
-        std::vector<std::shared_ptr<RxCore::Job<RenderResponse>>> ui_jobs;
-        std::vector<std::shared_ptr<RxCore::Job<std::vector<RenderEntity>>>> entity_jobs;
+       // std::vector<std::shared_ptr<RxCore::Job<RenderResponse>>> shadow_jobs;
+        //std::vector<std::shared_ptr<RxCore::Job<RenderResponse>>> ui_jobs;
+        //std::vector<std::shared_ptr<RxCore::Job<std::vector<RenderEntity>>>> entity_jobs;
 
         {
             OPTICK_EVENT("Get Subsystem Entities")
@@ -386,15 +405,6 @@ namespace RxEngine
 #endif
 
         auto buf = graphicsCommandPool_->GetPrimaryCommandBuffer();
-
-        world_->getStream<Render::UiRenderCommand>()
-              ->each<Render::UiRenderCommand>(
-                  [&](ecs::World * w, const Render::UiRenderCommand * b)
-                  {
-                      buf->addSecondaryBuffer(b->buf, ERenderSequence::RenderSequenceUi);
-                      return true;
-                  }
-              );
 #if 0
         {
             OPTICK_EVENT("Wait for Render Jobs", Optick::Category::Wait)
@@ -451,8 +461,23 @@ namespace RxEngine
                     {
                         OPTICK_EVENT("Execute Secondaries")
 
-                        buf->executeSecondaries(RenderSequenceOpaque);
-                        buf->executeSecondaries(RenderSequenceUi);
+                        world_->getStream<Render::OpaqueRenderCommand>()
+                            ->each<Render::OpaqueRenderCommand>(
+                                [&](ecs::World* w, const Render::OpaqueRenderCommand* b)
+                                {
+                                    buf->executeSecondary(b->buf);
+                                    return true;
+                                }
+                        );
+
+                        world_->getStream<Render::UiRenderCommand>()
+                            ->each<Render::UiRenderCommand>(
+                                [&](ecs::World* w, const Render::UiRenderCommand* b)
+                                {
+                                    buf->executeSecondary(b->buf);
+                                    return true;
+                                }
+                        );
                     }
                     buf->EndRenderPass();
                 }
@@ -480,7 +505,7 @@ namespace RxEngine
         fs->index = (fs->index + 1) % 10;
         fs->frames[fs->index].cpuTime = static_cast<float>(cpuTime);
     }
-
+#if 0
     void Renderer::updateDescriptorSet0(const std::shared_ptr<RenderCamera> & renderCamera)
     {
         OPTICK_EVENT()
@@ -509,6 +534,7 @@ namespace RxEngine
         }
 #endif
     }
+#endif
 
     std::shared_ptr<RxCore::FrameBuffer> Renderer::createRenderFrameBuffer(
         const vk::ImageView & imageView,
@@ -587,18 +613,6 @@ namespace RxEngine
 
         device_.destroyRenderPass(renderPass_);
         device_.destroyRenderPass(depthRenderPass_);
-    }
-
-    RenderStage Renderer::getSequenceRenderStage(ERenderSequence seq) const
-    {
-        if (seq == RenderSequenceOpaque || seq == RenderSequenceUi) {
-            return RenderStage{renderPass_, 0};
-        }
-        if (seq == RenderSequenceShadowPass) {
-            return RenderStage{depthRenderPass_, 0};
-        }
-        assert(false);
-        return {};
     }
 
     void Renderer::ensureShadowImages(uint32_t shadowMapSize, uint32_t numCascades)

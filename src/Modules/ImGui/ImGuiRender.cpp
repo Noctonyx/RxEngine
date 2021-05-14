@@ -8,10 +8,10 @@
 #include "ImGuiRender.hpp"
 #include "RXCore.h"
 #include "Window.hpp"
-#include "Scene.h"
 #include "AssetException.h"
 #include "Vfs.h"
 #include "Vulkan/ThreadResources.h"
+#include "EngineMain.hpp"
 
 namespace RxEngine
 {
@@ -318,8 +318,8 @@ namespace RxEngine
             VMA_MEMORY_USAGE_CPU_TO_GPU,
             dd->TotalIdxCount, true);
 
-        vb->getMemory()->map();
-        ib->getMemory()->map();
+        vb->map();
+        ib->map();
 
         uint32_t vbOffset = 0;
         uint32_t idxOffset = 0;
@@ -327,10 +327,10 @@ namespace RxEngine
         for (auto n = 0; n < dd->CmdListsCount; n++) {
             auto cmdList = dd->CmdLists[n];
 
-            vb->getMemory()->update(
+            vb->update(
                 cmdList->VtxBuffer.Data, vbOffset,
                 cmdList->VtxBuffer.Size * sizeof(ImDrawVert));
-            ib->getMemory()->update(
+            ib->update(
                 cmdList->IdxBuffer.Data, idxOffset,
                 cmdList->IdxBuffer.Size * sizeof(ImDrawIdx));
 
@@ -338,8 +338,8 @@ namespace RxEngine
             idxOffset += cmdList->IdxBuffer.Size * sizeof(ImDrawIdx);
         }
 
-        vb->getMemory()->unmap();
-        ib->getMemory()->unmap();
+        vb->unmap();
+        ib->unmap();
 
         return std::pair(vb, ib);
     }
@@ -378,16 +378,16 @@ namespace RxEngine
         buf->begin(pipeline->renderPass, pipeline->subPass);
         {
             buf->useLayout(layout->layout);
-            OPTICK_GPU_CONTEXT(buf->Handle());
-            OPTICK_GPU_EVENT("Draw IMGui");
+            OPTICK_GPU_CONTEXT(buf->Handle())
+            OPTICK_GPU_EVENT("Draw IMGui")
 
-            buf->BindPipeline(pipeline->pipeline->Handle());
+            buf->bindPipeline(pipeline->pipeline->Handle());
             buf->BindDescriptorSet(0, set0_);
             struct
             {
                 DirectX::XMFLOAT2 scale;
                 DirectX::XMFLOAT2 translate;
-            } pd{};
+            } pd;
 
             auto scale = DirectX::XMFLOAT2(2.0f / dd->DisplaySize.x, 2.0f / dd->DisplaySize.y);
             auto translate =
@@ -401,8 +401,8 @@ namespace RxEngine
                 vk::ShaderStageFlagBits::eVertex, 0,
                 sizeof(pd), static_cast<void *>(&pd));
 
-            buf->BindVertexBuffer(vb);
-            buf->BindIndexBuffer(ib);
+            buf->bindVertexBuffer(vb);
+            buf->bindIndexBuffer(ib);
             buf->setViewport(0, 0, dd->DisplaySize.x, dd->DisplaySize.y, 0, 1);
 
             uint32_t vb_offset = 0;
