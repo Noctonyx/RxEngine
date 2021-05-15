@@ -9,6 +9,7 @@
 #include "sol/state.hpp"
 #include "sol/table.hpp"
 #include "RxECS.h"
+#include "Modules/Render.h"
 
 namespace RxEngine
 {

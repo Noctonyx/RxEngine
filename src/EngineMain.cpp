@@ -14,6 +14,7 @@
 #include "Modules/Module.h"
 #include "Modules/Environment/Environment.h"
 #include "Modules/ImGui/ImGuiRender.hpp"
+#include "Modules/Lighting/Lighting.h"
 #include "Modules/Stats/Stats.h"
 #include "Modules/Prototypes/Prototypes.h"
 #include "Modules/RTSCamera/RTSCamera.h"
@@ -63,6 +64,7 @@ namespace RxEngine
         addModule<PrototypesModule>();
         addModule<RTSCameraModule>();
         addModule<SceneCameraModule>();
+        addModule<LightingModule>();
         addModule<EnvironmentModule>();
 
         for (auto & m: modules) {

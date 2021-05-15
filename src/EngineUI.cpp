@@ -110,9 +110,8 @@ namespace RxEngine
     {
         OPTICK_EVENT()
         for (auto c: entity) {
-            auto cd = world->getComponentDetails(c);
 
-            if (!cd->isRelation) {
+            if (const auto cd = world->getComponentDetails(c); !cd->isRelation) {
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
                 ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
@@ -308,7 +307,7 @@ namespace RxEngine
                         world->description(k).c_str(),
                         selectedSingleton == k)) {
                         selectedSingleton = k;
-                    };
+                    }
                 }
                 ImGui::EndTable();
             }
@@ -508,13 +507,13 @@ namespace RxEngine
             ImGui::TableNextColumn();
             ImGui::Text("Delta");
             ImGui::TableNextColumn();
-            ImGui::Text("%.3f", group->delta);
+            ImGui::Text("%.3f", static_cast<double>(group->delta));
 
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
             ImGui::Text("Rate");
             ImGui::TableNextColumn();
-            ImGui::Text("%.3f", group->rate);
+            ImGui::Text("%.3f", static_cast<double>(group->rate));
         }
     }
 
@@ -545,7 +544,7 @@ namespace RxEngine
             ImGui::TableNextColumn();
             ImGui::Text("Delta (ms)");
             ImGui::TableNextColumn();
-            ImGui::Text("%.3f", engine_time->delta * 1000.0f);
+            ImGui::Text("%.3f", engine_time->delta * 1000.0);
 
             ImGui::TableNextRow();
             ImGui::TableNextColumn();

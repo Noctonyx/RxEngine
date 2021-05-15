@@ -12,6 +12,7 @@
 #include "Vfs.h"
 #include "Vulkan/ThreadResources.h"
 #include "EngineMain.hpp"
+#include "Modules/Render.h"
 
 namespace RxEngine
 {

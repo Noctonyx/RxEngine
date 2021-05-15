@@ -2,22 +2,15 @@
 
 #include <vector>
 #include <memory>
-#include <optional>
-#include "Rendering/RenderData.h"
-//#include "ILightingManager.h"
-//#include "MaterialManager.h"
-//#include "EntityManager.h"
 #include "Vulkan/DescriptorSet.hpp"
 #include "Vulkan/DeviceObject.h"
-#include "Rendering/MeshBundle.h"
-#include "Rendering/RenderCamera.h"
 #include "DirectXCollision.h"
 #include "RxECS.h"
 #include "Modules/Module.h"
-#include "Modules/Render.h"
 #include "Modules/Materials/Materials.h"
-#include "RxECS.h"
 #include <Jobs/JobManager.hpp>
+
+#include "Vulkan/DescriptorPool.hpp"
 
 #define NUM_CASCADES 4
 
@@ -42,7 +35,7 @@ namespace RxEngine
     struct ShadowCascade;
     class Renderer;
     class Camera;
-    class Lighting;
+    //class Lighting;
 
     enum ELightType
     {
@@ -90,7 +83,7 @@ namespace RxEngine
         DirectX::XMFLOAT4 instanceParams4;
 #endif
     };
-
+#if 0
     struct RenderEntityEntry
     {
         std::shared_ptr<MeshBundle> bundle;
@@ -101,7 +94,7 @@ namespace RxEngine
         uint32_t materialId;
         std::array<uint32_t, 3> pipelineIds;
     };
-
+#endif
     struct IndirectDrawCommand
     {
         uint32_t indexCount;

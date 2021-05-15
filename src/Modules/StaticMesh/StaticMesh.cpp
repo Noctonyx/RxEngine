@@ -3,6 +3,7 @@
 #include "EngineMain.hpp"
 #include "imgui.h"
 #include "Loader.h"
+#include "Modules/Render.h"
 #include "Modules/Materials/Materials.h"
 #include "Modules/Prototypes/Prototypes.h"
 #include "Modules/RTSCamera/RTSCamera.h"

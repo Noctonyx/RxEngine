@@ -50,7 +50,7 @@ layout(set=1, binding =0) readonly buffer V {
     //Material materials[];
 //};
 
-layout(set=1, binding =1) uniform sampler2D textures[];
+layout(set=0, binding =4) uniform sampler2D textures[];
 
 layout(set=2, binding=0) readonly buffer I {
     InstanceData instance[];

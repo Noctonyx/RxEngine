@@ -17,11 +17,11 @@ namespace RxEngine
 {
     struct Render
     {
-        using MaterialId = ecs::entity_t;
+        //using MaterialId = ecs::entity_t;
         //        using MaterialBaseId = flecs::entity;
         //using MaterialPipelineId = flecs::entity;
-        using TextureId = ecs::entity_t;
-        using ImageId = ecs::entity_t;
+        //using TextureId = ecs::entity_t;
+        //using ImageId = ecs::entity_t;
 
 #if 0
         struct ShadowCaster {};

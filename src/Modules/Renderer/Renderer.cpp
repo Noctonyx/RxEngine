@@ -138,7 +138,7 @@ namespace RxEngine
                   auto pl = world_->lookup("layout/general").get<PipelineLayout>();
                   auto ds0_ = RxCore::threadResources.getDescriptorSet(
                       poolTemplate,
-                      pl->dsls[0], {1000});
+                      pl->dsls[0], {1});
 
                   auto x = world->newEntity().addAndUpdate<DescriptorSet>();
                   x->ds = ds0_;

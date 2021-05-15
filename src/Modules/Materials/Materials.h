@@ -113,6 +113,11 @@ namespace RxEngine
         MaterialAlphaMode alpha;
     };
 
+    struct TexturesDescriptor
+    {
+
+    };
+
 
     class MaterialsModule : public Module
     {
