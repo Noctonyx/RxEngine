@@ -145,9 +145,30 @@ namespace RxEngine
 
     void StaticMeshModule::startup()
     {
+        world_->addSingleton<StaticInstanceBuffers>();
+
+        auto sib = world_->getSingletonUpdate<StaticInstanceBuffers>();
+
+        sib->count = 5;
+        sib->sizes.resize(5);
+        sib->buffers.resize(5);
+        sib->descriptorSets.resize(5);
+
+        RxCore::DescriptorPoolTemplate poolTemplate({{vk::DescriptorType::eStorageBuffer, 10}}, 10);
+        auto pl = world_->lookup("layout/general").get<PipelineLayout>();
+
+        for (uint32_t i = 0; i < sib->count; i++) {
+
+            sib->descriptorSets[i] = RxCore::threadResources.getDescriptorSet(
+                poolTemplate, pl->dsls[2]);
+        }
+
         world_->createSystem("StaticMesh:Render")
               .inGroup("Pipeline:PreRender")
               .withWrite<Render::OpaqueRenderCommand>()
+              .withRead<CurrentMainDescriptorSet>()
+              .withRead<DescriptorSet>()
+              .withRead<PipelineLayout>()
               .execute([this](ecs::World *)
               {
                   OPTICK_EVENT("StaticMesh:Render")
@@ -183,7 +204,7 @@ namespace RxEngine
         mb->vertexCount = 0;
         mb->indexCount = 0;
         mb->vertexSize = sizeof(StaticMeshVertex);
-        mb->useDescriptor = false;
+        mb->useDescriptor = true;
         mb->maxVertexCount = (256 * 1024 * 1024 / mb->vertexSize);
         mb->maxIndexCount = mb->maxVertexCount;
 
@@ -195,6 +216,13 @@ namespace RxEngine
         mb->indexBuffer = RxCore::iVulkan()->createIndexBuffer(
             VMA_MEMORY_USAGE_GPU_ONLY, static_cast<uint32_t>(mb->maxVertexCount * sizeof(uint32_t)),
             false);
+
+        RxCore::DescriptorPoolTemplate poolTemplate({{vk::DescriptorType::eStorageBuffer, 10}}, 10);
+
+        auto pl = world->lookup("layout/general").get<PipelineLayout>();
+        mb->descriptorSet = RxCore::threadResources.getDescriptorSet(poolTemplate, pl->dsls[1]);
+        mb->descriptorSet->
+            updateDescriptor(0, vk::DescriptorType::eStorageBuffer, mb->vertexBuffer);
 
         world->getSingletonUpdate<StaticMeshActiveBundle>()->currentBundle = mbe.id;
         return mbe.id;
@@ -472,14 +500,48 @@ namespace RxEngine
         if (ids.instances.empty()) {
             return;
         }
+
+        auto sib = world_->getSingletonUpdate<StaticInstanceBuffers>();
+        sib->ix = (sib->ix + 1) % sib->count;
+        if (sib->sizes[sib->ix] < ids.instances.size()) {
+            auto n = ids.instances.size() * 2;
+            auto b = engine_->createStorageBuffer(n * sizeof(IndirectDrawInstance));
+            sib->buffers[sib->ix] = b;
+            b->map();
+            sib->sizes[sib->ix] = n;
+            sib->descriptorSets[sib->ix]->
+                updateDescriptor(0, vk::DescriptorType::eStorageBuffer, b);
+        }
+
+        sib->buffers[sib->ix]->update(ids.instances.data(),
+                                      ids.instances.size() * sizeof(IndirectDrawInstance));
+
+        auto cmds = world_->getSingleton<CurrentMainDescriptorSet>();
+        auto ds0 = world_->get<DescriptorSet>(cmds->descriptorSet);
+        auto windowDetails = world_->getSingleton<WindowDetails>();
         auto buf = RxCore::threadResources.getCommandBuffer();
+
+        bool flipY = false;
 
         buf->begin(pipeline->renderPass, pipeline->subPass);
         {
             buf->useLayout(layout->layout);
             OPTICK_GPU_CONTEXT(buf->Handle());
             OPTICK_GPU_EVENT("Draw StaticMesh");
+            buf->BindDescriptorSet(0, ds0->ds);
 
+            buf->setScissor(
+                {
+                    {0, 0},
+                    {windowDetails->width, windowDetails->height}
+                });
+            buf->setViewport(
+                .0f, flipY ? static_cast<float>(windowDetails->height) : 0.0f, static_cast<float>(windowDetails->width),
+                flipY ? -static_cast<float>(windowDetails->height) : static_cast<float>(windowDetails->height), 0.0f,
+                1.0f);
+
+            buf->BindDescriptorSet(2, sib->descriptorSets[sib->ix]);
+            renderIndirectDraws(ids, buf);
             //buf->BindPipeline(pipeline->pipeline->Handle());
         }
         buf->end();

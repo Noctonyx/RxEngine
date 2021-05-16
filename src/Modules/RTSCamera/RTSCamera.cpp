@@ -52,6 +52,7 @@ namespace RxEngine
                       auto viewProj = view * pr;
 
                       XMStoreFloat4x4(&c->viewProj, viewProj);
+                      XMStoreFloat4x4(&c->proj, pr);
                       XMStoreFloat4x4(&c->iViewProj, XMMatrixInverse(nullptr, viewProj));
 
                       const BoundingFrustum frustum(pr, true);

@@ -271,6 +271,11 @@ namespace RxEngine
     {
         std::shared_ptr<RxCore::DescriptorSet> ds{};
     };
+
+    struct CurrentMainDescriptorSet
+    {
+        ecs::entity_t descriptorSet;
+    };
 #if 0
     struct Descriptors
     {

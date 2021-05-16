@@ -1,6 +1,7 @@
 #version 460
 
 #extension GL_GOOGLE_include_directive: enable
+//!#extension GL_KHR_vulkan_glsl : enable
 
 #define ambient 0.5
 #include "lighting.glsl"
@@ -114,7 +115,9 @@ void main() {
     float shadow = 1.0;
 	float bias = 0.005;
 
-    vec4 color = texture(textures[1], inUv);
+    //vec4 color = texture(textures[1], inUv);
+	vec4 color = vec4(0.8, 0.6, 0.2, 1.0);
+
         //color = vec4(1.0f);
     uint cascadeIndex = 0;
 
@@ -126,7 +129,7 @@ void main() {
 
     vec4 shadowCoord = (biasMat * lighting.cascades[cascadeIndex].viewProjMatrix) * vec4(inPos, 1.0);
     //shadow = textureProj(shadowCoord / shadowCoord.w, vec2(0.0), cascadeIndex);
-    shadow = filterPCF(shadowCoord / shadowCoord.w, cascadeIndex);
+    //shadow = filterPCF(shadowCoord / shadowCoord.w, cascadeIndex);
     vec3 N = normalize(inNormal);
 	vec3 L = normalize(-lighting.light_direction);
 	vec3 H = normalize(L + inViewPos);

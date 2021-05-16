@@ -38,21 +38,14 @@ add_library(RxEngine STATIC
         src/Modules/ImGui/ImGuiRender.hpp
         src/EngineMain.hpp
         src/EngineMain.cpp
-        #src/Delegates.hpp
-        #src/Delegates.cpp
         src/Window.cpp
         src/Window.hpp
-        #src/Example/TestMesh.cpp
-        #src/Example/TestMesh.hpp
         src/Rendering/RenderMesh.h
-        #src/Rendering/Mesh.cpp
-        #src/Rendering/Mesh.hpp
         src/Modules/Renderer/Renderer.hpp
         src/Modules/Renderer/Renderer.cpp
         src/Rendering/RenderData.h
         #src/FastNoiseLite.h
         src/Geometry/Camera.hpp
-        #src/Rendering/ILightingManager.h
         src/Modules/RmlUI/RmlSystemInterface.cpp
         src/Modules/RmlUI/RmlSystemInterface.h
         src/Modules/RmlUI/RmlRenderInterface.cpp
@@ -61,16 +54,10 @@ add_library(RxEngine STATIC
         src/Modules/RmlUI/RmlFileInterface.h
         src/Modules/RmlUI/UiContext.cpp
         src/Modules/RmlUI/UiContext.h
-        #src/Rendering/MeshBundle.cpp
-        #src/Rendering/MeshBundle.h
-        
-        
         src/Rendering/MaterialManager.cpp
         src/ini.h
         src/Rendering/MaterialManager.h
         src/Rendering/Defines.h
-        #src/LuaState.cpp 
-        #src/LuaState.h 
         src/Modules/Render.h
         src/Modules/Render.cpp
         src/Modules/Transforms/Transforms.h
@@ -97,7 +84,8 @@ add_library(RxEngine STATIC
         src/Modules/RTSCamera/RTSCamera.cpp 
         src/Modules/Environment/Environment.h
         src/Modules/Environment/Environment.cpp
-         "src/Modules/Lighting/Lighting.h" "src/Modules/Lighting/Lighting.cpp")
+        src/Modules/Lighting/Lighting.h 
+        src/Modules/Lighting/Lighting.cpp)
 
 target_compile_options(RxEngine PUBLIC -DGLFW_INCLUDE_VULKAN -DVK_USE_PLATFORM_WIN32_KHR -DGLFW_EXPOSE_NATIVE_WIN32 -DNOMINMAX)
 

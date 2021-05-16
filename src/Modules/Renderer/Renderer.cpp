@@ -133,6 +133,7 @@ namespace RxEngine
               .inGroup("Pipeline:PreFrame")
               .withRead<PipelineLayout>()
               .withWrite<DescriptorSet>()
+              .withWrite<CurrentMainDescriptorSet>()
               .executeIfNone([this](ecs::World * world)
               {
                   auto pl = world_->lookup("layout/general").get<PipelineLayout>();
@@ -140,8 +141,11 @@ namespace RxEngine
                       poolTemplate,
                       pl->dsls[0], {1});
 
-                  auto x = world->newEntity().addAndUpdate<DescriptorSet>();
+                  auto e = world->newEntity();
+                  auto x = e.addAndUpdate<DescriptorSet>();
                   x->ds = ds0_;
+
+                  world->setSingleton<CurrentMainDescriptorSet>({e.id});
               });
         //world_->addSingleton<Descriptors>();
     }
@@ -334,7 +338,7 @@ namespace RxEngine
         //  updateDescriptorSet0(renderCamera);
         //entityManager_->ensureDescriptors(poolTemplate, dsLayouts[1]);
 
-       // std::vector<std::shared_ptr<RxCore::Job<RenderResponse>>> shadow_jobs;
+        // std::vector<std::shared_ptr<RxCore::Job<RenderResponse>>> shadow_jobs;
         //std::vector<std::shared_ptr<RxCore::Job<RenderResponse>>> ui_jobs;
         //std::vector<std::shared_ptr<RxCore::Job<std::vector<RenderEntity>>>> entity_jobs;
 
@@ -462,22 +466,22 @@ namespace RxEngine
                         OPTICK_EVENT("Execute Secondaries")
 
                         world_->getStream<Render::OpaqueRenderCommand>()
-                            ->each<Render::OpaqueRenderCommand>(
-                                [&](ecs::World* w, const Render::OpaqueRenderCommand* b)
-                                {
-                                    buf->executeSecondary(b->buf);
-                                    return true;
-                                }
-                        );
+                              ->each<Render::OpaqueRenderCommand>(
+                                  [&](ecs::World * w, const Render::OpaqueRenderCommand * b)
+                                  {
+                                      buf->executeSecondary(b->buf);
+                                      return true;
+                                  }
+                              );
 
                         world_->getStream<Render::UiRenderCommand>()
-                            ->each<Render::UiRenderCommand>(
-                                [&](ecs::World* w, const Render::UiRenderCommand* b)
-                                {
-                                    buf->executeSecondary(b->buf);
-                                    return true;
-                                }
-                        );
+                              ->each<Render::UiRenderCommand>(
+                                  [&](ecs::World * w, const Render::UiRenderCommand * b)
+                                  {
+                                      buf->executeSecondary(b->buf);
+                                      return true;
+                                  }
+                              );
                     }
                     buf->EndRenderPass();
                 }

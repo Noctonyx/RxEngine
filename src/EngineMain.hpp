@@ -120,6 +120,7 @@ namespace RxEngine
 
         [[nodiscard]] size_t getUniformBufferAlignment(size_t size) const;
         [[nodiscard]] std::shared_ptr<RxCore::Buffer> createUniformBuffer(size_t size) const;
+        [[nodiscard]] std::shared_ptr<RxCore::Buffer> createStorageBuffer(size_t size) const;
 
     protected:
         void replaceSwapChain();

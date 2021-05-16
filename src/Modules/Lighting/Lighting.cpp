@@ -18,6 +18,13 @@ namespace RxEngine
         lighting->lightingBuffer->map();
         lighting->ix = 0;
 
+        lighting->shaderData.specularPower = 56;
+        lighting->shaderData.specularStrength = 0.21f;
+        lighting->shaderData.ambientStrength = 0.64f;
+        lighting->shaderData.diffAmount = 0.3f;
+        lighting->shaderData.light_direction = { 0.407f, -.707f, 0.8f };
+
+
         world_->createSystem("Lighting:NextFrame")
               .inGroup("Pipeline:PreRender")
               .withWrite<Lighting>()

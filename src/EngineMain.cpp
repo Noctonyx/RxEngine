@@ -285,6 +285,13 @@ namespace RxEngine
             VMA_MEMORY_USAGE_CPU_TO_GPU, size);
     }
 
+    std::shared_ptr<RxCore::Buffer> EngineMain::createStorageBuffer(size_t size) const
+    {
+        return device_->createBuffer(
+            vk::BufferUsageFlagBits::eStorageBuffer,
+            VMA_MEMORY_USAGE_CPU_TO_GPU, size);
+    }
+
     void EngineMain::replaceSwapChain()
     {
         RxCore::Device::Context()->WaitIdle();

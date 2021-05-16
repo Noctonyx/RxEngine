@@ -112,6 +112,16 @@ namespace RxEngine
         //DirectX::XMFLOAT4X4 mat;
     };
 
+    struct StaticInstanceBuffers
+    {
+        uint32_t count;
+        std::vector<std::shared_ptr<RxCore::Buffer>> buffers;
+        std::vector<std::shared_ptr<RxCore::DescriptorSet>> descriptorSets;
+        std::vector<uint32_t> sizes;
+
+        uint32_t ix;
+    };
+
 #if 0
     struct LodEntry
     {
