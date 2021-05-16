@@ -35,7 +35,7 @@ struct DrawCommand {
 
 struct InstanceData {
     mat4 transform;
-    //uint materialID;
+    uint materialID;
 };
 
 struct Material {
@@ -46,9 +46,9 @@ layout(set=1, binding =0) readonly buffer V {
     Vertex vertices[];
 } ;
 
-//layout(std430, set=1, binding =1) readonly buffer M {
-    //Material materials[];
-//};
+layout(std430, set=0, binding =3) readonly buffer M {
+    Material materials[];
+};
 
 layout(set=0, binding =4) uniform sampler2D textures[];
 
@@ -67,6 +67,7 @@ layout(location=0) out vec3 outPos;
 layout(location=1) out vec3 outNormal;
 layout(location=2) out vec2 outUv;
 layout(location=3) out vec3 outViewPos;
+layout(location=4) flat out uint outTexId;
 
 void main()
 {
@@ -76,6 +77,8 @@ void main()
     vec3 inNormal = v.aNormal;
 
     mat4 local = instance[gl_InstanceIndex].transform;
+    uint matId = instance[gl_InstanceIndex].materialID;
+    outTexId = materials[matId].colorMapIndex;
 
     vec4 p = uboCamera.projection * uboCamera.view * local * vec4(inPos, 1.0);
 

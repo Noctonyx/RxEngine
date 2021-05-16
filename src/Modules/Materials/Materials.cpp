@@ -54,6 +54,19 @@ namespace RxEngine
                     VertexShader,
                     PipelineLayout,
                     RenderPasses>(&createPipelines);
+
+        world_->createSystem("Material:setDescriptor")
+              .inGroup("Pipeline:PreFrame")
+              .withQuery<DescriptorSet>()
+              .without<MaterialDescriptor>()
+              .withRead<Material>()
+              .withRead<MaterialImage>()
+              .each<DescriptorSet>([this](ecs::EntityHandle e, DescriptorSet * ds)
+              {
+                  createShaderMaterialData(e, ds);
+              });
+
+        materialQuery = world_->createQuery<Material>().id;
     }
 
     void MaterialsModule::shutdown() { }
@@ -683,11 +696,10 @@ namespace RxEngine
         }
 
 
-        std::string a = material.get_or("alpha_mode", std::string{ "OPAQUE" });
+        std::string a = material.get_or("alpha_mode", std::string{"OPAQUE"});
         if (a == "OPAQUE") {
             mi.alpha = MaterialAlphaMode::Opaque;
-        }
-        else {
+        } else {
             mi.alpha = MaterialAlphaMode::Transparent;
         }
 
@@ -699,14 +711,14 @@ namespace RxEngine
                 throw RxAssets::AssetException("Not a valid opaquePipeline:", name);
             }
             e.set<HasOpaquePipeline>({{eop.id}});
-        } else if(mi.alpha == MaterialAlphaMode::Opaque) {
+        } else if (mi.alpha == MaterialAlphaMode::Opaque) {
             auto eop = world->lookup("pipeline/staticmesh_opaque");
 
             auto mpd = eop.get<MaterialPipelineDetails>();
             if (!mpd || mpd->stage != RxAssets::PipelineRenderStage::Opaque) {
                 throw RxAssets::AssetException("Not a valid opaquePipeline:", name);
             }
-            e.set<HasOpaquePipeline>({ {eop.id} });
+            e.set<HasOpaquePipeline>({{eop.id}});
         }
 
         if (shadowPipeline.has_value()) {
@@ -737,14 +749,14 @@ namespace RxEngine
                 throw RxAssets::AssetException("Not a valid transparentPipeline:", name);
             }
             e.set<HasTransparentPipeline>({{eop.id}});
-        }   else if (mi.alpha == MaterialAlphaMode::Transparent) {
+        } else if (mi.alpha == MaterialAlphaMode::Transparent) {
             auto eop = world->lookup("pipeline/staticmesh_transparent");
 
             auto mpd = eop.get<MaterialPipelineDetails>();
             if (!mpd || mpd->stage != RxAssets::PipelineRenderStage::Transparent) {
                 throw RxAssets::AssetException("Not a valid opaquePipeline:", name);
             }
-            e.set<HasTransparentPipeline>({ {eop.id} });
+            e.set<HasTransparentPipeline>({{eop.id}});
         }
 
         if (uiPipeline.has_value()) {
@@ -1017,5 +1029,39 @@ namespace RxEngine
                 });
             }
         }
+    }
+
+    void MaterialsModule::createShaderMaterialData(ecs::EntityHandle e, DescriptorSet * ds)
+    {
+        auto res = world_->getResults(materialQuery);
+        auto buffer = engine_->createStorageBuffer(res.count() * sizeof(MaterialShaderEntry));
+
+        std::vector<MaterialShaderEntry> mv;
+        std::vector<RxCore::CombinedSampler> ts;
+
+        res.each<Material>([&](ecs::EntityHandle e, Material * m)
+        {
+            m->sequence = mv.size();
+
+            //auto me = mv.emplace_back();
+            //me.roughness = m->roughness;
+            auto te = m->materialTextures[0];
+
+            auto tx = world_->get<MaterialImage>(te, true);
+            auto sm = world_->get<Render::MaterialSampler>(te);
+
+            //me.colorTextureIndex = ts.size();
+            mv.push_back({static_cast<uint32_t>(ts.size()), m->roughness});
+            ts.push_back({sm->sampler, tx->imageView});
+        });
+
+        buffer->map();
+        buffer->update(mv.data(), mv.size());
+        buffer->unmap();
+
+        ds->ds->updateDescriptor(3, vk::DescriptorType::eStorageBuffer, buffer);
+        ds->ds->updateDescriptor(4, vk::DescriptorType::eCombinedImageSampler, ts);
+
+        e.addDeferred<MaterialDescriptor>();
     }
 }

@@ -134,6 +134,8 @@ data.material_pipelines = {
         layout = "layout/general",
         vertexShader = "shader/staticmesh_opaque_vert",
         fragmentShader = "shader/staticmesh_opaque_frag",
+        depthTestEnable = true,
+        depthWriteEnable = true,
         blends = {
             {enable = false}
         },

@@ -392,58 +392,64 @@ namespace RxEngine
 
         std::vector<RenderingInstance> instances;
         std::vector<XMFLOAT4X4> mats;
-
-        auto res = world_->getResults(worldObjects);
-        res.each<WorldTransform, VisiblePrototype>(
-            [&](ecs::EntityHandle e,
-                const WorldTransform * wt,
-                const VisiblePrototype * vp)
-            {
-                if (!vp) {
-                    return;
-                }
-                BoundingSphere bs;
-                auto tx = XMLoadFloat4x4(&wt->transform);
-                vp->boundingSphere.Transform(bs, tx);
-
-                if (!frustum->frustum.Intersects(bs)) {
-                    return;
-                }
-                for (auto & sm: vp->subMeshEntities) {
-                    auto rdc = world_->get<RenderDetailCache>(sm);
-                    if (!rdc || !rdc->opaquePipeline) {
+        {
+            OPTICK_EVENT("Collect instances")
+            auto res = world_->getResults(worldObjects);
+            instances.reserve(res.count());
+            mats.reserve(res.count());
+            res.each<WorldTransform, VisiblePrototype>(
+                [&](ecs::EntityHandle e,
+                    const WorldTransform* wt,
+                    const VisiblePrototype* vp)
+                {
+                    //OPTICK_EVENT("Process Entity")
+                    if (!vp) {
                         return;
                     }
-                    size_t ix = mats.size();
-                    mats.push_back(wt->transform);
+                    BoundingSphere bs;
+                    auto tx = XMLoadFloat4x4(&wt->transform);
+                    vp->boundingSphere.Transform(bs, tx);
 
-                    instances.push_back({
-                        rdc->opaquePipeline, rdc->bundle, rdc->vertexOffset, rdc->indexOffset,
-                        rdc->indexCount, rdc->material, static_cast<uint32_t>(ix)
-                    });
-                }
-            });
+                    if (!frustum->frustum.Intersects(bs)) {
+                        return;
+                    }
+                    for (auto& sm : vp->subMeshEntities) {
+                        auto rdc = world_->get<RenderDetailCache>(sm);
+                        if (!rdc || !rdc->opaquePipeline) {
+                            return;
+                        }
+                        size_t ix = mats.size();
+                        mats.push_back(wt->transform);
 
-        std::ranges::sort(
-            instances,
-            [](const auto & a, const auto & b)
-            {
-                if (a.pipeline < b.pipeline) {
-                    return true;
+                        instances.push_back({
+                            rdc->opaquePipeline, rdc->bundle, rdc->vertexOffset, rdc->indexOffset,
+                            rdc->indexCount, rdc->material, static_cast<uint32_t>(ix)
+                            });
+                    }
+                });
+        }
+        {
+            OPTICK_EVENT("Sort Instances")
+            std::ranges::sort(
+                instances,
+                [](const auto& a, const auto& b)
+                {
+                    if (a.pipeline < b.pipeline) {
+                        return true;
+                    }
+                    if (a.pipeline > b.pipeline) {
+                        return false;
+                    }
+                    if (a.bundle < b.bundle) {
+                        return true;
+                    }
+                    if (a.bundle > b.bundle) {
+                        return false;
+                    }
+                    return a.vertexOffset < b.vertexOffset;
                 }
-                if (a.pipeline > b.pipeline) {
-                    return false;
-                }
-                if (a.bundle < b.bundle) {
-                    return true;
-                }
-                if (a.bundle > b.bundle) {
-                    return false;
-                }
-                return a.vertexOffset < b.vertexOffset;
-            }
-        );
-
+            );
+        }
         IndirectDrawSet ids;
 
         {
@@ -487,7 +493,10 @@ namespace RxEngine
                 }
                 //auto& e = (*entities)[eix];
 
-                ids.instances.push_back({mats[instance.matrixIndex], 0, 0, 0, 0});
+                auto mm = world_->get<Material>(instance.material);
+
+
+                ids.instances.push_back({mats[instance.matrixIndex], mm->sequence, 0, 0, 0});
                 ids.commands[commandIndex].instanceCount++;
 
                 if (ids.instances.size() > 19990) {
@@ -521,7 +530,7 @@ namespace RxEngine
         auto windowDetails = world_->getSingleton<WindowDetails>();
         auto buf = RxCore::threadResources.getCommandBuffer();
 
-        bool flipY = false;
+        bool flipY = true;
 
         buf->begin(pipeline->renderPass, pipeline->subPass);
         {

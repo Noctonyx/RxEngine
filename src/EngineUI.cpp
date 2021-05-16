@@ -199,7 +199,7 @@ namespace RxEngine
                                          c_str())) {
                 for (auto it: *world) {
                     auto table = world->getTableForArchetype(it.id);
-                    if (table->entities.size() > 0) {
+                    if (table && table->entities.size() > 0) {
                         if (ImGui::Selectable(table->description().c_str(),
                                               it.id == selectedArchetype)) {
                             selectedArchetype = it.id;

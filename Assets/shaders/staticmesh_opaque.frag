@@ -2,6 +2,7 @@
 
 #extension GL_GOOGLE_include_directive: enable
 //!#extension GL_KHR_vulkan_glsl : enable
+#extension GL_EXT_nonuniform_qualifier : require
 
 #define ambient 0.5
 #include "lighting.glsl"
@@ -47,9 +48,9 @@ layout(set=1, binding =0) readonly buffer V {
     Vertex vertices[];
 } ;
 
-//layout(std430, set=1, binding =1) readonly buffer M {
-    //Material materials[];
-//};
+layout(std430, set=0, binding =3) readonly buffer M {
+    Material materials[];
+};
 
 layout(set=0, binding =4) uniform sampler2D textures[];
 
@@ -66,6 +67,7 @@ layout(location=0) in vec3 inPos;
 layout(location=1) in vec3 inNormal;
 layout(location=2) in vec2 inUv;
 layout(location=3) in vec3 inViewPos;
+layout(location=4) flat in uint  inTextId;
 
 layout(location = 0) out vec4 outFragColor;
 
@@ -115,8 +117,8 @@ void main() {
     float shadow = 1.0;
 	float bias = 0.005;
 
-    //vec4 color = texture(textures[1], inUv);
-	vec4 color = vec4(0.8, 0.6, 0.2, 1.0);
+    vec4 color = texture(textures[inTextId], inUv);
+	//vec4 color = vec4(0.8, 0.6, 0.2, 1.0);
 
         //color = vec4(1.0f);
     uint cascadeIndex = 0;

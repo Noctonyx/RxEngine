@@ -6,6 +6,7 @@
 
 namespace RxEngine
 {
+    struct DescriptorSet;
     struct RenderPasses;
 
     struct GraphicsPipeline
@@ -108,16 +109,23 @@ namespace RxEngine
     struct Material
     {
         std::array<ecs::entity_t, 4> materialTextures{ 0, 0, 0, 0 };
+        //ecs::entity_t materialTexture;
         float roughness;
         float metallic;
         MaterialAlphaMode alpha;
+        uint32_t sequence{};
     };
 
-    struct TexturesDescriptor
+    struct MaterialDescriptor
     {
 
     };
 
+    struct MaterialShaderEntry
+    {
+        uint32_t colorTextureIndex;
+        float roughness;
+    };
 
     class MaterialsModule : public Module
     {
@@ -146,7 +154,9 @@ namespace RxEngine
             const PipelineLayout* pll,
             const RenderPasses* rp);
 
+        void createShaderMaterialData(ecs::EntityHandle e, DescriptorSet* ds);
     private:
+        ecs::queryid_t materialQuery;
         //static void materialGui(ecs::EntityHandle e);
     };
 }
