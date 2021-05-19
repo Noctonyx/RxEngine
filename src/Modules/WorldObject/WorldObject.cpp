@@ -18,8 +18,7 @@ namespace RxEngine
                      WorldTransform * wt)
                   {
                       auto tm = XMMatrixTranslation(wp->position.x, wp->position.y, wp->position.z);
-                      //auto rm = XMMatrixRotationRollPitchYaw(rot ? rot->rotation.x : 0.0f, rot ? rot->rotation.y : 0.0f, rot ? rot->rotation.z : 0.0f);
-                      auto rm = XMMatrixIdentity();
+                      auto rm = XMMatrixRotationRollPitchYaw(rot ? rot->rotation.x : 0.0f, rot ? rot->rotation.y : 0.0f, rot ? rot->rotation.z : 0.0f);
                       auto nm = XMMatrixMultiply(rm, tm);
                       if (!wt) {
                           WorldTransform wtt;
