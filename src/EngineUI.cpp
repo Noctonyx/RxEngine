@@ -599,6 +599,12 @@ namespace RxEngine
             ImGui::Text("Count");
             ImGui::TableNextColumn();
             ImGui::Text("%lld", system->count);
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Time");
+            ImGui::TableNextColumn();
+            ImGui::Text("%.3f ms", system->executionTime * 1000.0f);
         }
     }
 
