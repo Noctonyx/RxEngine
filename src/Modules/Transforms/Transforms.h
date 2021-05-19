@@ -45,6 +45,7 @@ namespace RxEngine
         {
             DirectX::BoundingBox boundBox;
         };
+
     }
 
     class TransformsModule: public Module

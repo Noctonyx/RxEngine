@@ -3,6 +3,7 @@
 #include "imgui.h"
 #include "Modules/StaticMesh/StaticMesh.h"
 #include "Modules/Transforms/Transforms.h"
+#include "Modules/WorldObject/WorldObject.h"
 #include "sol/state.hpp"
 #include "sol/table.hpp"
 

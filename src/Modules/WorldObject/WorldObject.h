@@ -14,6 +14,10 @@ namespace RxEngine
         DirectX::XMFLOAT4X4 transform;
     };
 
+    struct DirtyTransform
+    {
+        bool dirty;
+    };
     class WorldObjectModule : public Module
     {
     public:

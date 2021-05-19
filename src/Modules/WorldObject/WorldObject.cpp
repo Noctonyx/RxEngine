@@ -11,6 +11,7 @@ namespace RxEngine
         world_->createSystem("WorldObject:CreateTransform")
               .withQuery<WorldObject, Transforms::WorldPosition>()
               .inGroup("Pipeline:PostUpdate")
+              //.withSwitchValue<DirtyTransform>(1)
               .each<Transforms::WorldPosition, Transforms::LocalRotation, WorldTransform>(
                   [](ecs::EntityHandle e,
                      const Transforms::WorldPosition * wp,
@@ -18,17 +19,22 @@ namespace RxEngine
                      WorldTransform * wt)
                   {
                       auto tm = XMMatrixTranslation(wp->position.x, wp->position.y, wp->position.z);
-                      auto rm = XMMatrixRotationRollPitchYaw(rot ? rot->rotation.x : 0.0f, rot ? rot->rotation.y : 0.0f, rot ? rot->rotation.z : 0.0f);
+                      auto rm = XMMatrixRotationRollPitchYaw(
+                          rot ? rot->rotation.x : 0.0f, rot ? rot->rotation.y : 0.0f,
+                          rot ? rot->rotation.z : 0.0f);
                       auto nm = XMMatrixMultiply(rm, tm);
                       if (!wt) {
                           WorldTransform wtt;
                           XMStoreFloat4x4(&wtt.transform, nm);
 
                           e.addDeferred<WorldTransform>();
+                          //e.addDeferred<DirtyTransform>();
                           e.setDeferred<WorldTransform>(wtt);
+
                           return;
                       }
                       XMStoreFloat4x4(&wt->transform, nm);
+                   //   e.setSwitch<DirtyTransform>(0);
                   });
     }
 
