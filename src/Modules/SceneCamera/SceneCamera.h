@@ -37,8 +37,6 @@ namespace RxEngine
         
     };
 
-  
-
     class SceneCameraModule: public Module
     {
     public:

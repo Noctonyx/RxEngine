@@ -54,8 +54,8 @@ namespace RxEngine
 
                       sc->ix = (sc->ix + 1) % camera_buffer_count;
                       sc->camBuffer->update(&sc->shaderData,
-                                                         sc->ix * sc->bufferAlignment,
-                                                         sizeof(SceneCameraShaderData));
+                                            sc->ix * sc->bufferAlignment,
+                                            sizeof(SceneCameraShaderData));
                   }
               );
 
@@ -63,28 +63,26 @@ namespace RxEngine
               .inGroup("Pipeline:PreFrame")
               .withQuery<DescriptorSet>()
               .without<SceneCameraDescriptor>()
-              .withRead<SceneCamera>()
-              .each<DescriptorSet>([](ecs::EntityHandle e, DescriptorSet * ds)
-              {
-                  auto sc = e.world->getSingleton<SceneCamera>();
+              .withSingleton<SceneCamera>()
+              .each<DescriptorSet, SceneCamera>(
+                  [](ecs::EntityHandle e, DescriptorSet * ds, const SceneCamera * sc)
+                  {
+                      ds->ds->updateDescriptor(0, vk::DescriptorType::eUniformBufferDynamic,
+                                               sc->camBuffer, sizeof(SceneCameraShaderData),
+                                               static_cast<uint32_t>(sc->ix * sc->bufferAlignment));
 
-                  ds->ds->updateDescriptor(0, vk::DescriptorType::eUniformBufferDynamic,
-                                           sc->camBuffer, sizeof(SceneCameraShaderData),
-                                           static_cast<uint32_t>(sc->ix * sc->bufferAlignment));
-
-                  e.addDeferred<SceneCameraDescriptor>();
-              });
+                      e.addDeferred<SceneCameraDescriptor>();
+                  });
 
         world_->createSystem("SceneCamera:updateDescriptor")
               .inGroup("Pipeline:PreRender")
               .withQuery<DescriptorSet, SceneCameraDescriptor>()
-              .withRead<SceneCamera>()
-              .withRead<SceneCameraShaderData>()
-              .each<DescriptorSet>([](ecs::EntityHandle e, const DescriptorSet * ds)
-              {
-                  auto sc = e.world->getSingleton<SceneCamera>();
-                  ds->ds->setDescriptorOffset(0, sc->getDescriptorOffset());
-              });
+              .withSingleton<SceneCamera>()
+              .each<DescriptorSet, SceneCamera>(
+                  [](ecs::EntityHandle e, const DescriptorSet * ds, const SceneCamera * sc)
+                  {
+                      ds->ds->setDescriptorOffset(0, sc->getDescriptorOffset());
+                  });
 #if 0
         world_->createSystem("SceneCamera:UpdateDescriptor")
             .inGroup("Pipeline:PreRender")

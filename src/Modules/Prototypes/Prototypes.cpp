@@ -41,8 +41,8 @@ namespace RxEngine
         if(details.get_or("world_position", false)) {
             e.add<Transforms::WorldPosition>();
         }
-        if (details.get_or("y_rotation", false)) {
-            e.add<Transforms::YRotation>();
+        if (details.get_or("rotation", false)) {
+            e.add<Transforms::LocalRotation>();
         }
 
         std::string visible = details.get<std::string>("visible");

@@ -12,6 +12,7 @@
 #include "Modules/Renderer/Renderer.hpp"
 
 #include "Modules/Module.h"
+#include "Modules/CameraControl/CameraControl.h"
 #include "Modules/Environment/Environment.h"
 #include "Modules/ImGui/ImGuiRender.hpp"
 #include "Modules/Lighting/Lighting.h"
@@ -31,8 +32,6 @@ namespace RxEngine
 
     void EngineMain::setupWorld()
     {
-        window_->setWorld(world.get());
-
         world->newEntity("Pipeline:PreFrame").set<ecs::SystemGroup>({1, false, 0.0f, 0.0f});
         world->newEntity("Pipeline:Early").set<ecs::SystemGroup>({2, false, 0.0f, 0.0f});
         world->newEntity("Pipeline:FixedUpdate").set<ecs::SystemGroup>({3, true, 0.0f, 0.02f});
@@ -43,6 +42,8 @@ namespace RxEngine
         world->newEntity("Pipeline:Render").set<ecs::SystemGroup>({8, false, 0.0f, 0.0f});
         world->newEntity("Pipeline:PostRender").set<ecs::SystemGroup>({9, false, 0.0f, 0.0f});
         world->newEntity("Pipeline:PostFrame").set<ecs::SystemGroup>({10, false, 0.0f, 0.0f});
+
+        window_->setWorld(world.get());
 
         lua = new sol::state();
 
@@ -66,6 +67,7 @@ namespace RxEngine
         addModule<SceneCameraModule>();
         addModule<LightingModule>();
         addModule<EnvironmentModule>();
+        addModule<CameraControlModule>();
 
         for (auto & m: modules) {
             m->registerModule();

@@ -1,7 +1,11 @@
 #include "Window.hpp"
 #include <GLFW/glfw3.h>
+
+#include "DirectXMath.h"
+#include "EngineMain.hpp"
 #include "ini.h"
 #include "RxECS.h"
+#include "Log.h"
 
 namespace RxEngine
 {
@@ -52,6 +56,7 @@ namespace RxEngine
     {
         auto wnd = static_cast<Window *>(glfwGetWindowUserPointer(window));
 
+        spdlog::info("Mouse Button = {}, pressed = {}", button, action);
         wnd->buttonAction(button, action == GLFW_PRESS, mods);
     }
 
@@ -222,6 +227,21 @@ namespace RxEngine
             world_->getStream<MousePosition>()->add<MousePosition>({
                 x_pos, y_pos, static_cast<RxEngine::EInputMod>(mods)
             });
+
+            auto mouse_status = world_->getSingletonUpdate<MouseStatus>();
+
+            float delta = world_->deltaTime();
+
+            auto deltaMouseX = (cursorX - mouse_status->mouseX) / delta / 50.0f / 180.f *
+                DirectX::XM_2PI;
+            auto deltaMouseY = (cursorY - mouse_status->mouseY) / delta / 50.0f / 180.f *
+                DirectX::XM_2PI;
+
+            mouse_status->mouseX = cursorX;
+            mouse_status->mouseY = cursorY;
+
+            mouse_status->deltaMouseX = deltaMouseX;
+            mouse_status->deltaMouseY = deltaMouseY;
         }
     }
 
@@ -231,6 +251,21 @@ namespace RxEngine
             world_->getStream<MouseButton>()->add<MouseButton>({
                 button, pressed, static_cast<RxEngine::EInputMod>(mods)
             });
+
+            auto mbs = world_->getSingletonUpdate<MouseStatus>();
+            switch (button) {
+            case 0:
+                mbs->button1 = pressed;
+                break;
+            case 1:
+                mbs->button2 = pressed;
+                break;
+            case 2:
+                mbs->button3 = pressed;
+                break;
+            default:
+                break;
+            }
         }
     }
 
@@ -243,6 +278,49 @@ namespace RxEngine
         }
     }
 
+    void mouseStatusUi(ecs::World *, void * ptr)
+    {
+        auto ms = static_cast<MouseStatus *>(ptr);
+        if (ms) {
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("X Position");
+            ImGui::TableNextColumn();
+            ImGui::Text("%f", ms->mouseX);
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Y Position");
+            ImGui::TableNextColumn();
+            ImGui::Text("%f", ms->mouseY);
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Delta X");
+            ImGui::TableNextColumn();
+            ImGui::Text("%f", ms->deltaMouseX);
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Delta Y");
+            ImGui::TableNextColumn();
+            ImGui::Text("%f", ms->deltaMouseY);
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Button 1");
+            ImGui::TableNextColumn();
+            ImGui::Text("%s", ms->button1 ? "Pressed" : "Released");
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Button 2");
+            ImGui::TableNextColumn();
+            ImGui::Text("%s", ms->button2 ? "Pressed" : "Released");
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Button 3");
+            ImGui::TableNextColumn();
+            ImGui::Text("%s", ms->button3 ? "Pressed" : "Released");
+        }
+    }
+
     void Window::setWorld(ecs::World * world)
     {
         int w, h;
@@ -252,6 +330,24 @@ namespace RxEngine
             .width = static_cast<uint32_t>(w),
             .height = static_cast<uint32_t>(h)
         });
+
+        world->setSingleton<MouseStatus>({
+            .button1 = false,
+            .button2 = false,
+            .button3 = false
+        });
+
+        world->set<ComponentGui>(world->getComponentId<MouseStatus>(), {.editor = mouseStatusUi});
+
+        world->createSystem("Window:ResetDeltas")
+            .inGroup("Pipeline:PostFrame")
+            .withWrite<MouseStatus>()
+            .execute([](ecs::World* w)
+                {
+                    auto ms = w->getSingletonUpdate<MouseStatus>();
+                    ms->deltaMouseX = 0.f;
+                    ms->deltaMouseY = 0.f;
+                });
     }
 
     void Window::setCursor(ECursorStandard standard)
@@ -277,7 +373,7 @@ namespace RxEngine
             GLFW_CURSOR,
             hidden ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
         if (!hidden) {
-            setCursorPosition(cursorX, cursorY);// DirectX::XMFLOAT2{ pos_.x, pos_.y });
+            setCursorPosition(cursorX, cursorY); // DirectX::XMFLOAT2{ pos_.x, pos_.y });
         }
         hidden_ = hidden;
     }

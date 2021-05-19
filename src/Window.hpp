@@ -225,6 +225,19 @@ namespace RxEngine
         EInputMod mods;
     };
 
+    struct MouseStatus
+    {
+        bool button1;
+        bool button2;
+        bool button3;
+
+        float mouseX;
+        float mouseY;
+
+        float deltaMouseX;
+        float deltaMouseY;
+    };
+
     class Window
     {
     public:

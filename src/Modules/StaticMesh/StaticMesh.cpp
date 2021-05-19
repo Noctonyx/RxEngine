@@ -169,6 +169,7 @@ namespace RxEngine
               .withRead<CurrentMainDescriptorSet>()
               .withRead<DescriptorSet>()
               .withRead<PipelineLayout>()
+              .withRead<VisiblePrototype>()
               .execute([this](ecs::World *)
               {
                   OPTICK_EVENT("StaticMesh:Render")
@@ -186,8 +187,8 @@ namespace RxEngine
         //     .withQuery<Sta>()
 
         worldObjects = world_->createQuery()
-                             .with<WorldObject, WorldTransform>()
-                             .withRelation<HasVisiblePrototype, VisiblePrototype>()
+                             .with<WorldObject, WorldTransform, HasVisiblePrototype>()
+                             //.withRelation<HasVisiblePrototype, VisiblePrototype>()
                              .withInheritance(true).id;
 
         pipeline_ = world_->lookup("pipeline/staticmesh_opaque");
@@ -393,15 +394,16 @@ namespace RxEngine
         std::vector<RenderingInstance> instances;
         std::vector<XMFLOAT4X4> mats;
         {
+            //auto vpc = world_->getComponentId<VisiblePrototype>();
             OPTICK_EVENT("Collect instances")
             auto res = world_->getResults(worldObjects);
             instances.reserve(res.count());
             mats.reserve(res.count());
-            res.each<WorldTransform, VisiblePrototype>(
+            res.each<WorldTransform, HasVisiblePrototype>(
                 [&](ecs::EntityHandle e,
-                    const WorldTransform* wt,
-                    const VisiblePrototype* vp)
+                    const WorldTransform* wt, const HasVisiblePrototype * vpp)
                 {
+                    auto vp = world_->get<VisiblePrototype>(vpp->entity);
                     //OPTICK_EVENT("Process Entity")
                     if (!vp) {
                         return;
@@ -545,8 +547,11 @@ namespace RxEngine
                     {windowDetails->width, windowDetails->height}
                 });
             buf->setViewport(
-                .0f, flipY ? static_cast<float>(windowDetails->height) : 0.0f, static_cast<float>(windowDetails->width),
-                flipY ? -static_cast<float>(windowDetails->height) : static_cast<float>(windowDetails->height), 0.0f,
+                .0f, flipY ? static_cast<float>(windowDetails->height) : 0.0f,
+                static_cast<float>(windowDetails->width),
+                flipY
+                    ? -static_cast<float>(windowDetails->height)
+                    : static_cast<float>(windowDetails->height), 0.0f,
                 1.0f);
 
             buf->BindDescriptorSet(2, sib->descriptorSets[sib->ix]);

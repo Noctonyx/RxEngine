@@ -16,6 +16,11 @@ namespace RxEngine
             DirectX::XMFLOAT3 position;
         };
 
+        struct LocalRotation
+        {
+            DirectX::XMFLOAT3 rotation;
+        };
+#if 0
         struct YRotation
         {
             float yRotation;
@@ -25,7 +30,7 @@ namespace RxEngine
         {
             float xRotation;
         };
-
+#endif
         struct ScalarScale
         {
             float scale;

@@ -85,7 +85,7 @@ add_library(RxEngine STATIC
         src/Modules/Environment/Environment.h
         src/Modules/Environment/Environment.cpp
         src/Modules/Lighting/Lighting.h 
-        src/Modules/Lighting/Lighting.cpp)
+        src/Modules/Lighting/Lighting.cpp "src/Modules/CameraControl/CameraControl.h" "src/Modules/CameraControl/CameraControl.cpp")
 
 target_compile_options(RxEngine PUBLIC -DGLFW_INCLUDE_VULKAN -DVK_USE_PLATFORM_WIN32_KHR -DGLFW_EXPOSE_NATIVE_WIN32 -DNOMINMAX)
 

@@ -11,14 +11,15 @@ namespace RxEngine
         world_->createSystem("WorldObject:CreateTransform")
               .withQuery<WorldObject, Transforms::WorldPosition>()
               .inGroup("Pipeline:PostUpdate")
-              .each<Transforms::WorldPosition, Transforms::YRotation, WorldTransform>(
+              .each<Transforms::WorldPosition, Transforms::LocalRotation, WorldTransform>(
                   [](ecs::EntityHandle e,
                      const Transforms::WorldPosition * wp,
-                     const Transforms::YRotation * yrot,
+                     const Transforms::LocalRotation * rot,
                      WorldTransform * wt)
                   {
                       auto tm = XMMatrixTranslation(wp->position.x, wp->position.y, wp->position.z);
-                      auto rm = XMMatrixRotationY(yrot ? yrot->yRotation : 0.0f);
+                      //auto rm = XMMatrixRotationRollPitchYaw(rot ? rot->rotation.x : 0.0f, rot ? rot->rotation.y : 0.0f, rot ? rot->rotation.z : 0.0f);
+                      auto rm = XMMatrixIdentity();
                       auto nm = XMMatrixMultiply(rm, tm);
                       if (!wt) {
                           WorldTransform wtt;

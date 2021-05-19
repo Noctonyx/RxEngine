@@ -13,21 +13,20 @@ namespace RxEngine
     {
         world_->createSystem("RTSCamera:CalculateMatrix")
               .inGroup("Pipeline:PreRender")
-              .withQuery<RTSCamera, WorldPosition, YRotation, XRotation, CameraProjection,
+              .withQuery<RTSCamera, WorldPosition, LocalRotation, CameraProjection,
                          CameraFrustum>()
-              .each<RTSCamera, WorldPosition, YRotation, XRotation, CameraProjection,
+              .each<RTSCamera, WorldPosition, LocalRotation, CameraProjection,
                     CameraFrustum>(
                   [](ecs::EntityHandle e,
                      RTSCamera * c,
                      const WorldPosition * wp,
-                     const YRotation * yrot,
-                     const XRotation * xrot,
+                     const LocalRotation * rotv,
                      const CameraProjection * proj,
                      CameraFrustum * fru
               )
                   {
                       OPTICK_EVENT("Update Camera")
-                      XMFLOAT3 rot(xrot->xRotation, yrot->yRotation, 0.f);
+                      XMFLOAT3 rot(rotv->rotation);
                       XMFLOAT3 dolly(0.f, 0.f, c->dolly);
 
                       XMMATRIX rotM = XMMatrixRotationRollPitchYawFromVector(XMLoadFloat3(&rot));
@@ -100,8 +99,7 @@ namespace RxEngine
 
         world_->newEntity("PrefabRTSCamera")
               .add<WorldPosition>()
-              .add<XRotation>()
-              .add<YRotation>()
+              .add<LocalRotation>()
               .add<RTSCamera>()
               .set<CameraProjection>(def)
               .add<CameraFrustum>()
@@ -132,8 +130,8 @@ namespace RxEngine
     {
         auto camera = e.get<RTSCamera>();
         auto pos = e.get<WorldPosition>();
-        auto xrot = e.get<XRotation>();
-        auto yrot = e.get<YRotation>();
+        auto xrot = e.get<LocalRotation>()->rotation.x;
+        auto yrot = e.get<LocalRotation>()->rotation.y;
 
         const float DISTANCE = 5.0f;
 
@@ -167,8 +165,8 @@ namespace RxEngine
                 camera->viewPos.z);
             ImGui::Text(
                 "X/Y/Z Rotation: %.3f, %.3f, %.3f",
-                xrot->xRotation,
-                yrot->yRotation,
+                xrot,
+                yrot,
                 0.f);
             ImGui::Text("Arm Length: %.3f", camera->dolly);
             ImGui::Text("Forward: %.3f, %.3f, %.3f", fwd.x, fwd.y, fwd.z);
