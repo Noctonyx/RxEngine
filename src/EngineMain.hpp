@@ -140,6 +140,7 @@ namespace RxEngine
         void ecsInspectorEntityComponents(ecs::EntityHandle entity, ecs::EntityHandle& selectedEntity);
         void ecsInspectorEntityWindow(bool & show_entity_window);
         void ecsSingletonsWindow(bool & show_singletons_window);
+        void showSystemsGui(bool & showWindow);
         void updateEntityGui();
 
 

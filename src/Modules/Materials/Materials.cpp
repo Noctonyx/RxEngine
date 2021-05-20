@@ -1041,7 +1041,7 @@ namespace RxEngine
 
         res.each<Material>([&](ecs::EntityHandle e, Material * m)
         {
-            m->sequence = mv.size();
+            m->sequence = static_cast<uint32_t>(mv.size());
 
             //auto me = mv.emplace_back();
             //me.roughness = m->roughness;

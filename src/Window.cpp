@@ -373,15 +373,15 @@ namespace RxEngine
             GLFW_CURSOR,
             hidden ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
         if (!hidden) {
-            setCursorPosition(cursorX, cursorY); // DirectX::XMFLOAT2{ pos_.x, pos_.y });
+            setCursorPosition(static_cast<int32_t>(cursorX), static_cast<int32_t>(cursorY)); // DirectX::XMFLOAT2{ pos_.x, pos_.y });
         }
         hidden_ = hidden;
     }
 
     void Window::setCursorPosition(int32_t x, int32_t y)
     {
-        cursorX = x;
-        cursorY = y;
+        cursorX = static_cast<float>(x);
+        cursorY = static_cast<float>(y);
 
         glfwSetCursorPos(GetWindow(), cursorX, cursorY);
     }

@@ -164,7 +164,7 @@ namespace RxEngine
         }
 
         world_->createSystem("StaticMesh:Render")
-              .inGroup("Pipeline:PreRender")
+              .inGroup("Pipeline:Render")
               .withWrite<Render::OpaqueRenderCommand>()
               .withRead<CurrentMainDescriptorSet>()
               .withRead<DescriptorSet>()
@@ -412,7 +412,7 @@ namespace RxEngine
                     auto tx = XMLoadFloat4x4(&wt->transform);
                     vp->boundingSphere.Transform(bs, tx);
 
-                    if (!frustum->frustum.Intersects(bs)) {
+                    if (!frustum->frustum.Contains(bs)) {
                         return;
                     }
                     for (auto& sm : vp->subMeshEntities) {
@@ -519,7 +519,7 @@ namespace RxEngine
             auto b = engine_->createStorageBuffer(n * sizeof(IndirectDrawInstance));
             sib->buffers[sib->ix] = b;
             b->map();
-            sib->sizes[sib->ix] = n;
+            sib->sizes[sib->ix] = static_cast<uint32_t>(n);
             sib->descriptorSets[sib->ix]->
                 updateDescriptor(0, vk::DescriptorType::eStorageBuffer, b);
         }

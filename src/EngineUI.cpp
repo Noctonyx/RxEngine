@@ -5,8 +5,8 @@ namespace RxEngine
 {
     void frameStatsGui(ecs::World *, void * ptr)
     {
-        auto fs = static_cast<FrameStats*>(ptr);
-        if(fs) {
+        auto fs = static_cast<FrameStats *>(ptr);
+        if (fs) {
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
             ImGui::Text("Frame ID");
@@ -64,7 +64,7 @@ namespace RxEngine
 #endif
         for (auto e: *table) {
 
-            ImGui::PushID(e.id);
+            ImGui::PushID(static_cast<int>(e.id));
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
             ImGui::Text("%lld", e.id);
@@ -341,6 +341,83 @@ namespace RxEngine
         }
     }
 
+    void EngineMain::showSystemsGui(bool & showWindow)
+    {
+        if (ImGui::Begin("Systems", &showWindow)) {
+
+            auto pgs = world->getPipelineGroupSequence();
+
+
+            if (ImGui::BeginTable("Pipeline", 4,
+                                  ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit |
+                                  ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg,
+                                  ImVec2(0, 0))) {
+                ImGui::TableSetupColumn("Name");
+                ImGui::TableSetupColumn("Active");
+                ImGui::TableSetupColumn("Matched");
+                ImGui::TableSetupColumn("Time (ms)");
+                ImGui::TableSetupScrollFreeze(0, 1);
+                ImGui::TableHeadersRow();
+
+                for (auto pg: pgs) {
+                    ImGui::TableNextRow();
+                    ImGui::TableNextColumn();
+                    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
+                    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f));
+                    ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0.5, 0.6f, 0.6f));
+
+                    ImGui::Button(world->description(pg).c_str());
+                    ImGui::PopStyleColor();
+                    auto g = world->get<ecs::SystemGroup>(pg);
+                    if (g) {
+                        for (auto e : g->systems) {
+                            auto sys = world->get<ecs::System>(e);
+                            ImGui::TableNextRow();
+                            ImGui::TableNextColumn();
+                            ImGui::Text("%s", world->description(e).c_str());
+                            ImGui::TableNextColumn();
+                            ImGui::Text("%s",sys->enabled> 0.9f ? "Active" : "Inactive");
+                            ImGui::TableNextColumn();
+                            ImGui::Text("%lld", sys->count);
+                            ImGui::TableNextColumn();
+                            ImGui::Text("%.3f", sys->executionTime * 1000.f);
+                        }
+                    }
+                }
+#if 0
+                for (auto x : v) {
+                    if (x == 0) {
+                        ImGui::TableNextRow();
+                        ImGui::TableNextColumn();
+                        ImGui::Text("Merge");
+                    }
+                    else {
+                        ecs_system_stats_t* s1 = ecs_map_get(
+                            s.system_stats, ecs_system_stats_t, x);
+                        int32_t t = s1->query_stats.t;
+
+                        ImGui::TableNextRow();
+                        ImGui::TableNextColumn();
+                        auto e = world.entity(x);
+                        ImGui::Text("%s", e.name().c_str());
+                        ImGui::TableNextColumn();
+                        ImGui::Text("%s", s1->active.avg[t] > 0.9f ? "Active" : "Inactive");
+                        ImGui::TableNextColumn();
+                        ImGui::Text("%.1f", s1->query_stats.matched_table_count.avg[t]);
+                        ImGui::TableNextColumn();
+                        ImGui::Text("%.1f", s1->query_stats.matched_entity_count.avg[t]);
+                        ImGui::TableNextColumn();
+                        ImGui::Text("%.3f/%.3f", s1->time_spent.value[t] * 1.f,
+                            s1->time_spent.rate.avg[t] * 1.f);
+                    }
+#endif
+            }
+            ImGui::EndTable();
+
+        }
+        ImGui::End();
+    }
+
     void EngineMain::updateEntityGui()
     {
         static bool show_entity_window = getBoolConfigValue("editor", "ecsEntityWindow", false);
@@ -384,62 +461,7 @@ namespace RxEngine
         if (show_systems_window) {
             bool is_open = show_systems_window;
 
-            if (ImGui::Begin("Systems", &is_open)) {
-#if 0
-                ecs_pipeline_stats_t s{nullptr, nullptr};
-                //int32_t count = ecs_vector_count(s.systems);
-                //s.systems = flecs::vector<>
-                //flecs::vector<>
-                ecs_get_pipeline_stats(world, ecs_get_pipeline(world.get_world()), &s);
-                flecs::vector<ecs_entity_t> v(s.systems);
-                //ecs_map_get()
-                //flecs::map<>
-                //int32_t i, count = ecs_vector_count(s.systems);
-                //ecs_entity_t* systems = ecs_vector_first(s.systems, ecs_entity_t);
-                //flecs::vector<>
-
-                if (ImGui::BeginTable("Pipeline", 5,
-                                      ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit |
-                                      ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg,
-                                      ImVec2(0, 400))) {
-                    ImGui::TableSetupColumn("Name");
-                    ImGui::TableSetupColumn("Active");
-                    ImGui::TableSetupColumn("Tables");
-                    ImGui::TableSetupColumn("Matched");
-                    ImGui::TableSetupColumn("Time/Avg");
-                    ImGui::TableSetupScrollFreeze(0, 1);
-                    ImGui::TableHeadersRow();
-
-                    for (auto x: v) {
-                        if (x == 0) {
-                            ImGui::TableNextRow();
-                            ImGui::TableNextColumn();
-                            ImGui::Text("Merge");
-                        } else {
-                            ecs_system_stats_t * s1 = ecs_map_get(
-                                s.system_stats, ecs_system_stats_t, x);
-                            int32_t t = s1->query_stats.t;
-
-                            ImGui::TableNextRow();
-                            ImGui::TableNextColumn();
-                            auto e = world.entity(x);
-                            ImGui::Text("%s", e.name().c_str());
-                            ImGui::TableNextColumn();
-                            ImGui::Text("%s", s1->active.avg[t] > 0.9f ? "Active" : "Inactive");
-                            ImGui::TableNextColumn();
-                            ImGui::Text("%.1f", s1->query_stats.matched_table_count.avg[t]);
-                            ImGui::TableNextColumn();
-                            ImGui::Text("%.1f", s1->query_stats.matched_entity_count.avg[t]);
-                            ImGui::TableNextColumn();
-                            ImGui::Text("%.3f/%.3f", s1->time_spent.value[t] * 1.f,
-                                        s1->time_spent.rate.avg[t] * 1.f);
-                        }
-                    }
-                    ImGui::EndTable();
-                }
-#endif
-            }
-            ImGui::End();
+            showSystemsGui(show_systems_window);
 
             if (is_open != show_systems_window) {
                 show_systems_window = is_open;

@@ -5,7 +5,6 @@
 #include <vector>
 #include <filesystem>
 #include <memory>
-#include "Modules/Render.h"
 #include "EngineMain.hpp"
 #include "RXCore.h"
 #include "RxECS.h"
@@ -49,7 +48,7 @@ namespace RxEngine
 
         setupLuaEnvironment();
         loadLuaFile("/lua/engine");
-        for (auto sf: configFiles) {
+        for (auto & sf: configFiles) {
             loadLuaFile(sf);
         }
 
@@ -99,7 +98,7 @@ namespace RxEngine
 
         world->createSystem("Engine:CheckSwapchain")
              .inGroup("Pipeline:PreFrame")
-             .execute([this](ecs::World * world)
+             .execute([this](ecs::World *)
              {
                  OPTICK_EVENT("Check SwapChain")
                  if (swapChain_->swapChainOutOfDate()) {
@@ -111,7 +110,7 @@ namespace RxEngine
              .inGroup("Pipeline:PostRender")
              .label<AcquireImage>()
              .withWrite<MainRenderImageInput>()
-             .execute([this](ecs::World * world)
+             .execute([this](ecs::World * w)
              {
                  OPTICK_EVENT("AcquireImage")
                  const auto current_extent = swapChain_->GetExtent();
@@ -119,7 +118,7 @@ namespace RxEngine
                  auto [next_swap_image_view, next_image_available, next_image_index] =
                      swapChain_->AcquireNextImage();
 
-                 world->getStream<MainRenderImageInput>()->add<MainRenderImageInput>(
+                 w->getStream<MainRenderImageInput>()->add<MainRenderImageInput>(
                      {
                          next_swap_image_view, next_image_available, next_image_index,
                          current_extent, submitCompleteSemaphores_[next_image_index]
@@ -132,7 +131,7 @@ namespace RxEngine
              .label<PresentImage>()
              .withStream<MainRenderImageOutput>()
              .execute<MainRenderImageOutput>(
-                 [this](ecs::World * world, const MainRenderImageOutput * mri)
+                 [this](ecs::World *, const MainRenderImageOutput * mri)
                  {
                      OPTICK_GPU_FLIP(nullptr)
                      OPTICK_CATEGORY("Present", Optick::Category::Rendering)
@@ -143,7 +142,7 @@ namespace RxEngine
 
         world->createSystem("Engine:Clean")
              .inGroup("Pipeline:PostFrame")
-             .execute([](ecs::World * world)
+             .execute([](ecs::World *)
              {
                  RxCore::JobManager::instance().clean();
                  RxCore::threadResources.freeAllResources();
@@ -151,7 +150,7 @@ namespace RxEngine
 
         world->createSystem("Engine:ECSMain")
              .inGroup("Pipeline:UpdateUi")
-             .execute([this](ecs::World * world)
+             .execute([this](ecs::World *)
              {
                  OPTICK_EVENT("Engine GUI")
                  updateEntityGui();
@@ -174,11 +173,9 @@ namespace RxEngine
     void EngineMain::startup()
     {
         loadConfig();
-        uint32_t height = 1080;
-        uint32_t width = 1920;
 
-        width = getUint32ConfigValue("window", "width", 1280);
-        height = getUint32ConfigValue("window", "height", 768);
+        uint32_t width = getUint32ConfigValue("window", "width", 1280);
+        uint32_t height = getUint32ConfigValue("window", "height", 768);
 
         if (width <= 0) {
             width = 800;
