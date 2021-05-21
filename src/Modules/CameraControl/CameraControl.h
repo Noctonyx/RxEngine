@@ -14,6 +14,10 @@ namespace RxEngine
         void shutdown() override;
 
     private :
-        bool  movingCamera = false;
+        bool movingCamera = false;
+        bool forwardDown_ = false;
+        bool backwardDown_ = false;
+        bool rightDown_ = false;
+        bool leftDown_ = false;
     };
 }
