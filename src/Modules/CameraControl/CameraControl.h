@@ -12,5 +12,8 @@ namespace RxEngine
 
         void startup() override;
         void shutdown() override;
+
+    private :
+        bool  movingCamera = false;
     };
 }

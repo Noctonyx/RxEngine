@@ -220,17 +220,22 @@ namespace RxEngine
 
     void Window::mousePosition(float x_pos, float y_pos, int32_t mods)
     {
+        float deltaX = x_pos - cursorX;
+        float deltaY = y_pos - cursorY;
         cursorX = x_pos;
         cursorY = y_pos;
 
         if (world_) {
+            float delta = world_->deltaTime();
+
             world_->getStream<MousePosition>()->add<MousePosition>({
-                x_pos, y_pos, static_cast<RxEngine::EInputMod>(mods)
+                x_pos, y_pos,
+                deltaX / delta / 50.0f / 180.f * DirectX::XM_2PI,
+                deltaY / delta / 50.0f / 180.f * DirectX::XM_2PI,
+                static_cast<RxEngine::EInputMod>(mods)
             });
 
             auto mouse_status = world_->getSingletonUpdate<MouseStatus>();
-
-            float delta = world_->deltaTime();
 
             auto deltaMouseX = (cursorX - mouse_status->mouseX) / delta / 50.0f / 180.f *
                 DirectX::XM_2PI;
@@ -340,14 +345,14 @@ namespace RxEngine
         world->set<ComponentGui>(world->getComponentId<MouseStatus>(), {.editor = mouseStatusUi});
 
         world->createSystem("Window:ResetDeltas")
-            .inGroup("Pipeline:PostFrame")
-            .withWrite<MouseStatus>()
-            .execute([](ecs::World* w)
-                {
-                    auto ms = w->getSingletonUpdate<MouseStatus>();
-                    ms->deltaMouseX = 0.f;
-                    ms->deltaMouseY = 0.f;
-                });
+             .inGroup("Pipeline:PostFrame")
+             .withWrite<MouseStatus>()
+             .execute([](ecs::World * w)
+             {
+                 auto ms = w->getSingletonUpdate<MouseStatus>();
+                 ms->deltaMouseX = 0.f;
+                 ms->deltaMouseY = 0.f;
+             });
     }
 
     void Window::setCursor(ECursorStandard standard)
@@ -373,7 +378,8 @@ namespace RxEngine
             GLFW_CURSOR,
             hidden ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
         if (!hidden) {
-            setCursorPosition(static_cast<int32_t>(cursorX), static_cast<int32_t>(cursorY)); // DirectX::XMFLOAT2{ pos_.x, pos_.y });
+            setCursorPosition(static_cast<int32_t>(cursorX), static_cast<int32_t>(cursorY));
+            // DirectX::XMFLOAT2{ pos_.x, pos_.y });
         }
         hidden_ = hidden;
     }

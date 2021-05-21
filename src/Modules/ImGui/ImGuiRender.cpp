@@ -444,7 +444,7 @@ namespace RxEngine
     {
         ImGui::DockSpaceOverViewport(
             0, ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingInCentralNode);
-#if 1
+#if 0
         if (showDemoWindow_) {
             ImGui::ShowDemoWindow(&showDemoWindow_);
         }

@@ -209,6 +209,9 @@ namespace RxEngine
         float x;
         float y;
 
+        float deltaX;
+        float deltaY;
+
         EInputMod mods;
     };
 

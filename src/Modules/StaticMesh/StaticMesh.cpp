@@ -412,7 +412,7 @@ namespace RxEngine
                     auto tx = XMLoadFloat4x4(&wt->transform);
                     vp->boundingSphere.Transform(bs, tx);
 
-                    if (!frustum->frustum.Contains(bs)) {
+                    if (!frustum->frustum.Intersects(bs)) {
                         return;
                     }
                     for (auto& sm : vp->subMeshEntities) {

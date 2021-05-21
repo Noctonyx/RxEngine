@@ -362,12 +362,12 @@ namespace RxEngine
                 for (auto pg: pgs) {
                     ImGui::TableNextRow();
                     ImGui::TableNextColumn();
-                    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
-                    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f));
-                    ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0.5, 0.6f, 0.6f));
+                    //ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
+                    //ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f));
+                    //ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0.5, 0.6f, 0.6f));
 
                     ImGui::Button(world->description(pg).c_str());
-                    ImGui::PopStyleColor();
+                    //ImGui::PopStyleColor();
                     auto g = world->get<ecs::SystemGroup>(pg);
                     if (g) {
                         for (auto e : g->systems) {
