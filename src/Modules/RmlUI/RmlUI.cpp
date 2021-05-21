@@ -6,10 +6,7 @@
 
 namespace RxEngine
 {
-    void RmlUiModule::registerModule()
-    {
-     
-    }
+    void RmlUiModule::registerModule() { }
 
     void RmlUiModule::startup()
     {
@@ -29,19 +26,19 @@ namespace RxEngine
         Rml::Lua::Initialise();
 
         world_->createSystem("RmlUI:Resize")
-            .withStream<WindowResize>()
-            .execute<WindowResize>(
-                [&](ecs::World *, const WindowResize* resize)
-                {
-                    rmlRender->setDirty();
-                    return false;
-                }
-        );
+              .withStream<WindowResize>()
+              .execute<WindowResize>(
+                  [&](ecs::World *, const WindowResize * resize)
+                  {
+                      rmlRender->setDirty();
+                      return false;
+                  }
+              );
     }
 
     void RmlUiModule::shutdown()
     {
-        world_->lookup("RmlUI:Resize").destroy();
+        world_->deleteSystem(world_->lookup("RmlUI:Resize"));
 
         Rml::Shutdown();
 
@@ -50,8 +47,5 @@ namespace RxEngine
         rmlFile.reset();
     }
 
-    void RmlUiModule::deregisterModule()
-    {
-    
-    }
+    void RmlUiModule::deregisterModule() { }
 }

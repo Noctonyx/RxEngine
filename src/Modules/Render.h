@@ -1,7 +1,6 @@
 #pragma once
 
 #include <RxECS.h>
-#include "./Mesh.h"
 #include "DirectXCollision.h"
 #include "SerialisationData.h"
 #include "Vulkan/CommandBuffer.hpp"

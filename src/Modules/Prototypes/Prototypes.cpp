@@ -1,6 +1,7 @@
 #include "Prototypes.h"
 
 #include "imgui.h"
+#include "Modules/Mesh/Mesh.h"
 #include "Modules/StaticMesh/StaticMesh.h"
 #include "Modules/Transforms/Transforms.h"
 #include "Modules/WorldObject/WorldObject.h"
@@ -77,7 +78,7 @@ namespace RxEngine
             std::string m = objectDetails.get<std::string>("mesh");
             uint32_t smi = objectDetails.get<uint32_t>("submesh_id");
 
-            auto meshEntity = world->lookup(m).get<StaticMesh>();
+            auto meshEntity = world->lookup(m).get<Mesh>();
             assert(meshEntity);
             assert(meshEntity->subMeshes.size() > smi);
 

@@ -7,6 +7,7 @@
 
 namespace RxEngine
 {
+#if 0
     struct StaticMeshBundle
     {
         std::shared_ptr<RxCore::Buffer> vertexBuffer;
@@ -36,7 +37,8 @@ namespace RxEngine
 
         std::vector<ecs::entity_t> subMeshes;
     };
-
+#endif
+#if 0
     struct SubMesh
     {
         uint32_t indexOffset;
@@ -58,14 +60,15 @@ namespace RxEngine
     {
         
     };
-
+#endif
+#if 0
     struct MeshObject
     {
         uint32_t vertexCount;
         uint32_t indexCount;
         std::string meshFile;
     };
-
+#endif
     struct StaticMeshActiveBundle
     {
         ecs::entity_t currentBundle = 0;
@@ -86,7 +89,7 @@ namespace RxEngine
         float pad3;
         float pad4;
     };
-
+#if 0
     struct RenderDetailCache {
         ecs::entity_t bundle;
         uint32_t bundleEntry;
@@ -99,7 +102,7 @@ namespace RxEngine
         ecs::entity_t material;
         DirectX::BoundingSphere boundSphere;
     };
-
+#endif
     struct RenderingInstance
     {
         ecs::entity_t pipeline;
@@ -156,7 +159,7 @@ namespace RxEngine
                                  const std::shared_ptr<RxCore::SecondaryCommandBuffer> & buf) const;
 
     private:
-        std::shared_ptr<RxCore::DescriptorSet> set0_;
+        //std::shared_ptr<RxCore::DescriptorSet> set0_;
         //std::shared_ptr<RxCore::DescriptorSet> set1;
         //std::shared_ptr<RxCore::DescriptorSet> set2;
         ecs::EntityHandle pipeline_;

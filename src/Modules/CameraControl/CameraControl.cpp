@@ -105,7 +105,6 @@ namespace RxEngine
                   return false;
               });
 
-
         world_->createSystem("Camera:Move")
               .inGroup("Pipeline:Update")
               .execute([this](ecs::World * world)
