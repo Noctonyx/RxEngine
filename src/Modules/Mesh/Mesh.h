@@ -13,24 +13,24 @@ namespace RxEngine
         std::shared_ptr<RxCore::IndexBuffer> indexBuffer;
         std::shared_ptr<RxCore::DescriptorSet> descriptorSet;
 
-        uint32_t vertexSize;
+        uint32_t vertexSize{};
 
-        uint32_t vertexCount;
-        uint32_t indexCount;
+        uint32_t vertexCount{};
+        uint32_t indexCount{};
 
-        uint32_t maxIndexCount;
-        uint32_t maxVertexCount;
+        uint32_t maxIndexCount{};
+        uint32_t maxVertexCount{};
 
-        bool useDescriptor;
+        bool useDescriptor{};
 
         std::vector<ecs::entity_t> entries;
     };
 
     struct Mesh
     {
-        uint32_t vertexOffset;
-        uint32_t indexOffset;
-        uint32_t indexCount;
+        uint32_t vertexOffset{};
+        uint32_t indexOffset{};
+        uint32_t indexCount{};
 
         DirectX::BoundingSphere boundSphere;
 
@@ -44,22 +44,14 @@ namespace RxEngine
         uint32_t subMeshIndex;
     };
 
-    struct InBundle : ecs::Relation
+    struct InBundle : ecs::Relation { };
+
+    struct SubMeshOf : ecs::Relation { };
+
+    struct UsesMaterial : ecs::Relation { };
+
+    struct RenderDetailCache
     {
-
-    };
-
-    struct SubMeshOf : ecs::Relation
-    {
-
-    };
-
-    struct UsesMaterial : ecs::Relation
-    {
-
-    };
-
-    struct RenderDetailCache {
         ecs::entity_t bundle;
         uint32_t bundleEntry;
         ecs::entity_t shadowPipeline;
@@ -72,12 +64,13 @@ namespace RxEngine
         DirectX::BoundingSphere boundSphere;
     };
 
-    class MeshModule: public Module
+    class MeshModule final : public Module
     {
     public:
         MeshModule(ecs::World * world, EngineMain * engine)
             : Module(world, engine) {}
 
+        void registerModule() override;
         void startup() override;
         void shutdown() override;
     };

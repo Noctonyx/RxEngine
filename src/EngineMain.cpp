@@ -30,29 +30,8 @@ namespace RxEngine
 {
     class StatsModule;
 
-    void EngineMain::setupWorld()
+    void EngineMain::bootModules()
     {
-        world->newEntity("Pipeline:PreFrame").set<ecs::SystemGroup>({1, false, 0.0f, 0.0f});
-        world->newEntity("Pipeline:Early").set<ecs::SystemGroup>({2, false, 0.0f, 0.0f});
-        world->newEntity("Pipeline:FixedUpdate").set<ecs::SystemGroup>({3, true, 0.0f, 0.02f});
-        world->newEntity("Pipeline:Update").set<ecs::SystemGroup>({4, false, 0.0f, 0.0f});
-        world->newEntity("Pipeline:UpdateUi").set<ecs::SystemGroup>({5, false, 0.0f, 0.0f});
-        world->newEntity("Pipeline:PostUpdate").set<ecs::SystemGroup>({6, false, 0.0f, 0.0f});
-        world->newEntity("Pipeline:PreRender").set<ecs::SystemGroup>({7, false, 0.0f, 0.0f});
-        world->newEntity("Pipeline:Render").set<ecs::SystemGroup>({8, false, 0.0f, 0.0f});
-        world->newEntity("Pipeline:PostRender").set<ecs::SystemGroup>({9, false, 0.0f, 0.0f});
-        world->newEntity("Pipeline:PostFrame").set<ecs::SystemGroup>({10, false, 0.0f, 0.0f});
-
-        window_->setWorld(world.get());
-
-        lua = new sol::state();
-
-        setupLuaEnvironment();
-        loadLuaFile("/lua/engine");
-        for (auto & sf: configFiles) {
-            loadLuaFile(sf);
-        }
-
         modules.push_back(std::make_shared<Renderer>(device_->VkDevice(), world.get(),
                                                      swapChain_->imageFormat(), this));
 
@@ -68,7 +47,13 @@ namespace RxEngine
         addModule<SceneCameraModule>();
         addModule<LightingModule>();
         addModule<EnvironmentModule>();
-        addModule<CameraControlModule>();
+        //addModule<CameraControlModule>();
+
+        for (auto & um: userModules) {
+            modules.push_back(um);
+        }
+
+        userModules.clear();
 
         for (auto & m: modules) {
             m->registerModule();
@@ -85,9 +70,10 @@ namespace RxEngine
         for (auto & m: modules) {
             m->enable();
         }
+    }
 
-        startTime = std::chrono::high_resolution_clock::now();
-
+    void EngineMain::createSystems()
+    {
         world->createSystem("Engine:OnResize")
              .withStream<WindowResize>()
              .inGroup("Pipeline:PostUpdate")
@@ -157,19 +143,22 @@ namespace RxEngine
                  OPTICK_EVENT("Engine GUI")
                  updateEntityGui();
              });
+    }
 
-        world->set<ComponentGui>(world->getComponentId<ecs::Name>(), {.editor = ecsNameGui});
-        world->set<ComponentGui>(world->getComponentId<ecs::SystemGroup>(),
-                                 {.editor = ecsSystemGroupGui});
-        world->set<ComponentGui>(world->getComponentId<WindowDetails>(),
-                                 {.editor = ecsWindowDetailsGui});
-        world->set<ComponentGui>(world->getComponentId<EngineTime>(), {.editor = ecsEngineTimeGui});
-        world->set<ComponentGui>(world->getComponentId<ecs::StreamComponent>(),
-                                 {.editor = ecsStreamComponentGui});
-        world->set<ComponentGui>(world->getComponentId<ecs::System>(), {.editor = ecsSystemGui});
-        world->set<ComponentGui>(world->getComponentId<ecs::Component>(),
-                                 {.editor = ecsComponentGui});
-        world->set<ComponentGui>(world->getComponentId<FrameStats>(), {.editor = frameStatsGui});
+    void EngineMain::setupWorld()
+    {
+        world->newEntity("Pipeline:PreFrame").set<ecs::SystemGroup>({1, false, 0.0f, 0.0f});
+        world->newEntity("Pipeline:Early").set<ecs::SystemGroup>({2, false, 0.0f, 0.0f});
+        world->newEntity("Pipeline:FixedUpdate").set<ecs::SystemGroup>({3, true, 0.0f, 0.02f});
+        world->newEntity("Pipeline:Update").set<ecs::SystemGroup>({4, false, 0.0f, 0.0f});
+        world->newEntity("Pipeline:UpdateUi").set<ecs::SystemGroup>({5, false, 0.0f, 0.0f});
+        world->newEntity("Pipeline:PostUpdate").set<ecs::SystemGroup>({6, false, 0.0f, 0.0f});
+        world->newEntity("Pipeline:PreRender").set<ecs::SystemGroup>({7, false, 0.0f, 0.0f});
+        world->newEntity("Pipeline:Render").set<ecs::SystemGroup>({8, false, 0.0f, 0.0f});
+        world->newEntity("Pipeline:PostRender").set<ecs::SystemGroup>({9, false, 0.0f, 0.0f});
+        world->newEntity("Pipeline:PostFrame").set<ecs::SystemGroup>({10, false, 0.0f, 0.0f});
+
+        window_->setWorld(world.get());
     }
 
     void EngineMain::startup()
@@ -210,6 +199,34 @@ namespace RxEngine
         timer_ = std::chrono::high_resolution_clock::now();
 
         setupWorld();
+
+        lua = new sol::state();
+
+        setupLuaEnvironment();
+        loadLuaFile("/lua/engine");
+        for (auto& sf : configFiles) {
+            loadLuaFile(sf);
+        }
+    }
+
+    void EngineMain::loadModules()
+    {
+        bootModules();
+        createSystems();
+        world->set<ComponentGui>(world->getComponentId<ecs::Name>(), { .editor = ecsNameGui });
+        world->set<ComponentGui>(world->getComponentId<ecs::SystemGroup>(),
+            { .editor = ecsSystemGroupGui });
+        world->set<ComponentGui>(world->getComponentId<WindowDetails>(),
+            { .editor = ecsWindowDetailsGui });
+        world->set<ComponentGui>(world->getComponentId<EngineTime>(), { .editor = ecsEngineTimeGui });
+        world->set<ComponentGui>(world->getComponentId<ecs::StreamComponent>(),
+            { .editor = ecsStreamComponentGui });
+        world->set<ComponentGui>(world->getComponentId<ecs::System>(), { .editor = ecsSystemGui });
+        world->set<ComponentGui>(world->getComponentId<ecs::Component>(),
+            { .editor = ecsComponentGui });
+        world->set<ComponentGui>(world->getComponentId<FrameStats>(), { .editor = frameStatsGui });
+
+
     }
 
     void EngineMain::shutdown()
@@ -269,6 +286,8 @@ namespace RxEngine
 
     void EngineMain::run()
     {
+        startTime = std::chrono::high_resolution_clock::now();
+
         while (!window_->shouldClose()) {
             update();
         }
@@ -291,6 +310,11 @@ namespace RxEngine
         return device_->createBuffer(
             vk::BufferUsageFlagBits::eStorageBuffer,
             VMA_MEMORY_USAGE_CPU_TO_GPU, size);
+    }
+
+    void EngineMain::addUserModule(std::shared_ptr<Module> module)
+    {
+        userModules.push_back(module);
     }
 
     void EngineMain::replaceSwapChain()

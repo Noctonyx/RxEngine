@@ -40,10 +40,10 @@ add_library(RxEngine STATIC
         src/EngineMain.cpp
         src/Window.cpp
         src/Window.hpp
-        src/Rendering/RenderMesh.h
+        
         src/Modules/Renderer/Renderer.hpp
         src/Modules/Renderer/Renderer.cpp
-        src/Rendering/RenderData.h
+        
         #src/FastNoiseLite.h
         src/Geometry/Camera.hpp
         src/Modules/RmlUI/RmlSystemInterface.cpp
@@ -86,8 +86,8 @@ add_library(RxEngine STATIC
         src/Modules/Environment/Environment.cpp
         src/Modules/Lighting/Lighting.h 
         src/Modules/Lighting/Lighting.cpp 
-        src/Modules/CameraControl/CameraControl.h
-        src/Modules/CameraControl/CameraControl.cpp
+        #src/Modules/CameraControl/CameraControl.h
+        #src/Modules/CameraControl/CameraControl.cpp
         src/Modules/DynamicMesh/DynamicMesh.h
         src/Modules/DynamicMesh/DynamicMesh.cpp
         src/Modules/Mesh/Mesh.h

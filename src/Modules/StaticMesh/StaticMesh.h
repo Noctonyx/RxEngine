@@ -103,7 +103,7 @@ namespace RxEngine
         DirectX::BoundingSphere boundSphere;
     };
 #endif
-    struct RenderingInstance
+    struct StaticInstance
     {
         ecs::entity_t pipeline;
         ecs::entity_t bundle;
@@ -141,7 +141,7 @@ namespace RxEngine
         uint8_t selectedLod;
     };
 #endif
-    class StaticMeshModule : public Module
+    class StaticMeshModule final : public Module
     {
     public:
         StaticMeshModule(ecs::World * world, EngineMain * engine)
@@ -162,7 +162,7 @@ namespace RxEngine
         //std::shared_ptr<RxCore::DescriptorSet> set0_;
         //std::shared_ptr<RxCore::DescriptorSet> set1;
         //std::shared_ptr<RxCore::DescriptorSet> set2;
-        ecs::EntityHandle pipeline_;
-        ecs::queryid_t worldObjects;
+        ecs::EntityHandle pipeline_{};
+        ecs::queryid_t worldObjects_{};
     };
 }

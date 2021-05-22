@@ -70,8 +70,12 @@ namespace RxEngine
             shutdown();
         }
 
+        void bootModules();
+        void createSystems();
         void setupWorld();
         void startup();
+        void loadModules();
+
         //void setActiveScene(std::shared_ptr<Scene> scene);
         void run();
         void update();
@@ -122,6 +126,8 @@ namespace RxEngine
         [[nodiscard]] std::shared_ptr<RxCore::Buffer> createUniformBuffer(size_t size) const;
         [[nodiscard]] std::shared_ptr<RxCore::Buffer> createStorageBuffer(size_t size) const;
 
+        void addUserModule(std::shared_ptr<Module> module);
+
     protected:
         void replaceSwapChain();
         void createSemaphores(uint32_t semaphoreCount);
@@ -155,6 +161,7 @@ namespace RxEngine
         //std::unique_ptr<EntityManager> entityManager_;
 
         std::vector<std::shared_ptr<Module>> modules;
+        std::vector<std::shared_ptr<Module>> userModules;
 
         std::vector<vk::Semaphore> submitCompleteSemaphores_;
         std::chrono::time_point<std::chrono::steady_clock> timer_;

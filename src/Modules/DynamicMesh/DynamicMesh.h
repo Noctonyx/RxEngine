@@ -7,7 +7,35 @@
 
 namespace RxEngine
 {
-    struct StaticInstanceBuffers
+    struct DynamicMeshActiveBundle
+    {
+        ecs::entity_t currentBundle = 0;
+    };
+
+    struct DynamicMeshVertex
+    {
+        DirectX::XMFLOAT3 point;
+        float pad1;
+        DirectX::XMFLOAT3 normal;
+        float pad2;
+        DirectX::XMFLOAT2 uv;
+        float pad3;
+        float pad4;
+    };
+
+    struct DynamicInstance
+    {
+        ecs::entity_t pipeline;
+        ecs::entity_t bundle;
+        uint32_t vertexOffset;
+        uint32_t indexOffset;
+        uint32_t indexCount;
+        ecs::entity_t material;
+        uint32_t matrixIndex;
+        //DirectX::XMFLOAT4X4 mat;
+    };
+
+    struct DynamicInstanceBuffers
     {
         uint32_t count;
         std::vector<std::shared_ptr<RxCore::Buffer>> buffers;

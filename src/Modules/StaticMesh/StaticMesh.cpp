@@ -7,7 +7,6 @@
 #include "Modules/Materials/Materials.h"
 #include "Modules/Prototypes/Prototypes.h"
 #include "Modules/RTSCamera/RTSCamera.h"
-#include "Modules/Transforms/Transforms.h"
 #include "Modules/WorldObject/WorldObject.h"
 #include "sol/state.hpp"
 #include "sol/table.hpp"
@@ -15,97 +14,13 @@
 #include "Modules/SceneCamera/SceneCamera.h"
 #include "Modules/Mesh/Mesh.h"
 
-using namespace DirectX;
-
 namespace RxEngine
 {
     struct SceneCamera;
 
-    void staticMeshBundleGui(ecs::World *, void * ptr)
-    {
-        auto mesh_bundle = static_cast<MeshBundle *>(ptr);
-
-        if (mesh_bundle) {
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("Vertex Size");
-            ImGui::TableNextColumn();
-            ImGui::Text("%d", mesh_bundle->vertexSize);
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("Vertex Count");
-            ImGui::TableNextColumn();
-            ImGui::Text("%d/%d", mesh_bundle->vertexCount, mesh_bundle->maxVertexCount);
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("Index Count");
-            ImGui::TableNextColumn();
-            ImGui::Text("%d/%d", mesh_bundle->indexCount, mesh_bundle->maxIndexCount);
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("Mesh Count");
-            ImGui::TableNextColumn();
-            ImGui::Text("%lld", mesh_bundle->entries.size());
-        }
-    }
-
-    void meshPrimitiveGui(ecs::World *, void * ptr)
-    {
-        auto mesh = static_cast<Mesh *>(ptr);
-
-        if (mesh) {
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("Vertex Offset");
-            ImGui::TableNextColumn();
-            ImGui::Text("%d", mesh->vertexOffset);
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("Index Offset");
-            ImGui::TableNextColumn();
-            ImGui::Text("%d", mesh->indexOffset);
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("Index Count");
-            ImGui::TableNextColumn();
-            ImGui::Text("%d", mesh->indexCount);
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("SphereBounds");
-            ImGui::TableNextColumn();
-            ImGui::Text("(%.2f,%.2f,%.2f) %.2f", mesh->boundSphere.Center.x,
-                        mesh->boundSphere.Center.y, mesh->boundSphere.Center.z,
-                        mesh->boundSphere.Radius);
-        }
-    }
-
-    void subMeshGui(ecs::World *, void * ptr)
-    {
-        auto sub_mesh = static_cast<SubMesh *>(ptr);
-
-        if (sub_mesh) {
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("Index Offset");
-            ImGui::TableNextColumn();
-            ImGui::Text("%d", sub_mesh->indexOffset);
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("Index Count");
-            ImGui::TableNextColumn();
-            ImGui::Text("%d", sub_mesh->indexCount);
-        }
-    }
-
     void StaticMeshModule::registerModule()
     {
         world_->addSingleton<StaticMeshActiveBundle>();
-        world_->set<ComponentGui>(world_->getComponentId<MeshBundle>(),
-                                  ComponentGui{.editor = staticMeshBundleGui});
-        world_->set<ComponentGui>(world_->getComponentId<Mesh>(),
-                                  ComponentGui{.editor = meshPrimitiveGui});
-        world_->set<ComponentGui>(world_->getComponentId<SubMesh>(),
-                                  ComponentGui{.editor = subMeshGui});
     }
 
     void StaticMeshModule::startup()
@@ -119,13 +34,20 @@ namespace RxEngine
         sib->buffers.resize(5);
         sib->descriptorSets.resize(5);
 
-        RxCore::DescriptorPoolTemplate poolTemplate({{vk::DescriptorType::eStorageBuffer, 10}}, 10);
+        const RxCore::DescriptorPoolTemplate pool_template(
+            {
+                {
+                    vk::DescriptorType::eStorageBuffer,
+                    10
+                }
+            }, 10);
+
         auto pl = world_->lookup("layout/general").get<PipelineLayout>();
 
         for (uint32_t i = 0; i < sib->count; i++) {
 
             sib->descriptorSets[i] = RxCore::threadResources.getDescriptorSet(
-                poolTemplate, pl->dsls[2]);
+                pool_template, pl->dsls[2]);
         }
 
         world_->createSystem("StaticMesh:Render")
@@ -141,16 +63,15 @@ namespace RxEngine
                   createOpaqueRenderCommands();
               });
 
-     
 
         //        world_->createSystem("StaticMesh:Render")
         //      .inGroup("Pipeline:PreRender")
         //     .withQuery<Sta>()
 
-        worldObjects = world_->createQuery()
-                             .with<WorldObject, WorldTransform, HasVisiblePrototype>()
-                             //.withRelation<HasVisiblePrototype, VisiblePrototype>()
-                             .withInheritance(true).id;
+        worldObjects_ = world_->createQuery()
+                              .with<WorldObject, WorldTransform, HasVisiblePrototype>()
+                              //.withRelation<HasVisiblePrototype, VisiblePrototype>()
+                              .withInheritance(true).id;
 
         pipeline_ = world_->lookup("pipeline/staticmesh_opaque");
     }
@@ -179,10 +100,16 @@ namespace RxEngine
             VMA_MEMORY_USAGE_GPU_ONLY, static_cast<uint32_t>(mb->maxVertexCount * sizeof(uint32_t)),
             false);
 
-        RxCore::DescriptorPoolTemplate poolTemplate({{vk::DescriptorType::eStorageBuffer, 10}}, 10);
+        const RxCore::DescriptorPoolTemplate pool_template(
+            {
+                {
+                    vk::DescriptorType::eStorageBuffer,
+                    10
+                }
+            }, 10);
 
         auto pl = world->lookup("layout/general").get<PipelineLayout>();
-        mb->descriptorSet = RxCore::threadResources.getDescriptorSet(poolTemplate, pl->dsls[1]);
+        mb->descriptorSet = RxCore::threadResources.getDescriptorSet(pool_template, pl->dsls[1]);
         mb->descriptorSet->
             updateDescriptor(0, vk::DescriptorType::eStorageBuffer, mb->vertexBuffer);
 
@@ -192,7 +119,8 @@ namespace RxEngine
 
     ecs::entity_t getActiveMeshBundle(ecs::World * world)
     {
-        auto smab = world->getSingleton<StaticMeshActiveBundle>();
+        const auto smab = world->getSingleton<StaticMeshActiveBundle>();
+
         if (world->isAlive(smab->currentBundle)) {
             return smab->currentBundle;
         }
@@ -234,16 +162,16 @@ namespace RxEngine
         auto vertices = details.get<uint32_t>("vertices");
         auto indices = details.get<uint32_t>("indices");
 
-        std::vector<StaticMeshVertex> meshVertices(vertices);
-        std::vector<uint32_t> meshIndices(indices);
+        std::vector<StaticMeshVertex> mesh_vertices(vertices);
+        std::vector<uint32_t> mesh_indices(indices);
 
         RxAssets::MeshSaveData msd;
 
         RxAssets::Loader::loadMesh(msd, meshFile);
 
-        std::copy(msd.indices.begin(), msd.indices.end(), meshIndices.begin());
+        std::copy(msd.indices.begin(), msd.indices.end(), mesh_indices.begin());
         std::transform(
-            msd.vertices.begin(), msd.vertices.end(), meshVertices.begin(),
+            msd.vertices.begin(), msd.vertices.end(), mesh_vertices.begin(),
             [](RxAssets::MeshSaveVertex & m)
             {
                 return StaticMeshVertex{
@@ -256,7 +184,7 @@ namespace RxEngine
         {
             auto smb = world->get<MeshBundle>(mb);
 
-            if (meshVertices.size() + smb->vertexCount > smb->maxVertexCount || meshIndices.size() +
+            if (mesh_vertices.size() + smb->vertexCount > smb->maxVertexCount || mesh_indices.size() +
                 smb->indexCount > smb->maxIndexCount) {
                 mb = createStaticMeshBundle(world);
                 world->getSingletonUpdate<StaticMeshActiveBundle>()->currentBundle = mb;
@@ -270,11 +198,11 @@ namespace RxEngine
                                        .set<Mesh>({
                                            .vertexOffset = smb->vertexCount,
                                            .indexOffset = smb->indexCount,
-                                           .indexCount = static_cast<uint32_t>(meshIndices.size())
+                                           .indexCount = static_cast<uint32_t>(mesh_indices.size())
                                        })
                                        .set<InBundle>({{mb}});
 
-        copyToBuffers(meshVertices, meshIndices, smb);
+        copyToBuffers(mesh_vertices, mesh_indices, smb);
 
         smb->entries.push_back(static_mesh_entity.id);
 
@@ -335,7 +263,7 @@ namespace RxEngine
 
     void StaticMeshModule::createOpaqueRenderCommands()
     {
-        OPTICK_CATEGORY("Render Static", ::Optick::Category::Rendering);
+        OPTICK_CATEGORY("Render Static", ::Optick::Category::Rendering)
 
         auto pipeline = pipeline_.get<GraphicsPipeline>();
 
@@ -352,31 +280,32 @@ namespace RxEngine
 
         std::vector<ecs::entity_t> entities;
 
-        std::vector<RenderingInstance> instances;
-        std::vector<XMFLOAT4X4> mats;
+        std::vector<StaticInstance> instances;
+        std::vector<DirectX::XMFLOAT4X4> mats;
         {
             //auto vpc = world_->getComponentId<VisiblePrototype>();
             OPTICK_EVENT("Collect instances")
-            auto res = world_->getResults(worldObjects);
+            auto res = world_->getResults(worldObjects_);
             instances.reserve(res.count());
             mats.reserve(res.count());
             res.each<WorldTransform, HasVisiblePrototype>(
                 [&](ecs::EntityHandle e,
-                    const WorldTransform* wt, const HasVisiblePrototype * vpp)
+                    const WorldTransform * wt,
+                    const HasVisiblePrototype * vpp)
                 {
                     auto vp = world_->get<VisiblePrototype>(vpp->entity);
                     //OPTICK_EVENT("Process Entity")
                     if (!vp) {
                         return;
                     }
-                    BoundingSphere bs;
+                    DirectX::BoundingSphere bs;
                     auto tx = XMLoadFloat4x4(&wt->transform);
                     vp->boundingSphere.Transform(bs, tx);
 
                     if (!frustum->frustum.Intersects(bs)) {
                         return;
                     }
-                    for (auto& sm : vp->subMeshEntities) {
+                    for (auto & sm: vp->subMeshEntities) {
                         auto rdc = world_->get<RenderDetailCache>(sm);
                         if (!rdc || !rdc->opaquePipeline) {
                             return;
@@ -387,7 +316,7 @@ namespace RxEngine
                         instances.push_back({
                             rdc->opaquePipeline, rdc->bundle, rdc->vertexOffset, rdc->indexOffset,
                             rdc->indexCount, rdc->material, static_cast<uint32_t>(ix)
-                            });
+                        });
                     }
                 });
         }
@@ -395,7 +324,7 @@ namespace RxEngine
             OPTICK_EVENT("Sort Instances")
             std::ranges::sort(
                 instances,
-                [](const auto& a, const auto& b)
+                [](const auto & a, const auto & b)
                 {
                     if (a.pipeline < b.pipeline) {
                         return true;
@@ -498,8 +427,8 @@ namespace RxEngine
         buf->begin(pipeline->renderPass, pipeline->subPass);
         {
             buf->useLayout(layout->layout);
-            OPTICK_GPU_CONTEXT(buf->Handle());
-            OPTICK_GPU_EVENT("Draw StaticMesh");
+            OPTICK_GPU_CONTEXT(buf->Handle())
+            OPTICK_GPU_EVENT("Draw StaticMesh")
             buf->BindDescriptorSet(0, ds0->ds);
 
             buf->setScissor(
