@@ -70,6 +70,7 @@ namespace RxEngine
 
         worldObjects_ = world_->createQuery()
                               .with<WorldObject, WorldTransform, HasVisiblePrototype>()
+                              .withJob()
                               //.withRelation<HasVisiblePrototype, VisiblePrototype>()
                               .withInheritance(true).id;
 
@@ -184,7 +185,8 @@ namespace RxEngine
         {
             auto smb = world->get<MeshBundle>(mb);
 
-            if (mesh_vertices.size() + smb->vertexCount > smb->maxVertexCount || mesh_indices.size() +
+            if (mesh_vertices.size() + smb->vertexCount > smb->maxVertexCount || mesh_indices.size()
+                +
                 smb->indexCount > smb->maxIndexCount) {
                 mb = createStaticMeshBundle(world);
                 world->getSingletonUpdate<StaticMeshActiveBundle>()->currentBundle = mb;
@@ -280,14 +282,23 @@ namespace RxEngine
 
         std::vector<ecs::entity_t> entities;
 
-        std::vector<StaticInstance> instances;
-        std::vector<DirectX::XMFLOAT4X4> mats;
+        std::mutex g;
+        std::atomic<size_t> ix = 0;
+        //std::vector<StaticInstance> instances;
+        //std::vector<DirectX::XMFLOAT4X4> mats;
         {
             //auto vpc = world_->getComponentId<VisiblePrototype>();
-            OPTICK_EVENT("Collect instances")
+            OPTICK_EVENT("Collect instances")            
             auto res = world_->getResults(worldObjects_);
-            instances.reserve(res.count());
-            mats.reserve(res.count());
+            {
+                OPTICK_EVENT("Resize");
+                if (instances.size() < res.count() * 2) {
+                    instances.resize(res.count() * 2);
+                    mats.resize(res.count() * 2);
+                }
+            }
+            
+            
             res.each<WorldTransform, HasVisiblePrototype>(
                 [&](ecs::EntityHandle e,
                     const WorldTransform * wt,
@@ -310,20 +321,27 @@ namespace RxEngine
                         if (!rdc || !rdc->opaquePipeline) {
                             return;
                         }
-                        size_t ix = mats.size();
-                        mats.push_back(wt->transform);
+                        {
+                            size_t ix2 = ix++;
+                            //size_t ix = mats.size();
+                            mats[ix2] = wt->transform;
 
-                        instances.push_back({
-                            rdc->opaquePipeline, rdc->bundle, rdc->vertexOffset, rdc->indexOffset,
-                            rdc->indexCount, rdc->material, static_cast<uint32_t>(ix)
-                        });
+                            instances[ix2] = {
+                                rdc->opaquePipeline, rdc->bundle, rdc->vertexOffset,
+                                rdc->indexOffset,
+                                rdc->indexCount, rdc->material, static_cast<uint32_t>(ix2)
+                            };
+                        }
                     }
                 });
+            //mats.resize(ix);
+            //instances.resize(ix);
         }
         {
             OPTICK_EVENT("Sort Instances")
-            std::ranges::sort(
-                instances,
+            std::sort(
+                instances.begin(),
+                instances.begin()+ix,
                 [](const auto & a, const auto & b)
                 {
                     if (a.pipeline < b.pipeline) {
@@ -354,7 +372,9 @@ namespace RxEngine
             uint32_t headerIndex = 0;
             uint32_t commandIndex = 0;
 
-            for (auto & instance: instances) {
+            for(size_t i = 0; i < ix; i++){
+                auto& instance = instances[i];
+
                 if (prevPL != instance.pipeline || instance.bundle != prevBundle) {
 
                     headerIndex = static_cast<uint32_t>(ids.headers.size());

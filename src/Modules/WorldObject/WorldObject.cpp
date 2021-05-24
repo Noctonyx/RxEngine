@@ -11,6 +11,7 @@ namespace RxEngine
         world_->createSystem("WorldObject:CreateTransform")
               .withQuery<WorldObject, Transforms::WorldPosition>()
               .inGroup("Pipeline:PostUpdate")
+              .withJob()
               //.withSwitchValue<DirtyTransform>(1)
               .each<Transforms::WorldPosition, Transforms::LocalRotation, WorldTransform>(
                   [](ecs::EntityHandle e,
@@ -34,7 +35,7 @@ namespace RxEngine
                           return;
                       }
                       XMStoreFloat4x4(&wt->transform, nm);
-                   //   e.setSwitch<DirtyTransform>(0);
+                      //   e.setSwitch<DirtyTransform>(0);
                   });
     }
 

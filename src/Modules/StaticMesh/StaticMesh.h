@@ -164,5 +164,8 @@ namespace RxEngine
         //std::shared_ptr<RxCore::DescriptorSet> set2;
         ecs::EntityHandle pipeline_{};
         ecs::queryid_t worldObjects_{};
+
+        std::vector<StaticInstance> instances;
+        std::vector<DirectX::XMFLOAT4X4> mats;
     };
 }
