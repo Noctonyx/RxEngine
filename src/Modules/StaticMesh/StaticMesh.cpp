@@ -280,15 +280,14 @@ namespace RxEngine
         auto scene_camera = world_->getSingleton<SceneCamera>();
         auto frustum = world_->get<CameraFrustum>(scene_camera->camera);
 
-        std::vector<ecs::entity_t> entities;
+        DirectX::XMVECTOR planes[6];
+        frustum->frustum.GetPlanes(&planes[0], &planes[1], &planes[2], &planes[3], &planes[4],
+                                   &planes[5]);
 
         std::mutex g;
         std::atomic<size_t> ix = 0;
-        //std::vector<StaticInstance> instances;
-        //std::vector<DirectX::XMFLOAT4X4> mats;
         {
-            //auto vpc = world_->getComponentId<VisiblePrototype>();
-            OPTICK_EVENT("Collect instances")            
+            OPTICK_EVENT("Collect instances")
             auto res = world_->getResults(worldObjects_);
             {
                 OPTICK_EVENT("Resize");
@@ -297,8 +296,7 @@ namespace RxEngine
                     mats.resize(res.count() * 2);
                 }
             }
-            
-            
+
             res.each<WorldTransform, HasVisiblePrototype>(
                 [&](ecs::EntityHandle e,
                     const WorldTransform * wt,
@@ -313,8 +311,14 @@ namespace RxEngine
                     auto tx = XMLoadFloat4x4(&wt->transform);
                     vp->boundingSphere.Transform(bs, tx);
 
-                    if (!frustum->frustum.Intersects(bs)) {
-                        return;
+                    for (size_t i = 0; i < 6; i++) {
+                        DirectX::XMVECTOR c = DirectX::XMLoadFloat3(&bs.Center);
+                        c = DirectX::XMVectorSetW(c, 1.f);
+
+                        DirectX::XMVECTOR Dist = DirectX::XMVector4Dot(c, planes[i]);
+                        if (DirectX::XMVectorGetX(Dist) > bs.Radius) {
+                            return;
+                        }
                     }
                     for (auto & sm: vp->subMeshEntities) {
                         auto rdc = world_->get<RenderDetailCache>(sm);
@@ -334,14 +338,12 @@ namespace RxEngine
                         }
                     }
                 });
-            //mats.resize(ix);
-            //instances.resize(ix);
         }
         {
             OPTICK_EVENT("Sort Instances")
             std::sort(
                 instances.begin(),
-                instances.begin()+ix,
+                instances.begin() + ix,
                 [](const auto & a, const auto & b)
                 {
                     if (a.pipeline < b.pipeline) {
@@ -372,8 +374,8 @@ namespace RxEngine
             uint32_t headerIndex = 0;
             uint32_t commandIndex = 0;
 
-            for(size_t i = 0; i < ix; i++){
-                auto& instance = instances[i];
+            for (size_t i = 0; i < ix; i++) {
+                auto & instance = instances[i];
 
                 if (prevPL != instance.pipeline || instance.bundle != prevBundle) {
 
