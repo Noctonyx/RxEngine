@@ -11,7 +11,6 @@
 #include "Modules/Renderer/Renderer.hpp"
 
 #include "Modules/Module.h"
-#include "Modules/CameraControl/CameraControl.h"
 #include "Modules/Environment/Environment.h"
 #include "Modules/ImGui/ImGuiRender.hpp"
 #include "Modules/Lighting/Lighting.h"
@@ -47,7 +46,6 @@ namespace RxEngine
         addModule<SceneCameraModule>();
         addModule<LightingModule>();
         addModule<EnvironmentModule>();
-        //addModule<CameraControlModule>();
 
         for (auto & um: userModules) {
             modules.push_back(um);
@@ -161,7 +159,7 @@ namespace RxEngine
         window_->setWorld(world.get());
     }
 
-    void EngineMain::startup()
+    void EngineMain::startup(const char * windowTitle)
     {
         loadConfig();
 
@@ -176,8 +174,9 @@ namespace RxEngine
         }
 
         world = std::make_unique<ecs::World>();
+        world->setJobInterface(&jobAdapter);
 
-        window_ = std::make_unique<Window>(width, height, "RX");
+        window_ = std::make_unique<Window>(width, height, windowTitle);
 
         device_ = std::make_unique<RxCore::Device>(window_->GetWindow());
 
@@ -204,7 +203,7 @@ namespace RxEngine
 
         setupLuaEnvironment();
         loadLuaFile("/lua/engine");
-        for (auto& sf : configFiles) {
+        for (auto & sf: configFiles) {
             loadLuaFile(sf);
         }
     }
@@ -213,20 +212,18 @@ namespace RxEngine
     {
         bootModules();
         createSystems();
-        world->set<ComponentGui>(world->getComponentId<ecs::Name>(), { .editor = ecsNameGui });
+        world->set<ComponentGui>(world->getComponentId<ecs::Name>(), {.editor = ecsNameGui});
         world->set<ComponentGui>(world->getComponentId<ecs::SystemGroup>(),
-            { .editor = ecsSystemGroupGui });
+                                 {.editor = ecsSystemGroupGui});
         world->set<ComponentGui>(world->getComponentId<WindowDetails>(),
-            { .editor = ecsWindowDetailsGui });
-        world->set<ComponentGui>(world->getComponentId<EngineTime>(), { .editor = ecsEngineTimeGui });
+                                 {.editor = ecsWindowDetailsGui});
+        world->set<ComponentGui>(world->getComponentId<EngineTime>(), {.editor = ecsEngineTimeGui});
         world->set<ComponentGui>(world->getComponentId<ecs::StreamComponent>(),
-            { .editor = ecsStreamComponentGui });
-        world->set<ComponentGui>(world->getComponentId<ecs::System>(), { .editor = ecsSystemGui });
+                                 {.editor = ecsStreamComponentGui});
+        world->set<ComponentGui>(world->getComponentId<ecs::System>(), {.editor = ecsSystemGui});
         world->set<ComponentGui>(world->getComponentId<ecs::Component>(),
-            { .editor = ecsComponentGui });
-        world->set<ComponentGui>(world->getComponentId<FrameStats>(), { .editor = frameStatsGui });
-
-
+                                 {.editor = ecsComponentGui});
+        world->set<ComponentGui>(world->getComponentId<FrameStats>(), {.editor = frameStatsGui});
     }
 
     void EngineMain::shutdown()

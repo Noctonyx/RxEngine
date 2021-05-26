@@ -52,9 +52,32 @@ namespace RxEngine
         float delta;
         float totalElapsed;
     };
+
     struct ComponentGui
     {
         std::function<void(ecs::World *, void *)> editor;
+    };
+    
+    struct RxJobAdaptor : ecs::JobInterface
+    {
+        JobHandle create(std::function<void()> f) override {
+            return RxCore::CreateJob<void>(f);
+        }
+
+        void schedule(JobHandle job_handle) override {
+            auto x = std::static_pointer_cast<RxCore::Job<void>>(job_handle);
+            x->schedule();
+        }
+
+        bool isComplete(JobHandle job_handle) const override {
+            auto x = std::static_pointer_cast<RxCore::Job<void>>(job_handle);
+            return x->isCompleted();
+        }
+
+        void awaitCompletion(JobHandle job_handle) override {
+            auto x = std::static_pointer_cast<RxCore::Job<void>>(job_handle);
+            x->waitComplete();
+        }
     };
 
     class EngineMain
@@ -73,7 +96,7 @@ namespace RxEngine
         void bootModules();
         void createSystems();
         void setupWorld();
-        void startup();
+        void startup(const char * windowTitle);
         void loadModules();
 
         //void setActiveScene(std::shared_ptr<Scene> scene);
@@ -112,14 +135,14 @@ namespace RxEngine
                                       uint32_t defaultValue);
 
 
-        void addInitConfigFile(const std::string& config);
+        void addInitConfigFile(const std::string & config);
 
         [[nodiscard]] ecs::World * getWorld() const
         {
             return world.get();
         }
 
-        template<class T>
+        template <class T>
         void addModule();
 
         [[nodiscard]] size_t getUniformBufferAlignment(size_t size) const;
@@ -140,15 +163,15 @@ namespace RxEngine
         void ecsMainMenu(bool & show_entity_window,
                          bool & show_systems_window,
                          bool & show_singletons_window);
-        void ecsInspectorShowTableDetails(ecs::EntityHandle& selectedEntity,
+        void ecsInspectorShowTableDetails(ecs::EntityHandle & selectedEntity,
                                           ecs::Table * table) const;
-        void ecsInspectorIsAEntity(ecs::EntityHandle entity, ecs::EntityHandle& selectedEntity);
-        void ecsInspectorEntityComponents(ecs::EntityHandle entity, ecs::EntityHandle& selectedEntity);
+        void ecsInspectorIsAEntity(ecs::EntityHandle entity, ecs::EntityHandle & selectedEntity);
+        void ecsInspectorEntityComponents(ecs::EntityHandle entity,
+                                          ecs::EntityHandle & selectedEntity);
         void ecsInspectorEntityWindow(bool & show_entity_window);
         void ecsSingletonsWindow(bool & show_singletons_window);
         void showSystemsGui(bool & showWindow);
         void updateEntityGui();
-
 
 
     private:
@@ -177,6 +200,7 @@ namespace RxEngine
         mINI::INIStructure iniData;
 
         std::unique_ptr<ecs::World> world;
+        RxJobAdaptor jobAdapter;
     };
 
     template <class T>
@@ -210,14 +234,13 @@ namespace RxEngine
 #endif
     }
 
-    void ecsNameGui(ecs::World* world, void* ptr);
-    void ecsComponentGui(ecs::World* world, void* ptr);
-    void ecsSystemGroupGui(ecs::World* world, void* ptr);
-    void ecsWindowDetailsGui(ecs::World* world, void* ptr);
-    void ecsEngineTimeGui(ecs::World* world, void* ptr);
-    void ecsSystemGui(ecs::World* world, void* ptr);
-    void ecsStreamComponentGui(ecs::World* world, void* ptr);
-    void frameStatsGui(ecs::World* world, void* ptr);
-
+    void ecsNameGui(ecs::World * world, void * ptr);
+    void ecsComponentGui(ecs::World * world, void * ptr);
+    void ecsSystemGroupGui(ecs::World * world, void * ptr);
+    void ecsWindowDetailsGui(ecs::World * world, void * ptr);
+    void ecsEngineTimeGui(ecs::World * world, void * ptr);
+    void ecsSystemGui(ecs::World * world, void * ptr);
+    void ecsStreamComponentGui(ecs::World * world, void * ptr);
+    void frameStatsGui(ecs::World * world, void * ptr);
 }
 #endif //RX_ENGINEMAIN_HPP

@@ -376,7 +376,7 @@ namespace RxEngine
                             ImGui::TableNextColumn();
                             ImGui::Text("%s", world->description(e).c_str());
                             ImGui::TableNextColumn();
-                            ImGui::Text("%s",sys->enabled> 0.9f ? "Active" : "Inactive");
+                            ImGui::Text("%s",sys->enabled ? "Active" : "Inactive");
                             ImGui::TableNextColumn();
                             ImGui::Text("%lld", sys->count);
                             ImGui::TableNextColumn();
