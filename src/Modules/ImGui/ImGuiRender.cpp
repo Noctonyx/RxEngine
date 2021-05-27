@@ -32,7 +32,7 @@ namespace RxEngine
         fontImage_.reset();
         set0_.reset();
     }
-    
+
     void IMGuiRender::startup()
     {
         auto wd = world_->getSingleton<WindowDetails>();
@@ -48,6 +48,9 @@ namespace RxEngine
               .execute([&, this](ecs::World * world)
               {
                   OPTICK_EVENT("ImGui:UpdateGui")
+                  if (!enabled) {
+                     // return;
+                  }
                   this->updateGui();
               });
 
@@ -55,9 +58,12 @@ namespace RxEngine
               .withStream<WindowResize>()
               .inGroup("Pipeline:PreFrame")
               //.label<UiContextUpdate>()
-              .execute<WindowResize>([](ecs::World * world, const WindowResize * resize)
+              .execute<WindowResize>([this](ecs::World * world, const WindowResize * resize)
               {
                   OPTICK_EVENT("ImGui:WindowResize")
+                  if (!enabled) {
+                      //return false;
+                  }
 
                   ImGuiIO & io = ImGui::GetIO();
                   io.DisplaySize = ImVec2(
@@ -69,9 +75,13 @@ namespace RxEngine
         world_->createSystem("ImGui:MousePos")
               .withStream<MousePosition>()
               .inGroup("Pipeline:PreFrame")
-              .execute<MousePosition>([](ecs::World * world, const MousePosition * pos)
+              .execute<MousePosition>([this](ecs::World * world, const MousePosition * pos)
               {
                   OPTICK_EVENT("ImGui:MousePos")
+                  if (!enabled) {
+                      return false;
+                  }
+
                   auto & io = ImGui::GetIO();
                   io.MousePos = ImVec2(pos->x, pos->y);
                   if (io.WantCaptureMouse) {
@@ -83,9 +93,13 @@ namespace RxEngine
         world_->createSystem("ImGui:MouseButton")
               .withStream<MouseButton>()
               .inGroup("Pipeline:PreFrame")
-              .execute<MouseButton>([](ecs::World * world, const MouseButton * button)
+              .execute<MouseButton>([this](ecs::World * world, const MouseButton * button)
               {
                   OPTICK_EVENT()
+                  if (!enabled) {
+                      return false;
+                  }
+
                   auto & io = ImGui::GetIO();
                   if (io.WantCaptureMouse) {
                       io.MouseDown[static_cast<int>(button->button)] = button->pressed;
@@ -97,9 +111,13 @@ namespace RxEngine
         world_->createSystem("ImGui:MouseScroll")
               .withStream<MouseScroll>()
               .inGroup("Pipeline:PreFrame")
-              .execute<MouseScroll>([](ecs::World * world, const MouseScroll * s)
+              .execute<MouseScroll>([this](ecs::World * world, const MouseScroll * s)
               {
                   OPTICK_EVENT()
+                  if (!enabled) {
+                      return false;
+                  }
+
                   auto & io = ImGui::GetIO();
                   if (io.WantCaptureMouse) {
                       io.MouseWheel += s->y_offset;
@@ -111,11 +129,15 @@ namespace RxEngine
         world_->createSystem("ImGui:Key")
               .withStream<KeyboardKey>()
               .inGroup("Pipeline:PreFrame")
-              .execute<KeyboardKey>([](ecs::World * world, const KeyboardKey * key)
+              .execute<KeyboardKey>([this](ecs::World * world, const KeyboardKey * key)
               {
                   OPTICK_EVENT()
+                  if (!enabled) {
+                      return false;
+                  }
+
                   auto & io = ImGui::GetIO();
-                 
+
                   if (key->action == EInputAction::Press) {
                       io.KeysDown[static_cast<int>(key->key)] = true;
                   }
@@ -139,9 +161,13 @@ namespace RxEngine
         world_->createSystem("ImGui:Char")
               .withStream<KeyboardChar>()
               .inGroup("Pipeline:PreFrame")
-              .execute<KeyboardChar>([](ecs::World * world, const KeyboardChar * c)
+              .execute<KeyboardChar>([this](ecs::World * world, const KeyboardChar * c)
               {
                   OPTICK_EVENT("ImGui:Char")
+                  if (!enabled) {
+                      return false;
+                  }
+
                   auto & io = ImGui::GetIO();
                   if (!io.WantCaptureKeyboard) {
                       return false;
@@ -156,6 +182,10 @@ namespace RxEngine
               .execute([this](ecs::World * world)
               {
                   OPTICK_EVENT("ImGui:NewFrame")
+                  if (!enabled) {
+                     // return;
+                  }
+
                   update(world->deltaTime());
               });
 
@@ -164,6 +194,10 @@ namespace RxEngine
               .execute([this](ecs::World *)
               {
                   OPTICK_EVENT("Imgui:Render")
+                  if (!enabled) {
+                      return;
+                  }
+
                   createRenderCommands();
               });
 

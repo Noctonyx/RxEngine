@@ -7,15 +7,15 @@
 
 #include <unordered_map>
 #include <vector>
-//#include "glm/vec2.hpp"
-//#include "glm/vec4.hpp"
-//#include "glm/mat4x4.hpp"
-//#include "glm/common.hpp"
 #include "DirectXMath.h"
 #include "Vulkan/Vulk.hpp"
 #include <RmlUi/Core/RenderInterface.h>
-//#include "Rendering/Renderer.hpp"
+#include "EntityHandle.h"
 #include "Vulkan/DescriptorPool.hpp"
+
+namespace ecs {
+    class World;
+}
 
 namespace RxCore
 {
@@ -33,8 +33,6 @@ namespace RxEngine
 
     struct UiRenderEntry
     {
-        //std::vector<Rml::Vertex> vertices;
-        //std::vector<uint32_t> indices;
         size_t vertexOffset;
         size_t indexOffset;
         size_t indexCount;
@@ -60,11 +58,11 @@ namespace RxEngine
         DirectX::XMFLOAT4X4 transform;
     };
 
-    class RmlRenderInterface : public Rml::RenderInterface
+    class RmlRenderInterface final : public Rml::RenderInterface
     {
     public:
         RmlRenderInterface();
-        virtual ~RmlRenderInterface();
+        ~RmlRenderInterface() override;
         void RenderGeometry(
             Rml::Vertex * vertices,
             int numVertices,
@@ -90,24 +88,13 @@ namespace RxEngine
         void SetTransform(const Rml::Matrix4f * transform) override;
 
         void resetRender();
-        //void readyRender();
-#if 0
-        void rendererInit(Renderer * renderer) override;
-        RenderResponse renderUi(
-            const RenderStage & stage,
-            const uint32_t width,
-            const uint32_t height) override;
-        bool hasRenderUi() const override;
-#endif
+        void renderUi(ecs::World* world);
         void setDirty() { dirtyTextures = true;}
 
-        //std::vector<RenderEntity> getRenderEntities() override;
     private:
 
         std::tuple<std::shared_ptr<RxCore::VertexBuffer>, std::shared_ptr<RxCore::IndexBuffer>> CreateBuffers() const;
 
-        //std::unordered_map<std::string, uint32_t> textureIndex_;
-        //std::unordered_map<uintptr_t,RenderImageEntry> imageEntries_;
         std::unordered_map<uintptr_t, RenderTextureEntry> textureEntries_;
         bool dirtyTextures{true};
 
@@ -123,13 +110,11 @@ namespace RxEngine
         std::shared_ptr<RxCore::DescriptorSet> currentDescriptorSet;
         std::unordered_map<uintptr_t, uint32_t> textureSamplerMap;
 
-        vk::DescriptorSetLayout dsl0;
-        vk::PipelineLayout pipelineLayout;
-        vk::Pipeline pipeline;
-        std::vector<vk::ShaderModule> shaders;
+        std::shared_ptr<RxCore::DescriptorSet> set0_;
+        ecs::EntityHandle pipeline_;
 
         std::shared_ptr<RxCore::Buffer> ub_;
-        //DirectX::XMFLOAT4X4 projectionMatrix_{};
+        DirectX::XMFLOAT4X4 projectionMatrix_{};
     };
 }
 

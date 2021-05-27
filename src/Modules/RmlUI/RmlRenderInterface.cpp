@@ -9,7 +9,12 @@
 #include <AssetException.h>
 #include "RmlRenderInterface.h"
 #include "Log.h"
+#include "Window.hpp"
+#include "World.h"
+#include "Modules/Render.h"
+#include "Modules/Materials/Materials.h"
 #include "Vulkan/CommandBuffer.hpp"
+#include "Vulkan/ThreadResources.h"
 
 using namespace DirectX;
 
@@ -231,111 +236,18 @@ namespace RxEngine
         indices_.clear();
         renders.clear();
     }
-#if 0
-    void RmlRenderInterface::rendererInit(Renderer * renderer)
+
+    void RmlRenderInterface::renderUi(ecs::World * world)
     {
-        auto render_stage = renderer->getSequenceRenderStage(RenderSequenceUi);
+        if (!world->isAlive(pipeline_)) {
+            pipeline_ = world->lookup("pipeline/rmlui");
+        }
+        auto wd = world->getSingleton<WindowDetails>();
+        auto layout = pipeline_.getRelated<UsesLayout, PipelineLayout>();
 
-        const std::vector<vk::DescriptorSetLayoutBinding> layout_bindings = {
-            {
-                0, vk::DescriptorType::eUniformBuffer, 1,
-                vk::ShaderStageFlagBits::eVertex
-            },
-            {
-                1,
-                vk::DescriptorType::eCombinedImageSampler,
-                4096,
-                vk::ShaderStageFlagBits::eFragment
-            }
-        };
-
-        std::vector<vk::DescriptorBindingFlags> set1_binding_flags = {
-            {},
-            vk::DescriptorBindingFlagBits::eVariableDescriptorCount |
-            vk::DescriptorBindingFlagBits::ePartiallyBound |
-            vk::DescriptorBindingFlagBits::eUpdateAfterBind
-        };
-
-        vk::DescriptorSetLayoutBindingFlagsCreateInfo dslbfc{};
-        dslbfc.setBindingFlags(set1_binding_flags);
-        vk::DescriptorSetLayoutCreateInfo dslci1{
-            vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool,
-            layout_bindings
-        };
-
-        dslci1.setPNext(&dslbfc);
-
-        dsl0 = RxCore::iVulkan()->createDescriptorSetLayout(dslci1);
-        vk::PipelineLayoutCreateInfo plci{};
-        std::vector<vk::DescriptorSetLayout> set_layouts{dsl0};
-
-        std::vector<vk::PushConstantRange> pcr = {
-            {
-                vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
-                static_cast<uint32_t>(0),
-                static_cast<uint32_t>(sizeof(RmlPushConstantData))
-            }
-        };
-
-        //dsls.push_back(dsl0);
-        plci.setSetLayouts(set_layouts)
-            .setPushConstantRanges(pcr);
-
-        pipelineLayout = RxCore::iVulkan()->createPipelineLayout(plci);
-
-        RxCore::PipelineBuilder plb;
-
-        plb.setDepthMode(false, false);
-        plb.SetCullMode(RxCore::EPipelineCullMode::None);
-
-        RxAssets::ShaderData sd;
-        RxAssets::Loader::loadShader(sd, "/shaders/rml_vert.spv");
-        auto vs = RxCore::Device::VkDevice().createShaderModule(
-            {{}, uint32_t(sd.bytes.size() * 4), (uint32_t *) sd.bytes.data()});
-        RxAssets::Loader::loadShader(sd, "/shaders/rml_frag.spv");
-        auto fs = RxCore::Device::VkDevice().createShaderModule(
-            {{}, uint32_t(sd.bytes.size() * 4), (uint32_t *) sd.bytes.data()});
-
-        shaders.emplace_back(vs);
-        shaders.emplace_back(fs);
-        plb.addShader(vs, vk::ShaderStageFlagBits::eVertex);
-        plb.addShader(fs, vk::ShaderStageFlagBits::eFragment);
-
-        const std::vector<vk::VertexInputAttributeDescription> attributes = {
-            {
-                0, 0, vk::Format::eR32G32Sfloat,
-                static_cast<uint32_t>(offsetof(Rml::Vertex, position))
-            },
-            {
-                1, 0, vk::Format::eR8G8B8A8Unorm,
-                static_cast<uint32_t>(offsetof(Rml::Vertex, colour))
-            },
-            {
-                2, 0, vk::Format::eR32G32Sfloat,
-                static_cast<uint32_t>(offsetof(Rml::Vertex, tex_coord))
-            }
-        };
-        const std::vector<vk::VertexInputBindingDescription> bindings = {
-            {0, sizeof(Rml::Vertex), vk::VertexInputRate::eVertex}
-        };
-        plb.setVertexInputState(attributes, bindings);
-        plb.AddAttachmentColorBlending(true);
-        plb.setLayout(pipelineLayout);
-        plb.setRenderPass(render_stage.renderPass);
-        plb.setSubPass(render_stage.subPass);
-        plb.setDepthMode(false, false);
-        plb.SetCullMode(RxCore::EPipelineCullMode::None);
-        pipeline = plb.build();
-    }
-
-    RenderResponse RmlRenderInterface::renderUi(
-        const RenderStage & stage,
-        const uint32_t width,
-        const uint32_t height)
-    {
         if (dirtyTextures) {
-            auto descriptor_set = RxCore::JobManager::threadData().getDescriptorSet(
-                poolTemplate_, dsl0, {
+            auto descriptor_set = RxCore::threadResources.getDescriptorSet(
+                poolTemplate_, layout->dsls[0], {
                     static_cast<uint32_t>(textureEntries_.size())
                 });
 
@@ -344,7 +256,7 @@ namespace RxEngine
             textureSamplerMap.clear();
             for (auto & te: textureEntries_) {
                 auto ix = samplers.size();
-                samplers.push_back({ te.second.sampler, te.second.imageView });
+                samplers.push_back({te.second.sampler, te.second.imageView});
                 //sm.first = te.second.sampler;
                 //sm.second = te.second.imageView;
 
@@ -356,66 +268,66 @@ namespace RxEngine
                                                  samplers);
             }
 
-            //glm::mat4 proj(1.0f);
-            auto pm = XMMatrixOrthographicOffCenterRH(0.0f,
-                                                               static_cast<float>(width),
-                                                               0.0f,
-                                                               static_cast<float>(height),
-                                                               0.0f,
-                                                               10.0f);
-
-            XMStoreFloat4x4(&projectionMatrix_, pm);
-#if 0
-            projectionMatrix_ = glm::ortho(
+            auto pm = XMMatrixOrthographicOffCenterRH(
                 0.0f,
-                static_cast<float>(width),
+                static_cast<float>(wd->width),
                 0.0f,
-                static_cast<float>(height),
+                static_cast<float>(wd->height),
                 0.0f,
                 10.0f);
-#endif
+
+            XMStoreFloat4x4(&projectionMatrix_, pm);
+
             ub_ = RxCore::iVulkan()->createBuffer(
                 vk::BufferUsageFlagBits::eUniformBuffer,
                 VMA_MEMORY_USAGE_CPU_TO_GPU,
                 sizeof(XMFLOAT4X4),
                 &projectionMatrix_);
-            ub_->getMemory()->map();
+            ub_->map();
             descriptor_set->updateDescriptor(0, vk::DescriptorType::eUniformBuffer, ub_);
 
             currentDescriptorSet = descriptor_set;
             dirtyTextures = false;
         }
-
-        //projectionMatrix_ = glm::ortho(0.0f, static_cast<float>(width), 0.0f, static_cast<float>(height), 0.0f, 10.0f);
-        auto pm = XMMatrixOrthographicOffCenterRH(0.0f,
-                                                           static_cast<float>(width),
-                                                           0.0f,
-                                                           static_cast<float>(height),
-                                                           0.0f,
-                                                           10.0f);
+        auto pm = XMMatrixOrthographicOffCenterRH(
+            0.0f,
+            static_cast<float>(wd->width),
+            0.0f,
+            static_cast<float>(wd->height),
+            0.0f,
+            10.0f);
 
         XMStoreFloat4x4(&projectionMatrix_, pm);
-        ub_->getMemory()->update(&projectionMatrix_, sizeof(XMFLOAT4X4));
-        //ub_->up
-        auto buf = RxCore::JobManager::threadData().getCommandBuffer();
+        ub_->update(&projectionMatrix_, sizeof(XMFLOAT4X4));
+
+        auto pipeline = pipeline_.get<GraphicsPipeline>();
+
+        if (!pipeline) {
+            return;
+        }
+        assert(pipeline);
+        assert(pipeline->pipeline);
+
+        auto buf = RxCore::threadResources.getCommandBuffer();
 
         if (vertices_.empty()) {
-            return {};
+            return;
         }
         auto [vb, ib] = CreateBuffers();
 
-        buf->begin(stage.renderPass, stage.subPass);
+        buf->begin(pipeline->renderPass, pipeline->subPass);
         OPTICK_GPU_CONTEXT(buf->Handle());
         {
             OPTICK_GPU_EVENT("Draw RlmUi");
 
-            buf->useLayout(pipelineLayout);
-            buf->BindPipeline(pipeline);
+            buf->useLayout(layout->layout);
+            buf->bindPipeline(pipeline->pipeline->Handle());
             buf->BindDescriptorSet(0, currentDescriptorSet);
 
-            buf->BindVertexBuffer(vb);
-            buf->BindIndexBuffer(ib);
-            buf->setViewport(0, 0, static_cast<float>(width), static_cast<float>(height), 0, 1);
+            buf->bindVertexBuffer(vb);
+            buf->bindIndexBuffer(ib);
+            buf->setViewport(0, 0, static_cast<float>(wd->width), static_cast<float>(wd->height), 0,
+                             1);
 
             struct RmlPushConstantData pd{};
 
@@ -431,7 +343,7 @@ namespace RxEngine
                 if (rc.scissorEnable) {
                     buf->setScissor(rc.scissor);
                 } else {
-                    buf->setScissor({{0, 0}, {width, height}});
+                    buf->setScissor({{0, 0}, {wd->width, wd->height}});
                 }
                 buf->pushConstant(
                     vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
@@ -447,25 +359,17 @@ namespace RxEngine
             }
         }
         buf->end();
-        return {buf};
+        renders.clear();
+        vertices_.clear();
+        indices_.clear();
 
-        // return IRenderable::renderUi(stage, width, height);
+        world->getStream<Render::UiRenderCommand>()
+             ->add<Render::UiRenderCommand>({buf});
     }
 
-    bool RmlRenderInterface::hasRenderUi() const
-    {
-        return true;
-    }
-
-    void RmlRenderInterface::readyRender() { }
-#endif
     RmlRenderInterface::~RmlRenderInterface()
     {
-        for (auto & sm: shaders) {
-            RxCore::iVulkan()->getDevice().destroyShaderModule(sm);
-        }
         currentDescriptorSet.reset();
-        RxCore::iVulkan()->getDevice().destroyPipeline(pipeline);
     }
 
     std::tuple<std::shared_ptr<RxCore::VertexBuffer>, std::shared_ptr<RxCore::IndexBuffer>>
@@ -487,7 +391,6 @@ namespace RxEngine
         vb->unmap();
         ib->unmap();
 
-        return std::tuple<std::shared_ptr<RxCore::VertexBuffer>, std::shared_ptr<
-                              RxCore::IndexBuffer>>(vb, ib);
+        return std::tuple(vb, ib);
     }
 }

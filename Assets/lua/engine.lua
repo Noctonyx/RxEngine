@@ -10,6 +10,14 @@ data.shaders = {
         shader = "/shaders/shdr_imgui_frag.spv",
         stage = "frag"
     },
+    ["shader/rmlui_vert"] = {
+        shader = "/shaders/rml_vert.spv",
+        stage = "vert"
+    },
+    ["shader/rmlui_frag"] = {
+        shader = "/shaders/rml_frag.spv",
+        stage = "frag"
+    },
     ["shader/staticmesh_opaque_vert"] = {
         shader = "/shaders/staticmesh_opaque_vert.spv",
         stage = "vert"
@@ -18,7 +26,7 @@ data.shaders = {
         shader = "/shaders/staticmesh_opaque_frag.spv",
         stage = "frag"
     },
-}
+};
 
 data.pipeline_layouts = {
     ["layout/imgui"] = {
@@ -39,6 +47,36 @@ data.pipeline_layouts = {
                 stage = "vert",
                 offset = 0,
                 size = 16
+            }
+        }
+    },
+    ["layout/rmlui"] = {
+        ds_layouts = {
+            {
+                bindings = {
+                    {
+                        binding = 0,
+                        type = "uniform-buffer",
+                        stage = "vert",
+                        count = 1
+                    },
+                    {
+                        binding = 1,
+                        stage = "frag",
+                        count = 4096,
+                        type = "combined-sampler",
+                        variable = true,
+                        partially_bound = true,
+                        update_after = true
+                    },
+                }
+            }
+        },
+        push_constants = {
+            {
+                stage = "both",
+                offset = 0,
+                size = 144
             }
         }
     },
@@ -141,6 +179,23 @@ data.material_pipelines = {
         },
         renderStage = "opaque",
         vertices = {
+        }      
+    },
+    ["pipeline/rmlui"] = {
+        layout = "layout/rmlui",
+        vertexShader = "shader/rmlui_vert",
+        fragmentShader = "shader/rmlui_frag",
+        depthTestEnable = false,
+        depthWriteEnable = false,
+        cullMode = "none",
+        blends = {
+            {enable = true}
+        },
+        renderStage = "ui",
+        vertices = {
+            { type="float",  count=2, offset=0  },
+            { type="byte",   count=4, offset=8  },
+            { type="float",  count=2, offset=12 },
         }      
     },
 };

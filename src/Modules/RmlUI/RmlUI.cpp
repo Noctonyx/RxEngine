@@ -1,6 +1,7 @@
 #include "RmlUI.h"
 
 #include "Window.hpp"
+#include "optick/optick.h"
 #include "RmlUi/Core/Core.h"
 #include "RmlUi/Lua/Lua.h"
 
@@ -26,6 +27,7 @@ namespace RxEngine
         Rml::Lua::Initialise();
 
         world_->createSystem("RmlUI:Resize")
+              .inGroup("Pipeline:Update")
               .withStream<WindowResize>()
               .execute<WindowResize>(
                   [&](ecs::World *, const WindowResize * resize)
@@ -34,6 +36,14 @@ namespace RxEngine
                       return false;
                   }
               );
+
+        world_->createSystem("Rml:Render")
+              .inGroup("Pipeline:PreRender")
+              .execute([this](ecs::World *)
+              {
+                  OPTICK_EVENT("Rml:Render")
+                  rmlRender->renderUi(world_);
+              });
     }
 
     void RmlUiModule::shutdown()

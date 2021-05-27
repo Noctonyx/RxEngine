@@ -40,6 +40,7 @@ namespace RxEngine
         std::shared_ptr<RxCore::DescriptorSet> set0_;
         ecs::EntityHandle pipeline_;
 
+        bool enabled = false;
         //bool showDemoWindow_ = true;
         //bool showAnotherWindow_ = false;
     };

@@ -15,10 +15,6 @@ namespace RxEngine
     UiContext::UiContext(ecs::World * world, EngineMain * engine)
         : Module(world, engine)
     {
-        auto wd = world_->getSingleton<WindowDetails>();
-        context_ = Rml::CreateContext(
-            "MainUI", Rml::Vector2i(static_cast<int>(wd->width), static_cast<int>(wd->height)));
-        Rml::Debugger::Initialise(context_);
     }
 
     Rml::ElementDocument * UiContext::addDocument(const std::string & document)
@@ -61,9 +57,18 @@ namespace RxEngine
                           static_cast<int>(resize->height)
                       });
 
-                  context_->Update();
+                  //context_->Update();
                   return false;
               });
+
+        world_->createSystem("UiContext:WindowResize")            
+            .inGroup("Pipeline:PreRender")
+            .execute([&](ecs::World* )
+                {
+                    OPTICK_EVENT()
+
+                    context_->Update();
+                });
 
         world_->createSystem("UiContext:MousePos")
               .withStream<MousePosition>()
@@ -134,6 +139,13 @@ namespace RxEngine
                   OPTICK_EVENT()
                   return !context_->ProcessTextInput(c->c);
               });
+        auto wd = world_->getSingleton<WindowDetails>();
+        context_ = Rml::CreateContext(
+            "MainUI", Rml::Vector2i(static_cast<int>(wd->width), static_cast<int>(wd->height)));
+        Rml::Debugger::Initialise(context_);
+
+        auto document = context_->LoadDocument("/ui/test1.rml");
+        document->Show();
     }
 
     void UiContext::shutdown()
