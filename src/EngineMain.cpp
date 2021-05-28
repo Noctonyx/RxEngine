@@ -263,6 +263,7 @@ namespace RxEngine
 
         window_.reset();
         device_.reset();
+        RxAssets::vfs()->shutdown();
     }
 
     void EngineMain::update()
@@ -281,6 +282,9 @@ namespace RxEngine
         {
             OPTICK_EVENT("Window Updates")
             window_->Update(); // Collect the window events
+        }
+        if(RxAssets::vfs()->hasChanged()) {
+            RxAssets::vfs()->scan();
         }
 
         world->setSingleton<EngineTime>({delta_, totalElapsed_});
