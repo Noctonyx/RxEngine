@@ -20,7 +20,7 @@ namespace RxEngine
     Rml::ElementDocument * UiContext::addDocument(const std::string & document)
     {
         auto doc = context_->LoadDocument(document);
-        documents_.push_back(doc);
+        documents_.push_back({document, doc});
         doc->Show();
 
         return doc;
@@ -29,7 +29,7 @@ namespace RxEngine
     UiContext::~UiContext()
     {
         for (auto & d: documents_) {
-            d->Close();
+            d.second->Close();
         }
         documents_.clear();
     }
@@ -116,7 +116,15 @@ namespace RxEngine
                   }
                   if (key->key == EKey::F9 && key->action == EInputAction::Press) {
                       for (auto & d: documents_) {
-                          d->ReloadStyleSheet();
+                          d.second->ReloadStyleSheet();
+                      }
+                  }
+                  if (key->key == EKey::F10 && key->action == EInputAction::Press) {
+                      for (auto& d : documents_) {
+
+                          d.second->Close();
+                          d.second = context_->LoadDocument(d.first);
+                          d.second->Show();
                       }
                   }
                   if (key->action == EInputAction::Press) {
@@ -144,12 +152,17 @@ namespace RxEngine
             "MainUI", Rml::Vector2i(static_cast<int>(wd->width), static_cast<int>(wd->height)));
         Rml::Debugger::Initialise(context_);
 
-        auto document = context_->LoadDocument("/ui/test1.rml");
-        document->Show();
+        addDocument("/ui/test1.rml");
+        //document->Show();
     }
 
     void UiContext::shutdown()
     {
+        for (auto& d : documents_) {
+            d.second->Close();
+        }
+        documents_.clear();
+
         world_->deleteSystem(world_->lookup("UiContext:Render").id);
         world_->deleteSystem(world_->lookup("UiContext:WindowResize").id);
         world_->deleteSystem(world_->lookup("UiContext:MousePos").id);

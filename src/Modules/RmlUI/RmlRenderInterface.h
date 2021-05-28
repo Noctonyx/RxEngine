@@ -2,8 +2,7 @@
 // Created by shane on 19/02/2021.
 //
 
-#ifndef RX_RMLRENDERINTERFACE_H
-#define RX_RMLRENDERINTERFACE_H
+#pragma once
 
 #include <unordered_map>
 #include <vector>
@@ -117,5 +116,3 @@ namespace RxEngine
         DirectX::XMFLOAT4X4 projectionMatrix_{};
     };
 }
-
-#endif //RX_RMLRENDERINTERFACE_H

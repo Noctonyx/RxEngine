@@ -10,17 +10,21 @@
 		width: 500px;
 		height: 500px;
 		background-color: #ccc;
+		font-family: "Roboto";
 	}
 	div
 	{
 		display: block;
 		height: 150px;
 		width: 200px; 
-		background-color: #f00;
+		background-color: #ff0;
+		color: black;
+		margin: 20px;
+		padding: 20px;
 	}
 </style>
 </head>
 <body>
-	<div/>
+	<div>Hello stats</div>
 </body>
 </rml>

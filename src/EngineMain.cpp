@@ -37,6 +37,7 @@ namespace RxEngine
                                                      swapChain_->imageFormat(), this));
 
         addModule<MaterialsModule>();
+        addModule<IMGuiRender>();
         addModule<RmlUiModule>();
         addModule<UiContext>();
         //modules.push_back(std::make_shared<UiContext>(world.get(), this));
@@ -50,7 +51,6 @@ namespace RxEngine
         addModule<SceneCameraModule>();
         addModule<LightingModule>();
         addModule<EnvironmentModule>();
-        addModule<IMGuiRender>();
 
 
         for (auto & um: userModules) {
@@ -234,6 +234,9 @@ namespace RxEngine
 
     void EngineMain::shutdown()
     {
+        std::vector<std::shared_ptr<Module>> m1;
+
+        std::ranges::reverse(modules.begin(), modules.end());
         for (auto & m: modules) {
             m->disable();
         }

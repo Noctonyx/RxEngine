@@ -195,7 +195,7 @@ namespace RxEngine
               {
                   OPTICK_EVENT("Imgui:Render")
                   if (!enabled) {
-                      return;
+                      //return;
                   }
 
                   createRenderCommands();

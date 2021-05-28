@@ -29,6 +29,6 @@ namespace RxEngine
 
     private:
         Rml::Context * context_;
-        std::vector<Rml::ElementDocument *> documents_{};
+        std::vector<std::pair<std::string, Rml::ElementDocument *>> documents_{};
     };
 }
