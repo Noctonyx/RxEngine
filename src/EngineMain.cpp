@@ -18,7 +18,7 @@
 #include "Modules/Stats/Stats.h"
 #include "Modules/Prototypes/Prototypes.h"
 #include "Modules/RmlUI/RmlUI.h"
-#include "Modules/RmlUI/UiContext.h"
+//#include "Modules/RmlUI/UiContext.h"
 #include "Modules/RTSCamera/RTSCamera.h"
 #include "Modules/SceneCamera/SceneCamera.h"
 #include "Modules/StaticMesh/StaticMesh.h"
@@ -38,7 +38,7 @@ namespace RxEngine
 
         addModule<MaterialsModule>();
         addModule<RmlUiModule>();
-        addModule<UiContext>();
+        //addModule<UiContextModule>();
         addModule<IMGuiRender>();
         //modules.push_back(std::make_shared<UiContext>(world.get(), this));
         addModule<TransformsModule>();

@@ -41,11 +41,8 @@ add_library(RxEngine STATIC
         src/EngineMain.cpp
         src/Window.cpp
         src/Window.hpp
-        
         src/Modules/Renderer/Renderer.hpp
         src/Modules/Renderer/Renderer.cpp
-        
-        #src/FastNoiseLite.h
         src/Geometry/Camera.hpp
         src/Modules/RmlUI/RmlSystemInterface.cpp
         src/Modules/RmlUI/RmlSystemInterface.h
@@ -53,8 +50,6 @@ add_library(RxEngine STATIC
         src/Modules/RmlUI/RmlRenderInterface.h
         src/Modules/RmlUI/RmlFileInterface.cpp
         src/Modules/RmlUI/RmlFileInterface.h
-        src/Modules/RmlUI/UiContext.cpp
-        src/Modules/RmlUI/UiContext.h
         src/Rendering/MaterialManager.cpp
         src/ini.h
         src/Rendering/MaterialManager.h
