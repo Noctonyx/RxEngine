@@ -38,9 +38,7 @@ namespace RxEngine
 
         addModule<MaterialsModule>();
         addModule<RmlUiModule>();
-        //addModule<UiContextModule>();
         addModule<IMGuiRender>();
-        //modules.push_back(std::make_shared<UiContext>(world.get(), this));
         addModule<TransformsModule>();
         addModule<StatsModule>();
         addModule<MeshModule>();
@@ -50,8 +48,6 @@ namespace RxEngine
         addModule<RTSCameraModule>();
         addModule<SceneCameraModule>();
         addModule<LightingModule>();
-        addModule<EnvironmentModule>();
-
 
         for (auto & um: userModules) {
             modules.push_back(um);

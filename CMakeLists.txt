@@ -44,12 +44,6 @@ add_library(RxEngine STATIC
         src/Modules/Renderer/Renderer.hpp
         src/Modules/Renderer/Renderer.cpp
         src/Geometry/Camera.hpp
-        src/Modules/RmlUI/RmlSystemInterface.cpp
-        src/Modules/RmlUI/RmlSystemInterface.h
-        src/Modules/RmlUI/RmlRenderInterface.cpp
-        src/Modules/RmlUI/RmlRenderInterface.h
-        src/Modules/RmlUI/RmlFileInterface.cpp
-        src/Modules/RmlUI/RmlFileInterface.h
         src/Rendering/MaterialManager.cpp
         src/ini.h
         src/Rendering/MaterialManager.h
@@ -78,12 +72,8 @@ add_library(RxEngine STATIC
         src/Modules/Materials/Materials.cpp
         src/Modules/RTSCamera/RTSCamera.h 
         src/Modules/RTSCamera/RTSCamera.cpp 
-        src/Modules/Environment/Environment.h
-        src/Modules/Environment/Environment.cpp
         src/Modules/Lighting/Lighting.h 
         src/Modules/Lighting/Lighting.cpp 
-        #src/Modules/CameraControl/CameraControl.h
-        #src/Modules/CameraControl/CameraControl.cpp
         src/Modules/DynamicMesh/DynamicMesh.h
         src/Modules/DynamicMesh/DynamicMesh.cpp
         src/Modules/Mesh/Mesh.h
