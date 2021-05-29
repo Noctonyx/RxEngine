@@ -17,7 +17,7 @@ namespace RxEngine
     class IMGuiRender : public Module
     {
     public:
-        IMGuiRender(ecs::World* world, EngineMain* engine);
+        IMGuiRender(ecs::World * world, EngineMain * engine);
         ~IMGuiRender() override;
 
         void startup() override;
@@ -31,6 +31,11 @@ namespace RxEngine
 
         void createRenderCommands();
 
+        bool isEnabled() const  
+        {
+            return enabled;
+        }
+
     private:
         //std::vector<DelegateHandle> delegates_{};
         std::shared_ptr<RxCore::Image> fontImage_{};
@@ -40,8 +45,8 @@ namespace RxEngine
         std::shared_ptr<RxCore::DescriptorSet> set0_;
         ecs::EntityHandle pipeline_;
 
-        bool enabled = true;
-        bool showDemoWindow_ = true;
-        bool showAnotherWindow_ = false;
+        bool enabled = false;
+        //bool showDemoWindow_ = true;
+        //bool showAnotherWindow_ = false;
     };
 }

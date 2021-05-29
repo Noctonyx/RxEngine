@@ -118,6 +118,11 @@ namespace RxEngine
             loadLuaFile(f);
         });
 
+        lua->set("quitgame", [this]()
+            {
+                shouldQuit = true;
+            });
+
         //auto w = sol::make_light<flecs::world>(*world_);
         //auto e = sol::make_light<EngineMain>(*this);
         //lua["world"] = w.void_value();

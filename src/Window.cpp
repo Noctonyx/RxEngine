@@ -56,7 +56,7 @@ namespace RxEngine
     {
         auto wnd = static_cast<Window *>(glfwGetWindowUserPointer(window));
 
-        spdlog::info("Mouse Button = {}, pressed = {}", button, action);
+        //spdlog::info("Mouse Button = {}, pressed = {}", button, action);
         wnd->buttonAction(button, action == GLFW_PRESS, mods);
     }
 

@@ -294,7 +294,7 @@ namespace RxEngine
     {
         startTime = std::chrono::high_resolution_clock::now();
 
-        while (!window_->shouldClose()) {
+        while (!window_->shouldClose() && !shouldQuit) {
             update();
         }
     }

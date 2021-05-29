@@ -1,5 +1,6 @@
 #include "EngineMain.hpp"
 #include "imgui.h"
+#include "Modules/ImGui/ImGuiRender.hpp"
 
 namespace RxEngine
 {
@@ -446,6 +447,11 @@ namespace RxEngine
         static bool show_systems_window = getBoolConfigValue("editor", "ecsSystemsWindow", false);
         static bool show_singletons_window = getBoolConfigValue(
             "editor", "ecsSingletonsWindow", false);
+
+        auto& io = ImGui::GetIO();
+        if (io.UserData && !static_cast<IMGuiRender*>(io.UserData)->isEnabled()) {
+            return;
+        }
 
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("Subsystems")) {

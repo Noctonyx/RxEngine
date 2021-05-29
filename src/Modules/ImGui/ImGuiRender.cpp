@@ -24,6 +24,7 @@ namespace RxEngine
         ImGui::StyleColorsDark();
         ImGuiIO & io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+        io.UserData = this;
         setupInputs(io);
     };
 
@@ -132,6 +133,11 @@ namespace RxEngine
               .execute<KeyboardKey>([this](ecs::World * world, const KeyboardKey * key)
               {
                   OPTICK_EVENT()
+
+                  if(key->key == EKey::F1 && (key->mods == EInputMod::Control) && key->action == EInputAction::Press) {
+                      enabled = !enabled;
+                  }
+
                   if (!enabled) {
                       return false;
                   }
@@ -478,7 +484,7 @@ namespace RxEngine
     {
         ImGui::DockSpaceOverViewport(
             0, ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingInCentralNode);
-#if 1
+#if 0
         if (showDemoWindow_) {
             ImGui::ShowDemoWindow(&showDemoWindow_);
         }

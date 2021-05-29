@@ -3,6 +3,7 @@
 #include "imgui.h"
 #include "Modules/Transforms/Transforms.h"
 #include "RxECS.h"
+#include "Modules/ImGui/ImGuiRender.hpp"
 
 using namespace RxEngine::Transforms;
 using namespace DirectX;
@@ -136,6 +137,9 @@ namespace RxEngine
         const float DISTANCE = 5.0f;
 
         auto & io = ImGui::GetIO();
+        if(io.UserData && !static_cast<IMGuiRender *>(io.UserData)->isEnabled()) {
+            return;
+        }
         ImVec2 window_pos = ImVec2(
             io.DisplaySize.x - 2 * DISTANCE,
             io.DisplaySize.y - 2 * DISTANCE);

@@ -206,6 +206,8 @@ namespace RxEngine
 
         std::unique_ptr<ecs::World> world;
         RxJobAdaptor jobAdapter;
+
+        bool shouldQuit = false;
     };
 
     template <class T>

@@ -3,6 +3,7 @@
 #include "World.h"
 #include "imgui.h"
 #include "EngineMain.hpp"
+#include "Modules/ImGui/ImGuiRender.hpp"
 
 namespace RxEngine
 {
@@ -57,6 +58,9 @@ namespace RxEngine
         bool p_open = true;
         const float DISTANCE = 10.0f;
         auto & io = ImGui::GetIO();
+        if (io.UserData && !static_cast<IMGuiRender*>(io.UserData)->isEnabled()) {
+            return;
+        }
         ImVec2 window_pos = ImVec2(io.DisplaySize.x - 2, 2 * DISTANCE);
 
         fpsHistory_.push_back(delta_ * 1000.f);
