@@ -13,9 +13,7 @@
 namespace RxEngine
 {
     UiContext::UiContext(ecs::World * world, EngineMain * engine)
-        : Module(world, engine)
-    {
-    }
+        : Module(world, engine) { }
 
     Rml::ElementDocument * UiContext::addDocument(const std::string & document)
     {
@@ -38,9 +36,11 @@ namespace RxEngine
     {
         world_->createSystem("UiContext:Render")
               .inGroup("Pipeline:PreRender")
+              .withWrite<UiContextProcessed>()
               .execute([&](ecs::World * world)
               {
                   OPTICK_EVENT()
+                  context_->Update();
                   context_->Render();
               });
 
@@ -60,16 +60,16 @@ namespace RxEngine
                   //context_->Update();
                   return false;
               });
+#if 0
+        world_->createSystem("UiContext:WindowResize")
+              .inGroup("Pipeline:PreRender")
+              .execute([&](ecs::World *)
+              {
+                  OPTICK_EVENT()
 
-        world_->createSystem("UiContext:WindowResize")            
-            .inGroup("Pipeline:PreRender")
-            .execute([&](ecs::World* )
-                {
-                    OPTICK_EVENT()
-
-                    context_->Update();
-                });
-
+                  context_->Update();
+              });
+#endif
         world_->createSystem("UiContext:MousePos")
               .withStream<MousePosition>()
               .inGroup("Pipeline:Early")
@@ -120,7 +120,7 @@ namespace RxEngine
                       }
                   }
                   if (key->key == EKey::F10 && key->action == EInputAction::Press) {
-                      for (auto& d : documents_) {
+                      for (auto & d: documents_) {
 
                           d.second->Close();
                           d.second = context_->LoadDocument(d.first);
@@ -158,7 +158,7 @@ namespace RxEngine
 
     void UiContext::shutdown()
     {
-        for (auto& d : documents_) {
+        for (auto & d: documents_) {
             d.second->Close();
         }
         documents_.clear();

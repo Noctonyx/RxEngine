@@ -350,27 +350,34 @@ namespace RxEngine
 
             if (ImGui::BeginTable("Pipeline", 4,
                                   ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit |
-                                  ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg,
+                                  ImGuiTableFlags_ScrollY,// | ImGuiTableFlags_RowBg,
                                   ImVec2(0, 0))) {
                 ImGui::TableSetupColumn("Name");
                 ImGui::TableSetupColumn("Active");
-                ImGui::TableSetupColumn("Matched");
+                ImGui::TableSetupColumn("Count");
                 ImGui::TableSetupColumn("Time (ms)");
                 ImGui::TableSetupScrollFreeze(0, 1);
                 ImGui::TableHeadersRow();
 
                 for (auto pg: pgs) {
+                    auto sg = world->get<ecs::SystemGroup>(pg);
+
+                    ImGui::PushID(world->description(pg).c_str());
                     ImGui::TableNextRow();
                     ImGui::TableNextColumn();
                     //ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
                     //ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f));
-                    //ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0.5, 0.6f, 0.6f));
+                    ImGui::PushStyleColor(ImGuiCol_Text, static_cast<ImVec4>(ImColor(226, 255, 138)));
+                    bool open = ImGui::TreeNodeEx(world->description(pg).c_str(),ImGuiTreeNodeFlags_SpanFullWidth);
+                    ImGui::PopStyleColor(1);
 
-                    ImGui::Button(world->description(pg).c_str());
-                    //ImGui::PopStyleColor();
-                    auto g = world->get<ecs::SystemGroup>(pg);
-                    if (g) {
-                        for (auto e : g->systems) {
+                    ImGui::TableNextColumn();
+                    ImGui::TableNextColumn();
+                    ImGui::Text("%lld", sg->systems.size());
+                    ImGui::TableNextColumn();
+                    ImGui::Text("%.3f", sg->lastTime* 1000.f);
+                    if (sg && open) {
+                        for (auto e : sg->executionSequence) {
                             auto sys = world->get<ecs::System>(e);
                             ImGui::TableNextRow();
                             ImGui::TableNextColumn();
@@ -383,6 +390,21 @@ namespace RxEngine
                             ImGui::Text("%.3f", sys->executionTime * 1000.f);
                         }
                     }
+                    if (open) {
+                        ImGui::TableNextRow();
+                        ImGui::TableNextColumn();
+                        ImGui::PushStyleColor(ImGuiCol_Text, static_cast<ImVec4>(ImColor(138, 233, 255)));
+                        ImGui::Text("Deferred Processing");
+                        ImGui::PopStyleColor();
+
+                        ImGui::TableNextColumn();
+                        ImGui::TableNextColumn();
+                        ImGui::Text("%lld", sg->deferredCount);
+                        ImGui::TableNextColumn();
+                        ImGui::Text("%.3f", sg->deferredTime * 1000.f);
+                        ImGui::TreePop();
+                    }
+                    ImGui::PopID();
                 }
 #if 0
                 for (auto x : v) {

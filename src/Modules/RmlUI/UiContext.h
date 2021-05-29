@@ -12,6 +12,8 @@
 namespace RxEngine
 {
     enum class EInputMod;
+
+    struct UiContextProcessed{};
    
     class UiContext : public Module
     {

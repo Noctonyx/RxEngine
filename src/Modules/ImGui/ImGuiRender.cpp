@@ -49,7 +49,7 @@ namespace RxEngine
               {
                   OPTICK_EVENT("ImGui:UpdateGui")
                   if (!enabled) {
-                     // return;
+                     return;
                   }
                   this->updateGui();
               });
@@ -62,7 +62,7 @@ namespace RxEngine
               {
                   OPTICK_EVENT("ImGui:WindowResize")
                   if (!enabled) {
-                      //return false;
+                      return false;
                   }
 
                   ImGuiIO & io = ImGui::GetIO();
@@ -183,7 +183,7 @@ namespace RxEngine
               {
                   OPTICK_EVENT("ImGui:NewFrame")
                   if (!enabled) {
-                     // return;
+                     return;
                   }
 
                   update(world->deltaTime());
@@ -195,7 +195,7 @@ namespace RxEngine
               {
                   OPTICK_EVENT("Imgui:Render")
                   if (!enabled) {
-                      //return;
+                      return;
                   }
 
                   createRenderCommands();
@@ -478,7 +478,7 @@ namespace RxEngine
     {
         ImGui::DockSpaceOverViewport(
             0, ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingInCentralNode);
-#if 0
+#if 1
         if (showDemoWindow_) {
             ImGui::ShowDemoWindow(&showDemoWindow_);
         }

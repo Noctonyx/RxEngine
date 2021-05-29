@@ -37,9 +37,9 @@ namespace RxEngine
                                                      swapChain_->imageFormat(), this));
 
         addModule<MaterialsModule>();
-        addModule<IMGuiRender>();
         addModule<RmlUiModule>();
         addModule<UiContext>();
+        addModule<IMGuiRender>();
         //modules.push_back(std::make_shared<UiContext>(world.get(), this));
         addModule<TransformsModule>();
         addModule<StatsModule>();
@@ -149,7 +149,7 @@ namespace RxEngine
              });
     }
 
-    void EngineMain::setupWorld()
+    void EngineMain::setupWorld() const
     {
         world->newEntity("Pipeline:PreFrame").set<ecs::SystemGroup>({1, false, 0.0f, 0.0f});
         world->newEntity("Pipeline:Early").set<ecs::SystemGroup>({2, false, 0.0f, 0.0f});

@@ -95,7 +95,7 @@ namespace RxEngine
 
         void bootModules();
         void createSystems();
-        void setupWorld();
+        void setupWorld() const;
         void startup(const char * windowTitle);
         void loadModules();
 

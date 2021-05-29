@@ -1,5 +1,6 @@
 #include "RmlUI.h"
 
+#include "UiContext.h"
 #include "Window.hpp"
 #include "optick/optick.h"
 #include "RmlUi/Core/Core.h"
@@ -39,6 +40,7 @@ namespace RxEngine
 
         world_->createSystem("Rml:Render")
               .inGroup("Pipeline:PreRender")
+              .withRead<UiContextProcessed>()
               .execute([this](ecs::World *)
               {
                   OPTICK_EVENT("Rml:Render")

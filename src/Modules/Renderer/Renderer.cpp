@@ -95,7 +95,7 @@ namespace RxEngine
             instanceBufferDS.push_back(ds);
         }
 #endif
-        world_->createSystem("Renderer:Render")
+        world_->createSystem("Renderer:RunCommandBuffers")
               .inGroup("Pipeline:PostRender")
               //.after<AcquireImage>()
               //.before<PresentImage>()
