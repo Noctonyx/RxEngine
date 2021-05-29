@@ -25,7 +25,7 @@ namespace RxEngine
         //return engine->getTotalElapsed();
     }
 
-    bool RmlSystemInterface::LogMessage(Rml::Log::Type type, const Rml::String& message)
+    bool RmlSystemInterface::LogMessage(Rml::Log::Type type, const Rml::String & message)
     {
         switch (type) {
         case Rml::Log::LT_ALWAYS:
@@ -49,23 +49,23 @@ namespace RxEngine
         return true;
     }
 
-    RmlSystemInterface::RmlSystemInterface(ecs::World* world)
+    RmlSystemInterface::RmlSystemInterface(ecs::World * world)
         : world_(world) {}
 
-    int RmlSystemInterface::TranslateString(Rml::String& translated, const Rml::String& input)
+    int RmlSystemInterface::TranslateString(Rml::String & translated, const Rml::String & input)
     {
         return SystemInterface::TranslateString(translated, input);
     }
 
     void RmlRenderInterface::RenderGeometry(
-        Rml::Vertex* vertices,
+        Rml::Vertex * vertices,
         int numVertices,
-        int* indices,
+        int * indices,
         int numIndices,
         Rml::TextureHandle texture,
-        const Rml::Vector2f& translation)
+        const Rml::Vector2f & translation)
     {
-        auto& r = renders.emplace_back();
+        auto & r = renders.emplace_back();
 
         r.transform = transform_;
         r.texture = texture;
@@ -108,32 +108,31 @@ namespace RxEngine
     RmlRenderInterface::RmlRenderInterface()
         : dirtyTextures(true)
         , transform_()
-        , poolTemplate_({{vk::DescriptorType::eCombinedImageSampler, 5000},}, 10)        
+        , poolTemplate_({{vk::DescriptorType::eCombinedImageSampler, 5000},}, 10)
     {
         XMStoreFloat4x4(&transform_, XMMatrixIdentity());
     }
 
     bool RmlRenderInterface::LoadTexture(
-        Rml::TextureHandle& texture_handle,
-        Rml::Vector2i& texture_dimensions,
-        const Rml::String& source)
+        Rml::TextureHandle & texture_handle,
+        Rml::Vector2i & texture_dimensions,
+        const Rml::String & source)
     {
         OPTICK_EVENT()
 
-            RxAssets::ImageData id{};
+        RxAssets::ImageData id{};
         try {
             RxAssets::Loader::loadImage(id, source);
-        }
-        catch (RxAssets::AssetException& e) {
+        } catch (RxAssets::AssetException & e) {
             spdlog::error(e.what());
             return false;
         }
 
         auto image = RxCore::iVulkan()->createImage(
             id.imType == RxAssets::eBC7
-            ? vk::Format::eBc7UnormBlock
-            : vk::Format::eR8G8B8A8Unorm,
-            vk::Extent3D{ id.width, id.height, 1 },
+                ? vk::Format::eBc7UnormBlock
+                : vk::Format::eR8G8B8A8Unorm,
+            vk::Extent3D{id.width, id.height, 1},
             static_cast<uint32_t>(id.mipLevels.size()),
             1,
             vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
@@ -161,17 +160,17 @@ namespace RxEngine
 
         vk::SamplerCreateInfo sci{};
         sci.setMinFilter(vk::Filter::eNearest)
-            .setMagFilter(vk::Filter::eNearest)
-            .setAddressModeU(vk::SamplerAddressMode::eClampToEdge)
-            .setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
-            .setMaxLod(1.0f)
-            .setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
+           .setMagFilter(vk::Filter::eNearest)
+           .setAddressModeU(vk::SamplerAddressMode::eClampToEdge)
+           .setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
+           .setMaxLod(1.0f)
+           .setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
 
         auto sampler = RxCore::iVulkan()->createSampler(sci);
 
         auto h = getNextTextureHandle();
 
-        textureEntries_.emplace(h, RenderTextureEntry{ image, iv, sampler });
+        textureEntries_.emplace(h, RenderTextureEntry{image, iv, sampler});
         texture_handle = h;
         texture_dimensions.x = id.width;
         texture_dimensions.y = id.height;
@@ -182,21 +181,21 @@ namespace RxEngine
     }
 
     bool RmlRenderInterface::GenerateTexture(
-        Rml::TextureHandle& texture_handle,
-        const Rml::byte* source,
-        const Rml::Vector2i& source_dimensions)
+        Rml::TextureHandle & texture_handle,
+        const Rml::byte * source,
+        const Rml::Vector2i & source_dimensions)
     {
         OPTICK_EVENT()
-            auto image = RxCore::iVulkan()->createImage(
-                vk::Format::eR8G8B8A8Unorm,
-                vk::Extent3D{
-                    static_cast<uint32_t>(source_dimensions.x),
-                    static_cast<uint32_t>(source_dimensions.y), 1
-                },
-                1,
-                1,
-                vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
-                vk::ImageType::e2D);
+        auto image = RxCore::iVulkan()->createImage(
+            vk::Format::eR8G8B8A8Unorm,
+            vk::Extent3D{
+                static_cast<uint32_t>(source_dimensions.x),
+                static_cast<uint32_t>(source_dimensions.y), 1
+            },
+            1,
+            1,
+            vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
+            vk::ImageType::e2D);
 
         auto iv =
             image->createImageView(vk::ImageViewType::e2D, vk::ImageAspectFlagBits::eColor);
@@ -208,7 +207,7 @@ namespace RxEngine
             staging_buffer,
             image,
             vk::Extent3D(static_cast<uint32_t>(source_dimensions.x),
-                static_cast<uint32_t>(source_dimensions.y), 1),
+                         static_cast<uint32_t>(source_dimensions.y), 1),
             vk::ImageLayout::eShaderReadOnlyOptimal,
             1,
             0);
@@ -218,11 +217,11 @@ namespace RxEngine
 
         vk::SamplerCreateInfo sci{};
         sci.setMinFilter(vk::Filter::eNearest)
-            .setMagFilter(vk::Filter::eNearest)
-            .setAddressModeU(vk::SamplerAddressMode::eClampToEdge)
-            .setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
-            .setMaxLod(1.0f)
-            .setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
+           .setMagFilter(vk::Filter::eNearest)
+           .setAddressModeU(vk::SamplerAddressMode::eClampToEdge)
+           .setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
+           .setMaxLod(1.0f)
+           .setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
 
         auto sampler = RxCore::iVulkan()->createSampler(sci);
 
@@ -230,7 +229,7 @@ namespace RxEngine
 
         texture_handle = h;
 
-        textureEntries_.emplace(h, RenderTextureEntry{ image, iv, sampler });
+        textureEntries_.emplace(h, RenderTextureEntry{image, iv, sampler});
         dirtyTextures = true;
 
         return h;
@@ -240,9 +239,9 @@ namespace RxEngine
     {
         OPTICK_EVENT()
 
-            if (textureEntries_.contains(texture)) {
-                textureEntries_.erase(texture);
-            }
+        if (textureEntries_.contains(texture)) {
+            textureEntries_.erase(texture);
+        }
 
         dirtyTextures = true;
     }
@@ -251,7 +250,7 @@ namespace RxEngine
     {
         OPTICK_EVENT()
 
-            uintptr_t h = 1;
+        uintptr_t h = 1;
 
         while (textureEntries_.contains(h)) {
             h++;
@@ -259,12 +258,11 @@ namespace RxEngine
         return h;
     }
 
-    void RmlRenderInterface::SetTransform(const Rml::Matrix4f* transform)
+    void RmlRenderInterface::SetTransform(const Rml::Matrix4f * transform)
     {
         if (transform == nullptr) {
             XMStoreFloat4x4(&transform_, XMMatrixIdentity());
-        }
-        else {
+        } else {
             memcpy(&transform_, transform, sizeof(transform_));
         }
     }
@@ -276,7 +274,7 @@ namespace RxEngine
         renders.clear();
     }
 
-    void RmlRenderInterface::renderUi(ecs::World* world)
+    void RmlRenderInterface::renderUi(ecs::World * world)
     {
         if (!world->isAlive(pipeline_)) {
             pipeline_ = world->lookup("pipeline/rmlui");
@@ -293,9 +291,9 @@ namespace RxEngine
             std::vector<RxCore::CombinedSampler> samplers;
 
             textureSamplerMap.clear();
-            for (auto& te : textureEntries_) {
+            for (auto & te: textureEntries_) {
                 auto ix = samplers.size();
-                samplers.push_back({ te.second.sampler, te.second.imageView });
+                samplers.push_back({te.second.sampler, te.second.imageView});
                 //sm.first = te.second.sampler;
                 //sm.second = te.second.imageView;
 
@@ -304,7 +302,7 @@ namespace RxEngine
 
             if (!samplers.empty()) {
                 descriptor_set->updateDescriptor(1, vk::DescriptorType::eCombinedImageSampler,
-                    samplers);
+                                                 samplers);
             }
 
             auto pm = XMMatrixOrthographicOffCenterRH(
@@ -366,25 +364,23 @@ namespace RxEngine
             buf->bindVertexBuffer(vb);
             buf->bindIndexBuffer(ib);
             buf->setViewport(0, 0, static_cast<float>(wd->width), static_cast<float>(wd->height), 0,
-                1);
+                             1);
 
-            struct RmlPushConstantData pd {};
+            struct RmlPushConstantData pd{};
 
-            for (auto& rc : renders) {
+            for (auto & rc: renders) {
                 pd.transform = rc.transform;
                 pd.translate = rc.translation;
                 if (rc.texture != 0) {
                     pd.textureId = textureSamplerMap[rc.texture];
-                }
-                else {
+                } else {
                     pd.textureId = 9999;
                 }
 
                 if (rc.scissorEnable) {
                     buf->setScissor(rc.scissor);
-                }
-                else {
-                    buf->setScissor({ {0, 0}, {wd->width, wd->height} });
+                } else {
+                    buf->setScissor({{0, 0}, {wd->width, wd->height}});
                 }
                 buf->pushConstant(
                     vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
@@ -405,7 +401,7 @@ namespace RxEngine
         indices_.clear();
 
         world->getStream<Render::UiRenderCommand>()
-            ->add<Render::UiRenderCommand>({ buf });
+             ->add<Render::UiRenderCommand>({buf});
     }
 
     RmlRenderInterface::~RmlRenderInterface()
@@ -414,7 +410,7 @@ namespace RxEngine
     }
 
     std::tuple<std::shared_ptr<RxCore::VertexBuffer>, std::shared_ptr<RxCore::IndexBuffer>>
-        RmlRenderInterface::CreateBuffers() const
+    RmlRenderInterface::CreateBuffers() const
     {
         auto vb =
             RxCore::iVulkan()->createVertexBuffer(
@@ -435,7 +431,7 @@ namespace RxEngine
         return std::tuple(vb, ib);
     }
 
-    Rml::FileHandle RmlFileInterface::Open(const Rml::String& path)
+    Rml::FileHandle RmlFileInterface::Open(const Rml::String & path)
     {
         auto size = vfs_->getFilesize(path);
         if (size == 0) {
@@ -460,11 +456,11 @@ namespace RxEngine
         fileData.erase(file);
     }
 
-    size_t RmlFileInterface::Read(void* buffer, size_t size, Rml::FileHandle file)
+    size_t RmlFileInterface::Read(void * buffer, size_t size, Rml::FileHandle file)
     {
         assert(fileData.contains(file));
 
-        auto& fd = fileData[file];
+        auto & fd = fileData[file];
 
         if (!(fd.pointer + size <= fd.size)) {
             size = fd.size - fd.pointer;
@@ -480,7 +476,7 @@ namespace RxEngine
     {
         assert(fileData.contains(file));
 
-        auto& fd = fileData[file];
+        auto & fd = fileData[file];
 
         switch (origin) {
         case SEEK_CUR:
@@ -507,7 +503,7 @@ namespace RxEngine
     {
         assert(fileData.contains(file));
 
-        auto& fd = fileData[file];
+        auto & fd = fileData[file];
 
         return fd.pointer;
     }
@@ -571,13 +567,21 @@ namespace RxEngine
     Rml::ElementDocument * UiContext::loadDocument(const std::string & document)
     {
         auto doc = context->LoadDocument(document);
-        documents.push_back({document, doc});
+        documents[document] = doc;
         doc->Show();
 
         return doc;
     }
 
-    void UiContext::closeDocument(const std::string & document) { }
+    void UiContext::closeDocument(const std::string & document)
+    {
+        auto it = documents.find(document);
+        if(it == documents.end()) {
+            return;
+        }
+        it->second->Close();
+        documents.erase(it);
+    }
 
     void RmlUiModule::registerModule() { }
 
@@ -596,7 +600,7 @@ namespace RxEngine
         Rml::LoadFontFace("/ui/LatoLatin-Regular.ttf");
         Rml::LoadFontFace("/ui/fonts/Roboto-Regular.ttf");
         Rml::LoadFontFace("/ui/fonts/Roboto-Bold.ttf");
-        Rml::Lua::Initialise();
+        Rml::Lua::Initialise(engine_->getLua()->lua_state());
 
         world_->createSystem("RmlUI:NewContext")
               .inGroup("Pipeline:PreFrame")
@@ -630,6 +634,25 @@ namespace RxEngine
                       return false;
                   }
               );
+        world_->createSystem("RmlUI:ResizeContexts")
+              .withQuery<UiContext, UiContextCreated>()
+              .inGroup("Pipeline:Early")
+              .withWrite<WindowResize>()
+              .each<UiContext>([&](ecs::EntityHandle e, const UiContext * ctx)
+              {
+                  OPTICK_EVENT()
+                  e.world->getStream<WindowResize>()->each<WindowResize>(
+                      [&](ecs::World *, const WindowResize * resize)
+                      {
+                          ctx->context->SetDimensions(
+                              Rml::Vector2i{
+                                  static_cast<int>(resize->width),
+                                  static_cast<int>(resize->height)
+                              });
+                          return false;
+                      });
+
+              });
 
         world_->createSystem("RmlUI:Mouse")
               .withQuery<UiContext, UiContextCreated, UiContextInteractive>()

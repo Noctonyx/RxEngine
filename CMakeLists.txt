@@ -77,7 +77,7 @@ add_library(RxEngine STATIC
         src/Modules/DynamicMesh/DynamicMesh.h
         src/Modules/DynamicMesh/DynamicMesh.cpp
         src/Modules/Mesh/Mesh.h
-        src/Modules/Mesh/Mesh.cpp )
+        src/Modules/Mesh/Mesh.cpp  "src/FSM.h" "src/FSM.cpp")
 
 target_compile_options(RxEngine PUBLIC -DGLFW_INCLUDE_VULKAN -DVK_USE_PLATFORM_WIN32_KHR -DGLFW_EXPOSE_NATIVE_WIN32 -DNOMINMAX)
 

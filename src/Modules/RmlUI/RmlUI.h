@@ -32,7 +32,7 @@ namespace RxEngine
         Rml::Context* context;
         bool debugger = false;
         //bool interactive = false;
-        std::vector<std::pair<std::string, Rml::ElementDocument*>> documents{};
+        std::unordered_map<std::string, Rml::ElementDocument*> documents{};
 
         Rml::ElementDocument* loadDocument(const std::string& document);
         void closeDocument(const std::string& document);

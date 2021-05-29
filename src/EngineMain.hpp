@@ -151,6 +151,11 @@ namespace RxEngine
 
         void addUserModule(std::shared_ptr<Module> module);
 
+        [[nodiscard]] sol::state * getLua() const
+        {
+            return lua;
+        }
+
     protected:
         void replaceSwapChain();
         void createSemaphores(uint32_t semaphoreCount);
