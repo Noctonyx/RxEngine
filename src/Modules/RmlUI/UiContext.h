@@ -14,6 +14,16 @@ namespace RxEngine
     enum class EInputMod;
 
     struct UiContextProcessed{};
+
+    struct MainUiContext
+    {
+        Rml::Context * context;
+        std::string contextName{};
+        std::vector<std::pair<std::string, Rml::ElementDocument*>> documents{};
+
+        Rml::ElementDocument * loadDocument(const std::string & document);
+        void closeDocument(const std::string & document);
+    };
    
     class UiContext : public Module
     {
@@ -30,7 +40,7 @@ namespace RxEngine
         static Rml::Input::KeyIdentifier convertKey(EKey key);
 
     private:
-        Rml::Context * context_;
-        std::vector<std::pair<std::string, Rml::ElementDocument *>> documents_{};
+        //Rml::Context * context_;
+        //std::vector<std::pair<std::string, Rml::ElementDocument *>> documents_{};
     };
 }

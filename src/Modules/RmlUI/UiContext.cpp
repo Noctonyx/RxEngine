@@ -12,9 +12,24 @@
 
 namespace RxEngine
 {
+    Rml::ElementDocument * MainUiContext::loadDocument(const std::string & document)
+    {
+        auto doc = context->LoadDocument(document);
+        documents.push_back({document, doc});
+        doc->Show();
+
+        return doc;
+    }
+
+    void MainUiContext::closeDocument(const std::string & document)
+    {
+        
+    }
+
     UiContext::UiContext(ecs::World * world, EngineMain * engine)
         : Module(world, engine) { }
 
+#if 0
     Rml::ElementDocument * UiContext::addDocument(const std::string & document)
     {
         auto doc = context_->LoadDocument(document);
@@ -23,25 +38,31 @@ namespace RxEngine
 
         return doc;
     }
-
+#endif
     UiContext::~UiContext()
     {
+#if 0
         for (auto & d: documents_) {
             d.second->Close();
         }
         documents_.clear();
+
+#endif
     }
 
     void UiContext::startup()
     {
+        world_->setSingleton<MainUiContext>({nullptr});
+
         world_->createSystem("UiContext:Render")
               .inGroup("Pipeline:PreRender")
               .withWrite<UiContextProcessed>()
               .execute([&](ecs::World * world)
               {
                   OPTICK_EVENT()
-                  context_->Update();
-                  context_->Render();
+                  auto ui = world_->getSingleton<MainUiContext>();
+                  ui->context->Update();
+                  ui->context->Render();
               });
 
         world_->createSystem("UiContext:WindowResize")
@@ -50,8 +71,8 @@ namespace RxEngine
               .execute<WindowResize>([&](ecs::World * world, const WindowResize * resize)
               {
                   OPTICK_EVENT()
-
-                  context_->SetDimensions(
+                  auto ui = world_->getSingleton<MainUiContext>();
+                  ui->context->SetDimensions(
                       Rml::Vector2i{
                           static_cast<int>(resize->width),
                           static_cast<int>(resize->height)
@@ -76,9 +97,10 @@ namespace RxEngine
               .execute<MousePosition>([&](ecs::World * world, const MousePosition * pos)
               {
                   OPTICK_EVENT()
-                  return !context_->ProcessMouseMove(static_cast<int>(pos->x),
-                                                     static_cast<int>(pos->y),
-                                                     convertModState(pos->mods));
+                  auto ui = world_->getSingleton<MainUiContext>();
+                  return !ui->context->ProcessMouseMove(static_cast<int>(pos->x),
+                                                        static_cast<int>(pos->y),
+                                                        convertModState(pos->mods));
               });
 
         world_->createSystem("UiContext:MouseButton")
@@ -87,11 +109,12 @@ namespace RxEngine
               .execute<MouseButton>([&](ecs::World * world, const MouseButton * button)
               {
                   OPTICK_EVENT()
+                  auto ui = world_->getSingleton<MainUiContext>();
                   if (button->pressed) {
-                      return !context_->ProcessMouseButtonDown(
+                      return !ui->context->ProcessMouseButtonDown(
                           button->button, convertModState(button->mods));
                   } else {
-                      return !context_->ProcessMouseButtonUp(
+                      return !ui->context->ProcessMouseButtonUp(
                           button->button, convertModState(button->mods));
                   }
               });
@@ -102,7 +125,8 @@ namespace RxEngine
               .execute<MouseScroll>([&](ecs::World * world, const MouseScroll * s)
               {
                   OPTICK_EVENT()
-                  return !context_->ProcessMouseWheel(- s->y_offset, convertModState(s->mods));
+                  auto ui = world_->getSingleton<MainUiContext>();
+                  return !ui->context->ProcessMouseWheel(- s->y_offset, convertModState(s->mods));
               });
 
         world_->createSystem("UiContext:Key")
@@ -111,29 +135,31 @@ namespace RxEngine
               .execute<KeyboardKey>([&](ecs::World * world, const KeyboardKey * key)
               {
                   OPTICK_EVENT()
+                  auto ui = world_->getSingletonUpdate<MainUiContext>();
+
                   if (key->key == EKey::F8 && key->action == EInputAction::Press) {
                       Rml::Debugger::SetVisible(!Rml::Debugger::IsVisible());
                   }
                   if (key->key == EKey::F9 && key->action == EInputAction::Press) {
-                      for (auto & d: documents_) {
+                      for (auto & d: ui->documents) {
                           d.second->ReloadStyleSheet();
                       }
                   }
                   if (key->key == EKey::F10 && key->action == EInputAction::Press) {
-                      for (auto & d: documents_) {
+                      for (auto & d: ui->documents) {
 
                           d.second->Close();
-                          d.second = context_->LoadDocument(d.first);
+                          d.second = ui->context->LoadDocument(d.first);
                           d.second->Show();
                       }
                   }
                   if (key->action == EInputAction::Press) {
-                      return !context_->ProcessKeyDown(convertKey(key->key),
-                                                       convertModState(key->mods));
+                      return !ui->context->ProcessKeyDown(convertKey(key->key),
+                                                          convertModState(key->mods));
                   }
                   if (key->action == EInputAction::Release) {
-                      return !context_->ProcessKeyUp(convertKey(key->key),
-                                                     convertModState(key->mods));
+                      return !ui->context->ProcessKeyUp(convertKey(key->key),
+                                                        convertModState(key->mods));
                   }
 
                   return false;
@@ -144,24 +170,34 @@ namespace RxEngine
               .inGroup("Pipeline:Early")
               .execute<KeyboardChar>([&](ecs::World * world, const KeyboardChar * c)
               {
+                  auto ui = world_->getSingleton<MainUiContext>();
                   OPTICK_EVENT()
-                  return !context_->ProcessTextInput(c->c);
+                  return !ui->context->ProcessTextInput(c->c);
               });
-        auto wd = world_->getSingleton<WindowDetails>();
-        context_ = Rml::CreateContext(
-            "MainUI", Rml::Vector2i(static_cast<int>(wd->width), static_cast<int>(wd->height)));
-        Rml::Debugger::Initialise(context_);
 
-        addDocument("/ui/test1.rml");
+
+        auto wd = world_->getSingleton<WindowDetails>();
+        auto ui = world_->getSingletonUpdate<MainUiContext>();
+
+        ui->context =  Rml::CreateContext(
+            "MainUI", Rml::Vector2i(static_cast<int>(wd->width), static_cast<int>(wd->height)));
+        ui->contextName = "MainUI";
+        Rml::Debugger::Initialise(ui->context);
+
+        ui->loadDocument("/ui/test1.rml");
         //document->Show();
     }
 
     void UiContext::shutdown()
     {
-        for (auto & d: documents_) {
+        auto ui = world_->getSingletonUpdate<MainUiContext>();
+        for (auto & d: ui->documents) {
             d.second->Close();
         }
-        documents_.clear();
+        ui->documents.clear();
+
+        Rml::RemoveContext(ui->contextName);
+        world_->removeSingleton<MainUiContext>();
 
         world_->deleteSystem(world_->lookup("UiContext:Render").id);
         world_->deleteSystem(world_->lookup("UiContext:WindowResize").id);
