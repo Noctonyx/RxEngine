@@ -109,66 +109,39 @@ namespace RxEngine
 {
     void EngineMain::setupLuaEnvironment()
     {
-        //sol::state lua;
-
-        lua->open_libraries(sol::lib::base, sol::lib::string, sol::lib::table);
+        lua->open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::package);
 
         lua->set("dofile", [this](std::string f)
         {
             loadLuaFile(f);
         });
 
-        lua->set("quitgame", [this]()
-            {
-                shouldQuit = true;
-            });
+        //lua->clear_package_loaders();
+        //lua->add_package_loader()
+        sol::table package = (*lua)["package"];
+        sol::table loaders = package["searchers"];
+        sol::function f = loaders[1];
 
-        //auto w = sol::make_light<flecs::world>(*world_);
-        //auto e = sol::make_light<EngineMain>(*this);
-        //lua["world"] = w.void_value();
-        //lua["engine"].set(e);// = e.void_value();
-#if 0
-        lua.set(script_key_world, world_.get());
-        lua.set(script_key_engine, this);
-
-        lua.set_function("createMaterialPipeline", [](flecs::world * l, std::string name)
+        sol::table t = lua->create_table();
+        //t[1] = l;
+        t[1] = f;
+        t[2] = [](lua_State * L)
         {
-            auto e = l->entity(name.c_str()).add<RxEngine::Render::MaterialPipeline>();
-            //return e;
-            return MaterialPipelineLua{e};
+            std::string mod = sol::stack::get<std::string>(L, 1);
+            std::string path = "/lua/" + mod + ".lua";
+            //spdlog::info("Trying to load {0}", path);
+
+            const std::string script = RxAssets::vfs()->getStringFile(path);
+            luaL_loadbuffer(L, script.data(), script.size(), path.c_str());
+            return 1;
+        };
+
+        package.set("searchers", t);
+
+
+        lua->set("quitgame", [this]()
+        {
+            shouldQuit = true;
         });
-
-        auto x = lua.new_usertype<MaterialPipelineLua>("MaterialPipelineLua");
-        //x["test"] = &MaterialPipelineLua::x;
-        x.set("x", sol::readonly(&MaterialPipelineLua::x));
-        x.set("lineWidth",
-              sol::property(&MaterialPipelineLua::getLineWidth,
-                            &MaterialPipelineLua::setLineWidth));
-#endif
-        //x.set_function()
-#if 0
-        luabridge::getGlobalNamespace(lua_->L)
-            .beginNamespace("ind")
-            .beginClass<MaterialPipelineLua>("MaterialPipeline")
-            //.addConstructor<void (*)(const char *)>()
-            .addProperty("x", &MaterialPipelineLua::x)
-            .endClass()          
-            .addFunction("getMaterialPipeline", [this](const char * name)-> std::optional<MaterialPipelineLua>
-            {
-                auto e = world_->lookup(name);
-                if(e.is_valid()) {
-                    return MaterialPipelineLua(e);
-                }
-                return std::nullopt;
-            })
-            .addFunction("createOpaquePipeline", [this]()
-            {
-                auto e = world_->entity();
-                e.add<Render::OpaquePipeline>();
-
-            })
-
-            .endNamespace();
-#endif
-    } 
+    }
 }
