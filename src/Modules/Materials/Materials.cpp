@@ -104,11 +104,11 @@ namespace RxEngine
             auto sh = device->createShader(sd.bytes);
 
             if (stage == "vert") {
-                world->newEntity(name.c_str()).set<VertexShader>({
+                world->newEntityReplace(name.c_str()).set<VertexShader>({
                     .shader = sh, .shaderAssetName = spv
                 });
             } else {
-                world->newEntity(name.c_str()).set<FragmentShader>({
+                world->newEntityReplace(name.c_str()).set<FragmentShader>({
                     .shader = sh, .shaderAssetName = spv
                 });
             }
@@ -207,7 +207,7 @@ namespace RxEngine
         auto l = device->createPipelineLayout(plci);
 
         pll.layout = l;
-        world->newEntity(name.c_str())
+        world->newEntityReplace(name.c_str())
              .set<PipelineLayout>(pll);
     }
 
@@ -458,7 +458,7 @@ namespace RxEngine
             throw RxAssets::AssetException("missing shader:", layout_name);
         }
 
-        world->newEntity(name.c_str())
+        world->newEntityReplace(name.c_str())
              .set<MaterialPipelineDetails>({mpd})
              .set<UsesVertexShader>({{vse.id}})
              .set<UsesFragmentShader>({{fse.id}})
@@ -639,7 +639,7 @@ namespace RxEngine
         mi.image = image;
         mi.imageView = iv;
 
-        return world->newEntity(name.c_str()).set<MaterialImage>(mi);
+        return world->newEntityReplace(name.c_str()).set<MaterialImage>(mi);
     }
 
     void loadTexture(ecs::World * world,
@@ -658,7 +658,7 @@ namespace RxEngine
 
         const auto sampler_handle = createSampler(device, sd);
 
-        world->newEntity(textureName.c_str())
+        world->newEntityReplace(textureName.c_str())
              .set<ecs::InstanceOf>({{image_entity.id}})
              .set<Render::MaterialSampler>({sampler_handle, 9999});
     }
@@ -688,13 +688,14 @@ namespace RxEngine
             "uiPipeline");
 
         Material mi{};
-
+#if 0
         auto e = world->lookup(name.c_str());
 
         if (!e.isAlive()) {
             e = world->newEntity(name.c_str());
         }
-
+#endif
+        auto e = world->newEntityReplace(name.c_str());
 
         std::string a = material.get_or("alpha_mode", std::string{"OPAQUE"});
         if (a == "OPAQUE") {

@@ -218,7 +218,3 @@ data.prototypes = {
 data.visibles = {
 
 }
-
-function newgame(e)
-    print 'boober'
-end

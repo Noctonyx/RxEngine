@@ -38,7 +38,7 @@ namespace RxEngine
     struct FSM
     {
         BaseFSMState * currentState = nullptr;
-        std::string nextStateName = "";
+        std::string nextStateName;
 
         std::unordered_map<std::string, std::unique_ptr<BaseFSMState>> states;
 

@@ -21,6 +21,12 @@ namespace RxEngine
     void StaticMeshModule::registerModule()
     {
         world_->addSingleton<StaticMeshActiveBundle>();
+        worldObjects_ = world_->createQuery()
+            .with<WorldObject, WorldTransform, HasVisiblePrototype>()
+            .withJob()
+            //.withRelation<HasVisiblePrototype, VisiblePrototype>()
+            .withInheritance(true).id;
+
     }
 
     void StaticMeshModule::startup()
@@ -68,12 +74,7 @@ namespace RxEngine
         //      .inGroup("Pipeline:PreRender")
         //     .withQuery<Sta>()
 
-        worldObjects_ = world_->createQuery()
-                              .with<WorldObject, WorldTransform, HasVisiblePrototype>()
-                              .withJob()
-                              //.withRelation<HasVisiblePrototype, VisiblePrototype>()
-                              .withInheritance(true).id;
-
+        
         pipeline_ = world_->lookup("pipeline/staticmesh_opaque");
     }
 

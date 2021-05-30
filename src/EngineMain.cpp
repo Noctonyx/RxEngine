@@ -161,7 +161,21 @@ namespace RxEngine
         window_->setWorld(world.get());
     }
 
-    void EngineMain::startup(const char * windowTitle)
+    bool EngineMain::loadLuaFiles() const
+    {
+        if(!loadLuaFile("/lua/engine")) {
+            return false;
+        }
+
+        for (auto & sf: configFiles) {
+            if(!loadLuaFile(sf)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool EngineMain::startup(const char * windowTitle)
     {
         loadConfig();
 
@@ -204,10 +218,11 @@ namespace RxEngine
         lua = new sol::state();
 
         setupLuaEnvironment();
-        loadLuaFile("/lua/engine");
-        for (auto & sf: configFiles) {
-            loadLuaFile(sf);
+        if(!loadLuaFiles()) {
+            return false;
         }
+
+        return true;
     }
 
     void EngineMain::loadModules()
@@ -279,7 +294,7 @@ namespace RxEngine
             OPTICK_EVENT("Window Updates")
             window_->Update(); // Collect the window events
         }
-        if(RxAssets::vfs()->hasChanged()) {
+        if (RxAssets::vfs()->hasChanged()) {
             RxAssets::vfs()->scan();
         }
 

@@ -57,24 +57,28 @@ namespace RxEngine
     {
         std::function<void(ecs::World *, void *)> editor;
     };
-    
+
     struct RxJobAdaptor : ecs::JobInterface
     {
-        JobHandle create(std::function<void()> f) override {
+        JobHandle create(std::function<void()> f) override
+        {
             return RxCore::CreateJob<void>(f);
         }
 
-        void schedule(JobHandle job_handle) override {
+        void schedule(JobHandle job_handle) override
+        {
             auto x = std::static_pointer_cast<RxCore::Job<void>>(job_handle);
             x->schedule();
         }
 
-        bool isComplete(JobHandle job_handle) const override {
+        bool isComplete(JobHandle job_handle) const override
+        {
             auto x = std::static_pointer_cast<RxCore::Job<void>>(job_handle);
             return x->isCompleted();
         }
 
-        void awaitCompletion(JobHandle job_handle) override {
+        void awaitCompletion(JobHandle job_handle) override
+        {
             auto x = std::static_pointer_cast<RxCore::Job<void>>(job_handle);
             x->waitComplete();
         }
@@ -96,7 +100,8 @@ namespace RxEngine
         void bootModules();
         void createSystems();
         void setupWorld() const;
-        void startup(const char * windowTitle);
+        bool loadLuaFiles() const;
+        bool startup(const char * windowTitle);
         void loadModules();
 
         //void setActiveScene(std::shared_ptr<Scene> scene);
@@ -162,7 +167,7 @@ namespace RxEngine
         void destroySemaphores();
 
         void createMaterialTexture(std::string textureName, sol::table details);
-        void loadLuaFile(const std::filesystem::path & file);
+        bool loadLuaFile(const std::filesystem::path & file) const;
         void setupLuaEnvironment();
 
         void ecsMainMenu(bool & show_entity_window,
@@ -216,29 +221,23 @@ namespace RxEngine
         modules.push_back(std::make_shared<T>(world.get(), this));
     }
 
-    inline void EngineMain::loadLuaFile(const std::filesystem::path & file)
+    inline bool EngineMain::loadLuaFile(const std::filesystem::path & file) const
     {
         auto path = file;
         if (!path.has_extension()) {
             path.replace_extension(".lua");
         }
 
-
         const std::string script = RxAssets::vfs()->getStringFile(path);
-        lua->script(script, path.generic_string());
-        //. load_buffer(script.c_str(), script.length(), path.generic_string().c_str());
-#if 0
-        if (r == 0) {
-            if (lua. (L, 0, LUA_MULTRET, 0) != 0) {
-                const auto error_string = lua_tostring(L, -1);
-                throw std::runtime_error(error_string ? error_string : "Unknown lua error");
-            }
+        auto result = lua->safe_script(script, path.generic_string());
+
+        if (!result.valid()) {
+            sol::error err = result;
+            std::string what = err.what();
+            spdlog::critical("Lua error - {0}", err.what());
+            return false;
         }
-        else {
-            spdlog::error("Error in {} - {}", file.generic_string().c_str(), lua_tostring(L, -1));
-            throw std::runtime_error(lua_tostring(L, -1));
-        }
-#endif
+        return true;
     }
 
     void ecsNameGui(ecs::World * world, void * ptr);
