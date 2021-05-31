@@ -517,13 +517,13 @@ namespace RxEngine
     int convertModState(RxEngine::EInputMod mods)
     {
         int kms = 0;
-        if (static_cast<uint32_t>(mods) & static_cast<uint32_t>(EInputMod::Shift)) {
+        if (static_cast<uint32_t>(mods) & static_cast<uint32_t>(EInputMod_Shift)) {
             kms |= Rml::Input::KeyModifier::KM_SHIFT;
         }
-        if (static_cast<uint32_t>(mods) & static_cast<uint32_t>(EInputMod::Control)) {
+        if (static_cast<uint32_t>(mods) & static_cast<uint32_t>(EInputMod_Control)) {
             kms |= Rml::Input::KeyModifier::KM_CTRL;
         }
-        if (static_cast<uint32_t>(mods) & static_cast<uint32_t>(EInputMod::Alt)) {
+        if (static_cast<uint32_t>(mods) & static_cast<uint32_t>(EInputMod_Alt)) {
             kms |= Rml::Input::KeyModifier::KM_ALT;
         }
         return kms;
@@ -759,19 +759,19 @@ namespace RxEngine
                           }
                       }
                   }
-                    if (key->key == EKey::F10 && key->action == EInputAction::Press) {
-                        std::vector<Rml::String> urls;
-                        for (int i = 0; i < mainUI->GetNumDocuments(); i++) {
-                            auto doc = mainUI->GetDocument(i);
-                            if (doc->GetSourceURL() != "") {
-                                urls.push_back(doc->GetSourceURL());
-                                doc->Close();
-                            }
-                        }
-                        for(auto & u : urls) {
-                            mainUI->LoadDocument(u)->Show();
-                        }
-                    }
+                  if (key->key == EKey::F10 && key->action == EInputAction::Press) {
+                      std::vector<Rml::String> urls;
+                      for (int i = 0; i < mainUI->GetNumDocuments(); i++) {
+                          auto doc = mainUI->GetDocument(i);
+                          if (doc->GetSourceURL() != "") {
+                              urls.push_back(doc->GetSourceURL());
+                              doc->Close();
+                          }
+                      }
+                      for (auto & u: urls) {
+                          mainUI->LoadDocument(u)->Show();
+                      }
+                  }
                   if (key->action == EInputAction::Press) {
                       return !mainUI->ProcessKeyDown(convertKey(key->key),
                                                      convertModState(key->mods));

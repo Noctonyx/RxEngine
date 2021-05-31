@@ -3,13 +3,6 @@ cmake_minimum_required(VERSION 3.15)
 #set(RXENGINE_ASSET_PATH "${PROJECT_SOURCE_DIR}/Assets")
 #set(RXENGINE_ASSET_PATH "${RXENGINE_ASSET_PATH}" PARENT_PATH)
 
-option(GLFW_BUILD_DOCS OFF)
-option(GLFW_INSTALL OFF)
-option(GLFW_BUILD_EXAMPLES "Build the GLFW example programs" OFF)
-option(GLFW_BUILD_TESTS "Build the GLFW test programs" OFF)
-
-add_subdirectory("extern/glfw")
-
 option(JSON_BuildTests "Build the unit tests when BUILD_TESTING is enabled." OFF)
 add_subdirectory("extern/json")
 add_subdirectory("extern/spdlog")
@@ -39,8 +32,6 @@ add_library(RxEngine STATIC
         src/Modules/ImGui/ImGuiRender.hpp
         src/EngineMain.hpp
         src/EngineMain.cpp
-        src/Window.cpp
-        src/Window.hpp
         src/Modules/Renderer/Renderer.hpp
         src/Modules/Renderer/Renderer.cpp
         src/Geometry/Camera.hpp
@@ -77,9 +68,12 @@ add_library(RxEngine STATIC
         src/Modules/DynamicMesh/DynamicMesh.h
         src/Modules/DynamicMesh/DynamicMesh.cpp
         src/Modules/Mesh/Mesh.h
-        src/Modules/Mesh/Mesh.cpp  "src/FSM.h" "src/FSM.cpp")
+        src/Modules/Mesh/Mesh.cpp  
+        src/FSM.h
+        src/FSM.cpp
+    )
 
-target_compile_options(RxEngine PUBLIC -DGLFW_INCLUDE_VULKAN -DVK_USE_PLATFORM_WIN32_KHR -DGLFW_EXPOSE_NATIVE_WIN32 -DNOMINMAX)
+target_compile_options(RxEngine PUBLIC -DVK_USE_PLATFORM_WIN32_KHR -DNOMINMAX)
 
 if (MSVC)
     target_compile_options(RxEngine PUBLIC /W4 /WX /wd4100 -D_CRT_SECURE_NO_WARNINGS -D_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING -DWIN32_LEAN_AND_MEAN)
@@ -103,7 +97,6 @@ target_include_directories(RxEngine PUBLIC "src")
 target_include_directories(RxEngine INTERFACE "include")
 
 target_link_libraries(RxEngine PUBLIC RxCore)
-target_link_libraries(RxEngine PUBLIC glfw)
 target_link_libraries(RxEngine PUBLIC RxECS)
 target_link_libraries(RxEngine PUBLIC RxAssets)
 target_link_libraries(RxEngine PUBLIC lua_static)
@@ -113,7 +106,6 @@ target_link_libraries(RxEngine PUBLIC RmlDebugger)
 target_link_libraries(RxEngine PUBLIC freetype)
 target_link_libraries(RxEngine PUBLIC RmlLua)
 target_link_libraries(RxEngine PUBLIC RmlSVG)
-#target_link_libraries(RxEngine PUBLIC glfw)
 target_link_libraries(RxEngine PUBLIC DirectXMath)
 
 target_include_directories(RxEngine PUBLIC ${imgui_SOURCE_DIR})

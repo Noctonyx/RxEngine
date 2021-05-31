@@ -134,7 +134,7 @@ namespace RxEngine
               {
                   OPTICK_EVENT()
 
-                  if(key->key == EKey::F1 && (key->mods == EInputMod::Control) && key->action == EInputAction::Press) {
+                  if(key->key == EKey::F1 && (key->mods & EInputMod_Control) && key->action == EInputAction::Press) {
                       enabled = !enabled;
                   }
 
@@ -309,6 +309,7 @@ namespace RxEngine
     {
         OPTICK_EVENT()
 
+        
         auto & io = ImGui::GetIO();
         io.DeltaTime = deltaTime;
 
@@ -323,19 +324,19 @@ namespace RxEngine
                 case ImGuiMouseCursor_ResizeAll:
                 case ImGuiMouseCursor_ResizeNESW:
                 case ImGuiMouseCursor_ResizeNWSE:
-                    window_->setCursor(ECursorStandard::Arrow);
+                    window_->setCursor(RxCore::ECursorStandard::Arrow);
                     break;
                 case ImGuiMouseCursor_TextInput:
-                    window_->setCursor(ECursorStandard::IBeam);
+                    window_->setCursor(RxCore::ECursorStandard::IBeam);
                     break;
                 case ImGuiMouseCursor_ResizeNS:
-                    window_->setCursor(ECursorStandard::ResizeY);
+                    window_->setCursor(RxCore::ECursorStandard::ResizeY);
                     break;
                 case ImGuiMouseCursor_ResizeEW:
-                    window_->setCursor(ECursorStandard::ResizeX);
+                    window_->setCursor(RxCore::ECursorStandard::ResizeX);
                     break;
                 case ImGuiMouseCursor_Hand:
-                    window_->setCursor(ECursorStandard::Hand);
+                    window_->setCursor(RxCore::ECursorStandard::Hand);
                     break;
                 }
             }

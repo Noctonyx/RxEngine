@@ -40,7 +40,7 @@ namespace RxEngine
         //std::vector<DelegateHandle> delegates_{};
         std::shared_ptr<RxCore::Image> fontImage_{};
 
-        Window * window_{};
+        RxCore::Window * window_{};
 
         std::shared_ptr<RxCore::DescriptorSet> set0_;
         ecs::EntityHandle pipeline_;
