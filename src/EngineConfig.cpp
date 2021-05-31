@@ -138,7 +138,6 @@ namespace RxEngine
 
         package.set("searchers", t);
 
-
         lua->set("quitgame", [this]()
         {
             shouldQuit = true;

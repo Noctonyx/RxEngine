@@ -563,7 +563,7 @@ namespace RxEngine
             return Rml::Input::KeyIdentifier::KI_UNKNOWN;
         }
     }
-
+#if 0
     Rml::ElementDocument * UiContext::loadDocument(const std::string & document)
     {
         auto doc = context->LoadDocument(document);
@@ -582,7 +582,7 @@ namespace RxEngine
         it->second->Close();
         documents.erase(it);
     }
-
+#endif
     void RmlUiModule::registerModule() { }
 
     void RmlUiModule::startup()
@@ -602,6 +602,7 @@ namespace RxEngine
         Rml::LoadFontFace("/ui/fonts/Roboto-Bold.ttf");
         Rml::Lua::Initialise(engine_->getLua()->lua_state());
 
+#if 0
         world_->createSystem("RmlUI:NewContext")
               .inGroup("Pipeline:PreFrame")
               .withQuery<UiContext>()
@@ -622,18 +623,34 @@ namespace RxEngine
                           Rml::Debugger::Initialise(ctx->context);
                       }
                   });
-
+#endif
 
         world_->createSystem("RmlUI:Resize")
               .inGroup("Pipeline:Update")
               .withStream<WindowResize>()
               .execute<WindowResize>(
-                  [&](ecs::World *, const WindowResize * resize)
+                  [this](ecs::World *, const WindowResize * resize)
                   {
+                      mainUI->SetDimensions(
+                          Rml::Vector2i{
+                              static_cast<int>(resize->width),
+                              static_cast<int>(resize->height)
+                          });
                       rmlRender->setDirty();
                       return false;
                   }
               );
+#if 0
+        world_->createSystem("Rml::MousePosition")
+              .withStream<MousePosition>()
+              .execute<MousePosition>([this](ecs::World *, const MousePosition * mp)
+              {
+                  return !mainUI->ProcessMouseMove(static_cast<int>(mp->x),
+                                                   static_cast<int>(mp->y),
+                                                   convertModState(mp->mods));
+              });
+#endif
+#if 0
         world_->createSystem("RmlUI:ResizeContexts")
               .withQuery<UiContext, UiContextCreated>()
               .inGroup("Pipeline:Early")
@@ -651,9 +668,43 @@ namespace RxEngine
                               });
                           return false;
                       });
-
+              });
+#endif
+        world_->createSystem("Rml::MousePosition")
+              .inGroup("Pipeline:Early")
+              .withStream<MousePosition>()
+              .execute<MousePosition>([this](ecs::World *, const MousePosition * mp)
+              {
+                  return !mainUI->ProcessMouseMove(static_cast<int>(mp->x),
+                                                   static_cast<int>(mp->y),
+                                                   convertModState(mp->mods));
               });
 
+        world_->createSystem("Rml::MouseButton")
+              .inGroup("Pipeline:Early")
+              .withStream<MouseButton>()
+              .execute<MouseButton>([this](ecs::World *, const MouseButton * button)
+              {
+                  if (button->pressed) {
+                      return !mainUI->ProcessMouseButtonDown(
+                          button->button, convertModState(button->mods));
+                  } else {
+                      return !mainUI->ProcessMouseButtonUp(
+                          button->button, convertModState(button->mods));
+                  }
+              });
+
+
+        world_->createSystem("Rml::MouseScroll")
+              .inGroup("Pipeline:Early")
+              .withStream<MouseScroll>()
+              .execute<MouseScroll>([this](ecs::World *, const MouseScroll * s)
+              {
+                  return !mainUI->ProcessMouseWheel(
+                      -s->y_offset, convertModState(s->mods));
+              });
+
+#if 0
         world_->createSystem("RmlUI:Mouse")
               .withQuery<UiContext, UiContextCreated, UiContextInteractive>()
               .inGroup("Pipeline:Early")
@@ -691,53 +742,57 @@ namespace RxEngine
                       });
               });
 
-        world_->createSystem("RmlUI:Key")
-              .withQuery<UiContext, UiContextCreated, UiContextInteractive>()
+#endif
+        world_->createSystem("Rml::KeyboardKey")
               .inGroup("Pipeline:Early")
-              .withWrite<KeyboardKey>()
-              .withWrite<KeyboardChar>()
-              .each<UiContext>([&](ecs::EntityHandle e, UiContext * ctx)
+              .withStream<KeyboardKey>()
+              .execute<KeyboardKey>([this](ecs::World *, const KeyboardKey * key)
               {
-                  OPTICK_EVENT()
-                  e.world->getStream<KeyboardKey>()->each<KeyboardKey>(
-                      [&](ecs::World *, const KeyboardKey * key)
-                      {
-                          if (key->key == EKey::F8 && key->action == EInputAction::Press) {
-                              Rml::Debugger::SetVisible(!Rml::Debugger::IsVisible());
+                  if (key->key == EKey::F8 && key->action == EInputAction::Press) {
+                      Rml::Debugger::SetVisible(!Rml::Debugger::IsVisible());
+                  }
+                  if (key->key == EKey::F9 && key->action == EInputAction::Press) {
+                      for (int i = 0; i < mainUI->GetNumDocuments(); i++) {
+                          auto doc = mainUI->GetDocument(i);
+                          if (doc->GetSourceURL() != "") {
+                              doc->ReloadStyleSheet();
                           }
-                          if (key->key == EKey::F9 && key->action == EInputAction::Press) {
-                              for (auto & d: ctx->documents) {
-                                  d.second->ReloadStyleSheet();
-                              }
-                          }
-                          if (key->key == EKey::F10 && key->action == EInputAction::Press) {
-                              for (auto & d: ctx->documents) {
+                      }
+                  }
+                    if (key->key == EKey::F10 && key->action == EInputAction::Press) {
+                        std::vector<Rml::String> urls;
+                        for (int i = 0; i < mainUI->GetNumDocuments(); i++) {
+                            auto doc = mainUI->GetDocument(i);
+                            if (doc->GetSourceURL() != "") {
+                                urls.push_back(doc->GetSourceURL());
+                                doc->Close();
+                            }
+                        }
+                        for(auto & u : urls) {
+                            mainUI->LoadDocument(u)->Show();
+                        }
+                    }
+                  if (key->action == EInputAction::Press) {
+                      return !mainUI->ProcessKeyDown(convertKey(key->key),
+                                                     convertModState(key->mods));
+                  }
+                  if (key->action == EInputAction::Release) {
+                      return !mainUI->ProcessKeyUp(convertKey(key->key),
+                                                   convertModState(key->mods));
+                  }
 
-                                  d.second->Close();
-                                  d.second = ctx->context->LoadDocument(d.first);
-                                  d.second->Show();
-                              }
-                          }
-                          if (key->action == EInputAction::Press) {
-                              return !ctx->context->ProcessKeyDown(convertKey(key->key),
-                                  convertModState(key->mods));
-                          }
-                          if (key->action == EInputAction::Release) {
-                              return !ctx->context->ProcessKeyUp(convertKey(key->key),
-                                                                 convertModState(key->mods));
-                          }
-
-                          return false;
-                      });
-
-                  e.world->getStream<KeyboardChar>()->each<KeyboardChar>(
-                      [&](ecs::World *, const KeyboardChar * c)
-                      {
-                          return ctx->context->ProcessTextInput(c->c);
-                      });
+                  return false;
               });
 
+        world_->createSystem("Rml::KeyboardChar")
+              .inGroup("Pipeline:Early")
+              .withStream<KeyboardChar>()
+              .execute<KeyboardChar>([this](ecs::World *, const KeyboardChar * c)
+              {
+                  return mainUI->ProcessTextInput(c->c);
+              });
 
+#if 0
         world_->createSystem("Rml:RenderContext")
               .inGroup("Pipeline:PreRender")
               .withQuery<UiContext, UiContextCreated>()
@@ -748,33 +803,46 @@ namespace RxEngine
                   ctx->context->Update();
                   ctx->context->Render();
               });
-
+#endif
         world_->createSystem("Rml:Render")
               .inGroup("Pipeline:PreRender")
-              .withRead<UiContextProcessed>()
+              //.withRead<UiContextProcessed>()
               .execute([this](ecs::World *)
               {
                   OPTICK_EVENT("Rml:Render")
+                  mainUI->Update();
+                  mainUI->Render();
                   rmlRender->renderUi(world_);
               });
+
+        auto wd = world_->getSingleton<WindowDetails>();
+
+        mainUI = Rml::CreateContext(
+            "MainUI",
+            Rml::Vector2i(static_cast<int>(wd->width), static_cast<int>(wd->height)));
+        Rml::Debugger::Initialise(mainUI);
     }
 
     void RmlUiModule::shutdown()
     {
         world_->deleteSystem(world_->lookup("RmlUI:Resize"));
         world_->deleteSystem(world_->lookup("RmlUI:Render"));
-        world_->deleteSystem(world_->lookup("RmlUI:RenderContext"));
-        world_->deleteSystem(world_->lookup("RmlUI:Key"));
-        world_->deleteSystem(world_->lookup("RmlUI:Mouse"));
-        world_->deleteSystem(world_->lookup("RmlUI:NewContext"));
-
+        //        world_->deleteSystem(world_->lookup("RmlUI:RenderContext"));
+        world_->deleteSystem(world_->lookup("RmlUI:KeyboardKey"));
+        world_->deleteSystem(world_->lookup("RmlUI:KeyboardChar"));
+        world_->deleteSystem(world_->lookup("RmlUI:MousePosition"));
+        world_->deleteSystem(world_->lookup("RmlUI:MouseButton"));
+        world_->deleteSystem(world_->lookup("RmlUI:MouseScroll"));
+        //world_->deleteSystem(world_->lookup("RmlUI:NewContext"));
+#if 0
         auto q = world_->createQuery().with<UiContext, UiContextCreated, ecs::Name>();
 
         world_->getResults(q.id).each<ecs::Name>([](ecs::EntityHandle e, ecs::Name * name)
         {
             Rml::RemoveContext(name->name);
         });
-
+#endif
+        Rml::RemoveContext("MainUI");
         Rml::Shutdown();
 
         rmlRender.reset();

@@ -27,6 +27,7 @@ namespace Rml {
 
 namespace RxEngine 
 {
+#if 0
     struct UiContext
     {
         Rml::Context* context;
@@ -43,7 +44,7 @@ namespace RxEngine
     struct UiContextInteractive {};
     struct UiContextProcessed {};
 
-
+#endif
     class RmlSystemInterface : public Rml::SystemInterface
     {
     public:
@@ -183,5 +184,7 @@ namespace RxEngine
         std::unique_ptr<RmlSystemInterface> rmlSystem;
         std::unique_ptr<RmlFileInterface> rmlFile;
         std::unique_ptr<RmlRenderInterface> rmlRender;
+
+        Rml::Context* mainUI;
     };
 }
