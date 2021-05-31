@@ -50,7 +50,7 @@ namespace RxEngine
               {
                   OPTICK_EVENT("ImGui:UpdateGui")
                   if (!enabled) {
-                     return;
+                      return;
                   }
                   this->updateGui();
               });
@@ -80,6 +80,9 @@ namespace RxEngine
               {
                   OPTICK_EVENT("ImGui:MousePos")
                   if (!enabled) {
+                      return false;
+                  }
+                  if (pos->captured) {
                       return false;
                   }
 
@@ -134,7 +137,8 @@ namespace RxEngine
               {
                   OPTICK_EVENT()
 
-                  if(key->key == EKey::F1 && (key->mods & EInputMod_Control) && key->action == EInputAction::Press) {
+                  if (key->key == EKey::F1 && (key->mods & EInputMod_Control) && key->action ==
+                      EInputAction::Press) {
                       enabled = !enabled;
                   }
 
@@ -189,7 +193,7 @@ namespace RxEngine
               {
                   OPTICK_EVENT("ImGui:NewFrame")
                   if (!enabled) {
-                     return;
+                      return;
                   }
 
                   update(world->deltaTime());
@@ -309,7 +313,7 @@ namespace RxEngine
     {
         OPTICK_EVENT()
 
-        
+
         auto & io = ImGui::GetIO();
         io.DeltaTime = deltaTime;
 

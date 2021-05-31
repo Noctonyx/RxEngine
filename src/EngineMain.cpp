@@ -456,6 +456,86 @@ namespace RxEngine
         return EKey::Unknown;
     }
 
+    void EngineMain::handleEvents()
+    {
+        RxCore::Events::pollEvents([this](SDL_Event * ev)
+        {
+            switch (ev->type) {
+            case SDL_QUIT:
+                shouldQuit = true;
+                break;
+
+            case SDL_KEYUP:
+            case SDL_KEYDOWN:
+                {
+                    auto k = mapSDLToEKey(ev->key.keysym.sym);
+                    world->getStream<KeyboardKey>()->add(KeyboardKey
+                        {
+                            k,
+                            ev->key.state == SDL_PRESSED
+                                ? EInputAction::Press
+                                : EInputAction::Release,
+                            getKeyMod()
+                        });
+                }
+                if (ev->key.state == SDL_PRESSED) {
+                    world->getStream<KeyboardChar>()->add<KeyboardChar>(
+                        {
+                            static_cast<char>(ev->key.keysym.sym)
+                        });
+                }
+            case SDL_MOUSEMOTION:
+                {
+                    MousePosition pos{
+                        static_cast<float>(ev->motion.x),
+                        static_cast<float>(ev->motion.y),
+                        static_cast<float>(ev->motion.xrel),
+                        static_cast<float>(ev->motion.yrel),
+                        getKeyMod(),
+                        capturedMouse
+                    };
+                    world->getStream<MousePosition>()->add(pos);
+                }
+                break;
+            case SDL_MOUSEBUTTONDOWN:
+            case SDL_MOUSEBUTTONUP:
+                {
+                    world->getStream<MouseButton>()->add(MouseButton
+                        {
+                            ev->button.button - 1, ev->button.state == SDL_PRESSED,
+                            getKeyMod()
+                        });
+                }
+                break;
+            case SDL_MOUSEWHEEL:
+                {
+                    world->getStream<MouseScroll>()->add(MouseScroll
+                        {
+                            static_cast<float>(ev->wheel.y),
+                            getKeyMod()
+                        });
+                }
+                break;
+            case SDL_WINDOWEVENT:
+                {
+                    switch (ev->window.event) {
+                    case SDL_WINDOWEVENT_RESIZED:
+                        WindowResize res{
+                            static_cast<uint32_t>(ev->window.data1),
+                            static_cast<uint32_t>(ev->window.data2)
+                        };
+                        world->getStream<WindowResize>()->add(res);
+                        auto wd = world->getSingletonUpdate<WindowDetails>();
+                        wd->width = ev->window.data1;
+                        wd->height = ev->window.data2;
+                        break;
+                    }
+                }
+                break;
+            }
+        });
+    }
+
     void EngineMain::update()
     {
         OPTICK_FRAME("MainThread")
@@ -470,83 +550,8 @@ namespace RxEngine
         timer_ = time_now;
 
         {
-            OPTICK_EVENT("Window Updates")
-            //window_->Update(); // Collect the window events
-            RxCore::Events::pollEvents([this](SDL_Event * ev)
-            {
-                switch (ev->type) {
-                case SDL_QUIT:
-                    shouldQuit = true;
-                    break;
-
-                case SDL_KEYUP:
-                case SDL_KEYDOWN:
-                    {
-                        auto k = mapSDLToEKey(ev->key.keysym.sym);
-                        world->getStream<KeyboardKey>()->add(KeyboardKey
-                            {
-                                k,
-                                ev->key.state == SDL_PRESSED
-                                    ? EInputAction::Press
-                                    : EInputAction::Release,
-                                getKeyMod()
-                            });
-                    }
-                    if (ev->key.state == SDL_PRESSED) {
-                        world->getStream<KeyboardChar>()->add<KeyboardChar>(
-                            {
-                                static_cast<char>(ev->key.keysym.sym)
-                            });
-                    }
-                case SDL_MOUSEMOTION:
-                    {
-                        MousePosition pos{
-                            static_cast<float>(ev->motion.x),
-                            static_cast<float>(ev->motion.y),
-                            static_cast<float>(ev->motion.xrel),
-                            static_cast<float>(ev->motion.yrel),
-                            getKeyMod()
-                        };
-                        world->getStream<MousePosition>()->add(pos);
-                    }
-                    break;
-                case SDL_MOUSEBUTTONDOWN:
-                case SDL_MOUSEBUTTONUP:
-                    {
-                        world->getStream<MouseButton>()->add(MouseButton
-                            {
-                                ev->button.button - 1, ev->button.state == SDL_PRESSED,
-                                getKeyMod()
-                            });
-                    }
-                    break;
-                case SDL_MOUSEWHEEL:
-                    {
-                        world->getStream<MouseScroll>()->add(MouseScroll
-                            {
-                                static_cast<float>(ev->wheel.y),
-                                getKeyMod()
-                            });
-                    }
-                    break;
-                case SDL_WINDOWEVENT:
-                    {
-                        switch (ev->window.event) {
-                        case SDL_WINDOWEVENT_RESIZED:
-                            WindowResize res{
-                                static_cast<uint32_t>(ev->window.data1),
-                                static_cast<uint32_t>(ev->window.data2)
-                            };
-                            world->getStream<WindowResize>()->add(res);
-                            auto wd = world->getSingletonUpdate<WindowDetails>();
-                            wd->width = ev->window.data1;
-                            wd->height = ev->window.data2;
-                            break;
-                        }
-                    }
-                    break;
-                }
-            });
+            OPTICK_EVENT("Handle Events")
+            handleEvents();
         }
         if (RxAssets::vfs()->hasChanged()) {
             RxAssets::vfs()->scan();
@@ -590,6 +595,12 @@ namespace RxEngine
     void EngineMain::addUserModule(std::shared_ptr<Module> module)
     {
         userModules.push_back(module);
+    }
+
+    void EngineMain::captureMouse(bool enable)
+    {
+        capturedMouse = enable;
+        window_->hideCursor(enable);
     }
 
     void EngineMain::replaceSwapChain()

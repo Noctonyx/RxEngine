@@ -675,6 +675,10 @@ namespace RxEngine
               .withStream<MousePosition>()
               .execute<MousePosition>([this](ecs::World *, const MousePosition * mp)
               {
+                  if (mp->captured) {
+                      return false;
+                  }
+
                   return !mainUI->ProcessMouseMove(static_cast<int>(mp->x),
                                                    static_cast<int>(mp->y),
                                                    convertModState(mp->mods));

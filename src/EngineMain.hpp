@@ -278,6 +278,7 @@ namespace RxEngine
         float deltaY;
 
         EInputMod mods;
+        bool captured;
     };
 
     struct MouseButton
@@ -328,6 +329,7 @@ namespace RxEngine
 
         //void setActiveScene(std::shared_ptr<Scene> scene);
         void run();
+        void handleEvents();
         void update();
         void shutdown();
 
@@ -377,6 +379,8 @@ namespace RxEngine
         [[nodiscard]] std::shared_ptr<RxCore::Buffer> createStorageBuffer(size_t size) const;
 
         void addUserModule(std::shared_ptr<Module> module);
+
+        void captureMouse(bool enable);
 
         [[nodiscard]] sol::state * getLua() const
         {
@@ -435,6 +439,7 @@ namespace RxEngine
         RxJobAdaptor jobAdapter;
 
         bool shouldQuit = false;
+        bool capturedMouse = false;
     };
 
     template <class T>
