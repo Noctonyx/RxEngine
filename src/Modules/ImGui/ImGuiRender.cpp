@@ -320,11 +320,14 @@ namespace RxEngine
         if (!(io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange)) {
             ImGuiMouseCursor imgui_cursor = ImGui::GetMouseCursor();
             if (imgui_cursor == ImGuiMouseCursor_None || io.MouseDrawCursor) {
-                window_->hideCursor(true);
+                window_->setCursor(RxCore::ECursorStandard::None);
+                //window_->hideCursor(true);
             } else {
-                window_->hideCursor(false);
+                //window_->hideCursor(false);
                 switch (imgui_cursor) {
                 default:
+                case ImGuiMouseCursor_None:
+                    window_->setCursor(RxCore::ECursorStandard::None);
                 case ImGuiMouseCursor_ResizeAll:
                 case ImGuiMouseCursor_ResizeNESW:
                 case ImGuiMouseCursor_ResizeNWSE:

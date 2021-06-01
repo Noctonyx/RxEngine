@@ -9,45 +9,20 @@ namespace RxEngine
 {
     void StatsModule::startup()
     {
-        systemSet_ = world_->newEntity().set<ecs::SystemSet>({false}).id;
-
         world_->createSystem("Stats:Ui")
-              .withSet(systemSet_)
               .inGroup("Pipeline:UpdateUi")           
               .execute([this](ecs::World * w)
                   {
+                      RxCore::iVulkan()->getMemBudget(heaps_);
                       delta_ = w->deltaTime();
                       fps_ = fps_ * 0.99f + 0.01f * (1 / delta_);
                       presentStatsUi();
                   }
               );
-
-        world_->createSystem("Stats:Mem")
-              .withSet(systemSet_)
-              .inGroup("Pipeline:Update")              
-              .execute([this](ecs::World *)
-              {
-                  RxCore::iVulkan()->getMemBudget(heaps_);
-              });
-    }
-
-    void StatsModule::enable()
-    {
-        if (systemSet_) {
-            world_->getUpdate<ecs::SystemSet>(systemSet_)->enabled = true;
-        }
-    }
-
-    void StatsModule::disable()
-    {
-        if (systemSet_) {
-            world_->getUpdate<ecs::SystemSet>(systemSet_)->enabled = false;
-        }
     }
 
     void StatsModule::shutdown()
     {
-        world_->deleteSystem(world_->lookup("Stats:Mem").id);
         world_->deleteSystem(world_->lookup("Stats:Ui").id);
     }
 

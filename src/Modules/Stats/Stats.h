@@ -12,8 +12,6 @@ namespace RxEngine
 
     class StatsModule : public Module
     {
-        ecs::entity_t systemSet_{};
-
         float delta_ = 0.f;
         float fps_ = 0.f;
         std::deque<float> fpsHistory_{};
@@ -26,8 +24,6 @@ namespace RxEngine
             : Module(world, engine) {}
 
         void startup() override;
-        void enable() override;
-        void disable() override;
         void shutdown() override;
 
     protected:
