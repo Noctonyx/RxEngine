@@ -17,7 +17,7 @@ namespace RxEngine
     class IMGuiRender : public Module
     {
     public:
-        IMGuiRender(ecs::World * world, EngineMain * engine);
+        IMGuiRender(ecs::World * world, EngineMain * engine, const ecs::entity_t moduleId);
         ~IMGuiRender() override;
 
         void startup() override;

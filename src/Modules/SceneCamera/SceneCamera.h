@@ -40,8 +40,8 @@ namespace RxEngine
     class SceneCameraModule: public Module
     {
     public:
-        SceneCameraModule(ecs::World * world, EngineMain * engine)
-            : Module(world, engine) {}
+        SceneCameraModule(ecs::World * world, EngineMain * engine, const ecs::entity_t moduleId)
+            : Module(world, engine, moduleId) {}
 
         void startup() override;
         void shutdown() override;

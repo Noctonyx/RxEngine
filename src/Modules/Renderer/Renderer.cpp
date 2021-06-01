@@ -19,9 +19,10 @@ namespace RxEngine
     Renderer::Renderer(vk::Device device,
                        ecs::World * world,
                        vk::Format imageFormat,
-                       EngineMain * engine)
+                       EngineMain * engine,
+                       const ecs::entity_t moduleId)
         : DeviceObject(device)
-        , Module(world, engine)
+        , Module(world, engine, moduleId)
         , imageFormat_(imageFormat)
         , shadowImagesChanged(true)
         , poolTemplate(

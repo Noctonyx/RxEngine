@@ -77,8 +77,8 @@ namespace RxEngine
     class RTSCameraModule : public Module
     {
     public:
-        RTSCameraModule(ecs::World * world, EngineMain * engine)
-            : Module(world, engine) {}
+        RTSCameraModule(ecs::World * world, EngineMain * engine, const ecs::entity_t moduleId)
+            : Module(world, engine, moduleId) {}
 
         void startup() override;
         void shutdown() override;

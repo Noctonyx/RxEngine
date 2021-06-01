@@ -35,8 +35,12 @@ namespace RxEngine
 
     void EngineMain::bootModules()
     {
+        auto modId = world->createModule<Renderer>();
+        // auto name = ecs::World::trimName(typeid(std::remove_reference_t<Renderer>).name());
+        //auto modId = world->newEntity(name.c_str()).add<ecs::Module>();
+
         modules.push_back(std::make_shared<Renderer>(device_->VkDevice(), world.get(),
-                                                     swapChain_->imageFormat(), this));
+                                                     swapChain_->imageFormat(), this, modId));
 
         addModule<MaterialsModule>();
         addModule<RmlUiModule>();
@@ -50,27 +54,35 @@ namespace RxEngine
         addModule<RTSCameraModule>();
         addModule<SceneCameraModule>();
         addModule<LightingModule>();
-
+#if 0
         for (auto & um: userModules) {
             modules.push_back(um);
         }
-
+#endif
         userModules.clear();
 
         for (auto & m: modules) {
+            world->pushModuleScope(m->getModuleId());
             m->registerModule();
+            world->popModuleScope();
+        }
+
+        auto r = loadLuaFile("/lua/engine");
+        if (!r.valid()) {
+            return;
         }
 
         for (auto & m: modules) {
-            m->processStartupData(lua, device_.get());
+            world->pushModuleScope(m->getModuleId());
+            m->loadData(r.get<sol::table>());
+            world->popModuleScope();
+            //m->processStartupData(lua, device_.get());
         }
 
         for (auto & m: modules) {
+            world->pushModuleScope(m->getModuleId());
             m->startup();
-        }
-
-        for (auto & m: modules) {
-            m->enable();
+            world->popModuleScope();
         }
     }
 
@@ -165,7 +177,7 @@ namespace RxEngine
         });
         //window_->setWorld(world.get());
     }
-
+#if 0
     bool EngineMain::loadLuaFiles() const
     {
         if (!loadLuaFile("/lua/engine")) {
@@ -179,7 +191,7 @@ namespace RxEngine
         }
         return true;
     }
-
+#endif
     bool EngineMain::startup(const char * windowTitle)
     {
         loadConfig();
@@ -225,10 +237,14 @@ namespace RxEngine
         lua = new sol::state();
 
         setupLuaEnvironment();
-        if (!loadLuaFiles()) {
-            return false;
-        }
 
+       /// if (!loadLuaFile("/lua/engine")) {
+            //return false;
+        //}
+        //if (!loadLuaFiles()) {
+        //return false;
+        //}
+        loadModules();
         return true;
     }
 

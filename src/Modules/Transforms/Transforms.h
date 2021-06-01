@@ -51,8 +51,8 @@ namespace RxEngine
     class TransformsModule: public Module
     {
     public:
-        TransformsModule(ecs::World * world, EngineMain * engine)
-            : Module(world, engine) {}
+        TransformsModule(ecs::World * world, EngineMain * engine, const ecs::entity_t moduleId)
+            : Module(world, engine, moduleId) {}
 
         void registerModule() override;
         void deregisterModule() override;

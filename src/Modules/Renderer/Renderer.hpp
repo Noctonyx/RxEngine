@@ -289,7 +289,7 @@ namespace RxEngine
         explicit Renderer(vk::Device device,
                           ecs::World * world,
                           vk::Format imageFormat,
-                          EngineMain * engine);
+                          EngineMain * engine, const ecs::entity_t moduleId);
 
         ~Renderer();
 

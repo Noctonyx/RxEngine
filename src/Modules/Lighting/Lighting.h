@@ -59,8 +59,8 @@ namespace RxEngine
     class LightingModule : public Module
     {
     public:
-        LightingModule(ecs::World * world, EngineMain * engine)
-            : Module(world, engine) {}
+        LightingModule(ecs::World * world, EngineMain * engine, const ecs::entity_t moduleId)
+            : Module(world, engine, moduleId) {}
 
         void startup() override;
         void shutdown() override;

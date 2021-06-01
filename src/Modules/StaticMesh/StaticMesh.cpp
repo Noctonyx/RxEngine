@@ -254,14 +254,12 @@ namespace RxEngine
             loadMesh(world, device, name, details);
         }
     }
-
-    void StaticMeshModule::processStartupData(sol::state * lua, RxCore::Device * device)
-    {
-        const sol::table data = lua->get<sol::table>("data");
-
+    
+    void StaticMeshModule::loadData(sol::table data)
+    {       
         sol::table meshes = data.get<sol::table>("meshes");
 
-        loadMeshes(world_, device, meshes);
+        loadMeshes(world_, engine_->getDevice(), meshes);
     }
 
     void StaticMeshModule::createOpaqueRenderCommands()

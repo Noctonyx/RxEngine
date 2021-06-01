@@ -22,12 +22,13 @@ namespace RxEngine
     class PrototypesModule : public Module
     {
     public:
-        PrototypesModule(ecs::World * world, EngineMain * engine)
-            : Module(world, engine) {}
+        PrototypesModule(ecs::World * world, EngineMain * engine, const ecs::entity_t moduleId)
+            : Module(world, engine, moduleId) {}
 
         void startup() override;
         void shutdown() override;
 
-        void processStartupData(sol::state * lua, RxCore::Device * device) override;
+        void loadData(sol::table table) override;
+        //void processStartupData(sol::state * lua, RxCore::Device * device) override;
     };
 }

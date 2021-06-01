@@ -48,8 +48,8 @@ namespace RxEngine
     class DynamicMeshModule : public Module
     {
     public:
-        DynamicMeshModule(ecs::World * world, EngineMain * engine)
-            : Module(world, engine) {}
+        DynamicMeshModule(ecs::World * world, EngineMain * engine, const ecs::entity_t moduleId)
+            : Module(world, engine, moduleId) {}
 
         void startup() override;
         void shutdown() override;

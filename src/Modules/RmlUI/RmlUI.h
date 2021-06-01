@@ -11,7 +11,8 @@
 #include "RmlUi/Core/SystemInterface.h"
 #include "Vulkan/DescriptorPool.hpp"
 
-namespace RxCore {
+namespace RxCore
+{
     class Image;
     class ImageView;
     class Buffer;
@@ -20,12 +21,13 @@ namespace RxCore {
     struct DescriptorPoolTemplate;
 }
 
-namespace Rml {
+namespace Rml
+{
     struct Vertex;
     class ElementDocument;
 }
 
-namespace RxEngine 
+namespace RxEngine
 {
 #if 0
     struct UiContext
@@ -48,14 +50,14 @@ namespace RxEngine
     class RmlSystemInterface : public Rml::SystemInterface
     {
     public:
-        RmlSystemInterface(ecs::World* world);
+        RmlSystemInterface(ecs::World * world);
 
-        bool LogMessage(Rml::Log::Type type, const Rml::String& message) override;
+        bool LogMessage(Rml::Log::Type type, const Rml::String & message) override;
         double GetElapsedTime() override;
-        int TranslateString(Rml::String& translated, const Rml::String& input) override;
+        int TranslateString(Rml::String & translated, const Rml::String & input) override;
 
     private:
-        ecs::World* world_;
+        ecs::World * world_;
     };
 
     struct UiRenderEntry
@@ -78,7 +80,8 @@ namespace RxEngine
         vk::Sampler sampler;
     };
 
-    struct RmlPushConstantData {
+    struct RmlPushConstantData
+    {
         DirectX::XMFLOAT2 translate;
         uint32_t textureId;
         uint32_t pad;
@@ -91,39 +94,43 @@ namespace RxEngine
         RmlRenderInterface();
         ~RmlRenderInterface() override;
         void RenderGeometry(
-            Rml::Vertex* vertices,
+            Rml::Vertex * vertices,
             int numVertices,
-            int* indices,
+            int * indices,
             int numIndices,
             Rml::TextureHandle texture,
-            const Rml::Vector2f& translation) override;
+            const Rml::Vector2f & translation) override;
 
         void EnableScissorRegion(bool enable) override;
         void SetScissorRegion(int x, int y, int width, int height) override;
 
         bool LoadTexture(
-            Rml::TextureHandle& texture_handle,
-            Rml::Vector2i& texture_dimensions,
-            const Rml::String& source) override;
+            Rml::TextureHandle & texture_handle,
+            Rml::Vector2i & texture_dimensions,
+            const Rml::String & source) override;
 
         bool GenerateTexture(
-            Rml::TextureHandle& texture_handle,
-            const Rml::byte* source,
-            const Rml::Vector2i& source_dimensions) override;
+            Rml::TextureHandle & texture_handle,
+            const Rml::byte * source,
+            const Rml::Vector2i & source_dimensions) override;
         void ReleaseTexture(Rml::TextureHandle texture) override;
 
-        void SetTransform(const Rml::Matrix4f* transform) override;
+        void SetTransform(const Rml::Matrix4f * transform) override;
 
         void resetRender();
-        void renderUi(ecs::World* world);
-        void setDirty() { dirtyTextures = true; }
+        void renderUi(ecs::World * world);
+
+        void setDirty()
+        {
+            dirtyTextures = true;
+        }
 
     private:
-
-        std::tuple<std::shared_ptr<RxCore::VertexBuffer>, std::shared_ptr<RxCore::IndexBuffer>> CreateBuffers() const;
+        std::tuple<std::shared_ptr<RxCore::VertexBuffer>, std::shared_ptr<RxCore::IndexBuffer>>
+        CreateBuffers() const;
 
         std::unordered_map<uintptr_t, RenderTextureEntry> textureEntries_;
-        bool dirtyTextures{ true };
+        bool dirtyTextures{true};
 
         uintptr_t getNextTextureHandle() const;
         bool scissorEnabled_{};
@@ -144,7 +151,8 @@ namespace RxEngine
         DirectX::XMFLOAT4X4 projectionMatrix_{};
     };
 
-    struct FileHandle {
+    struct FileHandle
+    {
         std::vector<std::byte> buffer;
         size_t size;
         size_t pointer;
@@ -155,24 +163,24 @@ namespace RxEngine
     public:
         RmlFileInterface();
 
-        Rml::FileHandle Open(const Rml::String& path) override;
+        Rml::FileHandle Open(const Rml::String & path) override;
         void Close(Rml::FileHandle file) override;
-        size_t Read(void* buffer, size_t size, Rml::FileHandle file) override;
+        size_t Read(void * buffer, size_t size, Rml::FileHandle file) override;
         bool Seek(Rml::FileHandle file, long offset, int origin) override;
         size_t Tell(Rml::FileHandle file) override;
 
     private:
         //EngineMain * engine_;
-        RxAssets::Vfs* vfs_;
+        RxAssets::Vfs * vfs_;
         uintptr_t nextHandle = 1;
         std::unordered_map<uintptr_t, FileHandle> fileData;
     };
 
-    class RmlUiModule: public Module
+    class RmlUiModule : public Module
     {
     public:
-        RmlUiModule(ecs::World * world, EngineMain * engine)
-            : Module(world, engine) {}
+        RmlUiModule(ecs::World * world, EngineMain * engine, const ecs::entity_t moduleId)
+            : Module(world, engine, moduleId) {}
 
         void registerModule() override;
         void startup() override;
@@ -180,11 +188,10 @@ namespace RxEngine
         void deregisterModule() override;
 
     protected:
-
         std::unique_ptr<RmlSystemInterface> rmlSystem;
         std::unique_ptr<RmlFileInterface> rmlFile;
         std::unique_ptr<RmlRenderInterface> rmlRender;
 
-        Rml::Context* mainUI;
+        Rml::Context * mainUI;
     };
 }

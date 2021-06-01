@@ -800,15 +800,15 @@ namespace RxEngine
         }
     }
 
-    void MaterialsModule::processStartupData(sol::state * lua, RxCore::Device * device)
+    void MaterialsModule::loadData(sol::table data)
     {
-        sol::table data = lua->get<sol::table>("data");
-
         sol::table shaders = data.get<sol::table>("shaders");
         sol::table layouts = data.get<sol::table>("pipeline_layouts");
         sol::table textures = data.get<sol::table>("textures");
         sol::table pipelines = data.get<sol::table>("material_pipelines");
         sol::table materials = data.get<sol::table>("materials");
+
+        auto device = engine_->getDevice();
 
         loadShaderData(world_, device, shaders);
         loadLayouts(world_, device, layouts);
@@ -1035,6 +1035,9 @@ namespace RxEngine
     void MaterialsModule::createShaderMaterialData(ecs::EntityHandle e, DescriptorSet * ds)
     {
         auto res = world_->getResults(materialQuery);
+        if (res.count() == 0) {
+            return;
+        }
         auto buffer = engine_->createStorageBuffer(res.count() * sizeof(MaterialShaderEntry));
 
         std::vector<MaterialShaderEntry> mv;

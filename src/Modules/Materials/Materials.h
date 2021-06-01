@@ -63,13 +63,19 @@ namespace RxEngine
     };
 
     struct UsesFragmentShader : ecs::Relation {};
+
     struct UsesVertexShader : ecs::Relation {};
+
     struct UsesLayout : ecs::Relation {};
 
     struct HasOpaquePipeline : ecs::Relation { };
+
     struct HasShadowPipeline : ecs::Relation { };
+
     struct HasTransparentPipeline : ecs::Relation { };
+
     struct HasUiPipeline : ecs::Relation { };
+
     //struct HasPipeline {};
 
     struct MaterialPipelineDetails
@@ -108,7 +114,7 @@ namespace RxEngine
 
     struct Material
     {
-        std::array<ecs::entity_t, 4> materialTextures{ 0, 0, 0, 0 };
+        std::array<ecs::entity_t, 4> materialTextures{0, 0, 0, 0};
         //ecs::entity_t materialTexture;
         float roughness;
         float metallic;
@@ -116,10 +122,7 @@ namespace RxEngine
         uint32_t sequence{};
     };
 
-    struct MaterialDescriptor
-    {
-
-    };
+    struct MaterialDescriptor { };
 
     struct MaterialShaderEntry
     {
@@ -130,15 +133,16 @@ namespace RxEngine
     class MaterialsModule : public Module
     {
     public:
-        MaterialsModule(ecs::World* world, EngineMain* engine)
-            : Module(world, engine) {}
+        MaterialsModule(ecs::World * world, EngineMain * engine, const ecs::entity_t moduleId)
+            : Module(world, engine, moduleId) {}
 
         void registerModule() override;
         void deregisterModule() override;
         void startup() override;
         void shutdown() override;
 
-        void processStartupData(sol::state * lua, RxCore::Device* device) override;
+        void loadData(sol::table table) override;
+        //void processStartupData(sol::state * lua, RxCore::Device * device) override;
 
         static vk::Pipeline createMaterialPipeline(const MaterialPipelineDetails * mpd,
                                                    const FragmentShader * frag,
@@ -148,13 +152,13 @@ namespace RxEngine
                                                    uint32_t subpass);
 
         static void createPipelines(ecs::EntityHandle e,
-            const MaterialPipelineDetails* mpd,
-            const FragmentShader* frag,
-            const VertexShader* vert,
-            const PipelineLayout* pll,
-            const RenderPasses* rp);
+                                    const MaterialPipelineDetails * mpd,
+                                    const FragmentShader * frag,
+                                    const VertexShader * vert,
+                                    const PipelineLayout * pll,
+                                    const RenderPasses * rp);
 
-        void createShaderMaterialData(ecs::EntityHandle e, DescriptorSet* ds);
+        void createShaderMaterialData(ecs::EntityHandle e, DescriptorSet * ds);
     private:
         ecs::queryid_t materialQuery;
         //static void materialGui(ecs::EntityHandle e);

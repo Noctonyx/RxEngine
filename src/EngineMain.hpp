@@ -387,13 +387,18 @@ namespace RxEngine
             return lua;
         }
 
+        [[nodiscard]] RxCore::Device * getDevice() const
+        {
+            return device_.get();
+        }
+
     protected:
         void replaceSwapChain();
         void createSemaphores(uint32_t semaphoreCount);
         void destroySemaphores();
 
         void createMaterialTexture(std::string textureName, sol::table details);
-        bool loadLuaFile(const std::filesystem::path & file) const;
+        sol::protected_function_result loadLuaFile(const std::filesystem::path & file) const;
         void setupLuaEnvironment();
 
         void ecsMainMenu(bool & show_entity_window,
@@ -445,10 +450,13 @@ namespace RxEngine
     template <class T>
     void EngineMain::addModule()
     {
-        modules.push_back(std::make_shared<T>(world.get(), this));
+        auto modId = world->createModule<T>();
+        //auto name = ecs::World::trimName(typeid(std::remove_reference_t<T>).name());
+        //auto modId = world->newEntity(name.c_str()).add<ecs::Module>();
+        modules.push_back(std::make_shared<T>(world.get(), this, modId));
     }
 
-    inline bool EngineMain::loadLuaFile(const std::filesystem::path & file) const
+    inline sol::protected_function_result EngineMain::loadLuaFile(const std::filesystem::path & file) const
     {
         auto path = file;
         if (!path.has_extension()) {
@@ -462,9 +470,9 @@ namespace RxEngine
             sol::error err = result;
             std::string what = err.what();
             spdlog::critical("Lua error - {0}", err.what());
-            return false;
         }
-        return true;
+
+        return result;
     }
 
     void ecsNameGui(ecs::World * world, void * ptr);

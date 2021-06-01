@@ -16,8 +16,8 @@
 
 namespace RxEngine
 {
-    IMGuiRender::IMGuiRender(ecs::World * world, EngineMain * engine)
-        : Module(world, engine)
+    IMGuiRender::IMGuiRender(ecs::World * world, EngineMain * engine, const ecs::entity_t moduleId)
+        : Module(world, engine, moduleId)
         , window_(engine->getWindow())
     {
         ImGui::CreateContext();
