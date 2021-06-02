@@ -379,7 +379,6 @@ namespace RxEngine
         void createSemaphores(uint32_t semaphoreCount);
         void destroySemaphores();
 
-        void createMaterialTexture(std::string textureName, sol::table details);
         sol::protected_function_result loadLuaFile(const std::filesystem::path & file) const;
         void setupLuaEnvironment();
 
@@ -447,7 +446,7 @@ namespace RxEngine
         auto mod = std::make_shared<T>(world.get(), this, modId, std::forward<Args>(args)...);
         userModules.push_back(mod);
         world->pushModuleScope(modId);
-        mod->registerModule();
+        //mod->registerModule();
         mod->startup();
         world->popModuleScope();
     }

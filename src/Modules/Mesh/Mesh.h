@@ -70,7 +70,6 @@ namespace RxEngine
         MeshModule(ecs::World * world, EngineMain * engine, const ecs::entity_t moduleId)
             : Module(world, engine, moduleId) {}
 
-        void registerModule() override;
         void startup() override;
         void shutdown() override;
     };

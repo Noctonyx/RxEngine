@@ -31,16 +31,11 @@ namespace RxEngine
         }
     }
 
-    void MaterialsModule::registerModule()
+    void MaterialsModule::startup()
     {
         world_->set<ComponentGui>(world_->getComponentId<Material>(),
                                   ComponentGui{.editor = materialUi});
-    }
 
-    void MaterialsModule::deregisterModule() { }
-
-    void MaterialsModule::startup()
-    {
         world_->createSystem("Material:Pipelines")
               .inGroup("Pipeline:PreFrame")
               .withQuery<MaterialPipelineDetails>()
@@ -69,7 +64,11 @@ namespace RxEngine
         materialQuery = world_->createQuery<Material>().id;
     }
 
-    void MaterialsModule::shutdown() { }
+    void MaterialsModule::shutdown() {
+        world_->remove<ComponentGui>(world_->getComponentId<Material>());
+        world_->lookup("Material:Pipelines").destroy();
+        world_->lookup("Material:setDescriptor").destroy();
+    }
 
     vk::ShaderStageFlags getStageFlags(const std::string & stage)
     {

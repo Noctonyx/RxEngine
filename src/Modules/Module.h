@@ -32,17 +32,9 @@ namespace RxEngine
 
         virtual ~Module() = default;
 
-        virtual void registerModule() {}
-
         virtual void startup() {}
         virtual void loadData(sol::table table) {}
-
-        //virtual void enable() {};
-        //virtual void disable() {};
-
         virtual void shutdown() {}
-
-        virtual void deregisterModule() {}
 
         void enable() const
         {

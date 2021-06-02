@@ -51,12 +51,6 @@ namespace RxEngine
         addModule<SceneCameraModule>();
         addModule<LightingModule>();
 
-        for (auto & m: modules) {
-            world->pushModuleScope(m->getModuleId());
-            m->registerModule();
-            world->popModuleScope();
-        }
-
         auto r = loadLuaFile("/lua/engine");
         if (!r.valid()) {
             return;
@@ -245,12 +239,13 @@ namespace RxEngine
         device_->clearQueues();
         RxCore::JobManager::instance().Shutdown();
 
-        for (auto & m: modules) {
+        for (auto & m: userModules) {
             m->shutdown();
         }
         for (auto & m: modules) {
-            m->deregisterModule();
+            m->shutdown();
         }
+        userModules.clear();
         modules.clear();
 
         world.reset();

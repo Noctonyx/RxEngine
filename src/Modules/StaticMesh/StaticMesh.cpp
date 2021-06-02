@@ -18,19 +18,15 @@ namespace RxEngine
 {
     struct SceneCamera;
 
-    void StaticMeshModule::registerModule()
-    {
-        world_->addSingleton<StaticMeshActiveBundle>();
-        worldObjects_ = world_->createQuery()
-            .with<WorldObject, WorldTransform, HasVisiblePrototype>()
-            .withJob()
-            //.withRelation<HasVisiblePrototype, VisiblePrototype>()
-            .withInheritance(true).id;
-
-    }
-
     void StaticMeshModule::startup()
     {
+        //world_->addSingleton<StaticMeshActiveBundle>();
+        worldObjects_ = world_->createQuery()
+                .with<WorldObject, WorldTransform, HasVisiblePrototype>()
+                .withJob()
+                //.withRelation<HasVisiblePrototype, VisiblePrototype>()
+                .withInheritance(true).id;
+
         world_->addSingleton<StaticInstanceBuffers>();
 
         auto sib = world_->getSingletonUpdate<StaticInstanceBuffers>();
@@ -121,7 +117,11 @@ namespace RxEngine
 
     ecs::entity_t getActiveMeshBundle(ecs::World * world)
     {
-        const auto smab = world->getSingleton<StaticMeshActiveBundle>();
+        auto smab = world->getSingleton<StaticMeshActiveBundle>();
+        if(!smab) {
+            world->addSingleton<StaticMeshActiveBundle>();
+            smab = world->getSingleton<StaticMeshActiveBundle>();
+        }
 
         if (world->isAlive(smab->currentBundle)) {
             return smab->currentBundle;

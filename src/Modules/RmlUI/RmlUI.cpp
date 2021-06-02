@@ -583,8 +583,6 @@ namespace RxEngine
         documents.erase(it);
     }
 #endif
-    void RmlUiModule::registerModule() { }
-
     void RmlUiModule::startup()
     {
         rmlSystem = std::make_unique<RmlSystemInterface>(world_);
@@ -853,6 +851,4 @@ namespace RxEngine
         rmlSystem.reset();
         rmlFile.reset();
     }
-
-    void RmlUiModule::deregisterModule() { }
 }

@@ -119,7 +119,7 @@ namespace RxEngine
         subMeshEntity.setDeferred(rdc);
     }
 
-    void MeshModule::registerModule()
+    void MeshModule::startup()
     {
         world_->set<ComponentGui>(world_->getComponentId<MeshBundle>(),
                                   ComponentGui{.editor = meshBundleGui});
@@ -127,10 +127,7 @@ namespace RxEngine
                                   ComponentGui{.editor = meshPrimitiveGui});
         world_->set<ComponentGui>(world_->getComponentId<SubMesh>(),
                                   ComponentGui{.editor = subMeshGui});
-    }
 
-    void MeshModule::startup()
-    {
         world_->createSystem("Mesh:CacheSubmeshData")
               .inGroup("Pipeline:PreFrame")
               .withQuery<SubMesh>()
@@ -138,5 +135,11 @@ namespace RxEngine
               .each(cacheMeshRenderDetails);
     }
 
-    void MeshModule::shutdown() {}
+    void MeshModule::shutdown() {
+        world_->remove<ComponentGui>(world_->getComponentId<MeshBundle>());
+        world_->remove<ComponentGui>(world_->getComponentId<Mesh>());
+        world_->remove<ComponentGui>(world_->getComponentId<SubMesh>());
+
+        world_->lookup("Mesh:CacheSubmeshData").destroy();
+    }
 }

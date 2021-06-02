@@ -78,7 +78,7 @@ namespace RxEngine
         }
     }
 
-    void TransformsModule::registerModule()
+    void TransformsModule::startup()
     {
         world_->set<ComponentGui>(world_->getComponentId<WorldPosition>(),
                                   {.editor = worldPositionGui});
@@ -88,7 +88,7 @@ namespace RxEngine
                                   {.editor = scalarScaleGui});
     }
 
-    void TransformsModule::deregisterModule()
+    void TransformsModule::shutdown()
     {
         world_->remove<ComponentGui>(world_->getComponentId<WorldPosition>());
         world_->remove<ComponentGui>(world_->getComponentId<LocalRotation>());
