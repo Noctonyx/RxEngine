@@ -313,7 +313,6 @@ namespace RxEngine
     {
         OPTICK_EVENT()
 
-
         auto & io = ImGui::GetIO();
         io.DeltaTime = deltaTime;
 
@@ -325,9 +324,11 @@ namespace RxEngine
             } else {
                 //window_->hideCursor(false);
                 switch (imgui_cursor) {
-                default:
                 case ImGuiMouseCursor_None:
                     window_->setCursor(RxCore::ECursorStandard::None);
+                    break;
+                default:
+                case ImGuiMouseCursor_Arrow:
                 case ImGuiMouseCursor_ResizeAll:
                 case ImGuiMouseCursor_ResizeNESW:
                 case ImGuiMouseCursor_ResizeNWSE:

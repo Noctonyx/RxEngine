@@ -6,7 +6,6 @@
 #include "RxECS.h"
 #include "Modules/StaticMesh/StaticMesh.h"
 
-
 static const auto & script_key_world = "GlobalResource.World";
 static const auto & script_key_engine = "GlobalResource.Engine";
 //static const auto& script_key = "GlobalResource.MySpecialIdentifier123";
