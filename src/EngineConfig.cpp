@@ -107,14 +107,36 @@ int sol_lua_push(sol::types<RxEngine::EngineMain *>, lua_State * L, RxEngine::En
 
 namespace RxEngine
 {
+    int dofile(lua_State * L)
+    {
+        std::string path = sol::stack::get<std::string>(L, 1);
+        const std::string script = RxAssets::vfs()->getAssetAsString(path);
+        int stack_size = lua_gettop(L);
+        if(luaL_loadbuffer(L, script.data(), script.size(), path.c_str()) != LUA_OK) {
+            spdlog::critical("Lua error - {0}", lua_tostring(L, -1));
+            throw std::runtime_error(lua_tostring(L, -1));
+        }
+        if (lua_pcall(L, 0, LUA_MULTRET, 0) != LUA_OK) {
+            //lua_error(L);
+            spdlog::critical("Lua error - {0}", lua_tostring(L, -1));
+            throw std::runtime_error(lua_tostring(L, -1));
+            //lua_close(L);
+            return 1;
+        }
+        int nresults = lua_gettop(L) - stack_size;
+        return nresults;
+    }
+
     void EngineMain::setupLuaEnvironment()
     {
-        lua->open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::package);
+        lua->open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::package, sol::lib::math);
 
-        lua->set("dofile", [this](std::string f)
-        {
-            loadLuaFile(f);
-        });
+        //   lua->set("dofile", [this](std::string f)
+        //    {
+        //        loadLuaFile(f);
+        //   });
+        //
+        lua->set("dofile", &dofile);
 
         //lua->clear_package_loaders();
         //lua->add_package_loader()
@@ -131,7 +153,13 @@ namespace RxEngine
             std::string path = "/lua/" + mod + ".lua";
             //spdlog::info("Trying to load {0}", path);
 
-            const std::string script = RxAssets::vfs()->getStringFile(path);
+            if(!RxAssets::vfs()->assetExists(path)) {
+                spdlog::critical("Lua error - cannot find module {0}", mod);
+                lua_pushboolean(L, 0);
+                return 1;
+            }
+
+            const std::string script = RxAssets::vfs()->getAssetAsString(path);
             luaL_loadbuffer(L, script.data(), script.size(), path.c_str());
             return 1;
         };

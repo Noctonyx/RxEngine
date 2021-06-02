@@ -461,7 +461,11 @@ namespace RxEngine
         }
 
         if (show_entity_window) {
+            bool is_open = show_entity_window;
             ecsInspectorEntityWindow(show_entity_window);
+            if (is_open != show_entity_window) {
+                setBoolConfigValue("editor", "ecsEntityWindow", show_entity_window);
+            }
         }
 #if 0
         if (show_components_window) {
@@ -482,7 +486,6 @@ namespace RxEngine
             ecsSingletonsWindow(show_singletons_window);
 
             if (is_open != show_singletons_window) {
-                show_singletons_window = is_open;
                 setBoolConfigValue("editor", "ecsSingletonsWindow", show_singletons_window);
             }
         }
@@ -492,7 +495,6 @@ namespace RxEngine
             showSystemsGui(show_systems_window);
 
             if (is_open != show_systems_window) {
-                show_systems_window = is_open;
                 setBoolConfigValue("editor", "ecsSystemsWindow", show_systems_window);
             }
         }

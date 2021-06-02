@@ -35,12 +35,12 @@ namespace RxEngine
 
     void EngineMain::bootModules()
     {
-        auto modId = world->createModule<Renderer>();
+        //auto modId = world->createModule<Renderer>();
         // auto name = ecs::World::trimName(typeid(std::remove_reference_t<Renderer>).name());
         //auto modId = world->newEntity(name.c_str()).add<ecs::Module>();
 
         modules.push_back(std::make_shared<Renderer>(device_->VkDevice(), world.get(),
-                                                     swapChain_->imageFormat(), this, modId));
+                                                     swapChain_->imageFormat(), this, 0));
 
         addModule<MaterialsModule>();
         addModule<RmlUiModule>();
@@ -74,7 +74,7 @@ namespace RxEngine
 
         for (auto & m: modules) {
             world->pushModuleScope(m->getModuleId());
-            m->loadData(r.get<sol::table>());
+            m->loadData(lua->get<sol::table>("data").get<sol::table>("raw"));
             world->popModuleScope();
             //m->processStartupData(lua, device_.get());
         }
@@ -177,21 +177,7 @@ namespace RxEngine
         });
         //window_->setWorld(world.get());
     }
-#if 0
-    bool EngineMain::loadLuaFiles() const
-    {
-        if (!loadLuaFile("/lua/engine")) {
-            return false;
-        }
 
-        for (auto & sf: configFiles) {
-            if (!loadLuaFile(sf)) {
-                return false;
-            }
-        }
-        return true;
-    }
-#endif
     bool EngineMain::startup(const char * windowTitle)
     {
         loadConfig();
@@ -238,12 +224,6 @@ namespace RxEngine
 
         setupLuaEnvironment();
 
-       /// if (!loadLuaFile("/lua/engine")) {
-            //return false;
-        //}
-        //if (!loadLuaFiles()) {
-        //return false;
-        //}
         loadModules();
         return true;
     }

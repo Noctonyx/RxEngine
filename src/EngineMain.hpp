@@ -463,7 +463,7 @@ namespace RxEngine
             path.replace_extension(".lua");
         }
 
-        const std::string script = RxAssets::vfs()->getStringFile(path);
+        const std::string script = RxAssets::vfs()->getAssetAsString(path);
         auto result = lua->safe_script(script, path.generic_string());
 
         if (!result.valid()) {

@@ -257,9 +257,11 @@ namespace RxEngine
     
     void StaticMeshModule::loadData(sol::table data)
     {       
-        sol::table meshes = data.get<sol::table>("meshes");
+        sol::optional<sol::table> meshes = data["mesh"];
 
-        loadMeshes(world_, engine_->getDevice(), meshes);
+        if (meshes.has_value()) {
+            loadMeshes(world_, engine_->getDevice(), meshes.value());
+        }
     }
 
     void StaticMeshModule::createOpaqueRenderCommands()

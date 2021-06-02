@@ -45,7 +45,7 @@ namespace RxEngine
 
         world_->createSystem("ImGui:UpdateGui")
               //.after<UiContextUpdate>()
-              .inGroup("Pipeline:UpdateUi")
+              .inGroup("Pipeline:Early")
               .execute([&, this](ecs::World * world)
               {
                   OPTICK_EVENT("ImGui:UpdateGui")

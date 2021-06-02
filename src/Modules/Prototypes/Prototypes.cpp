@@ -5,7 +5,6 @@
 #include "Modules/StaticMesh/StaticMesh.h"
 #include "Modules/Transforms/Transforms.h"
 #include "Modules/WorldObject/WorldObject.h"
-#include "sol/state.hpp"
 #include "sol/table.hpp"
 
 namespace RxEngine
@@ -97,10 +96,14 @@ namespace RxEngine
 
     void PrototypesModule::loadData(sol::table data)
     {
-        sol::table prototypes = data.get<sol::table>("prototypes");
-        sol::table visibles = data.get<sol::table>("visibles");
+        sol::optional<sol::table> prototypes = data["prototype"];
+        sol::optional<sol::table> visibles = data["visible"];
 
-        loadVisibles(world_, visibles);
-        loadPrototypes(world_, prototypes);
+        if (visibles.has_value()) {
+            loadVisibles(world_, visibles.value());
+        }
+        if (prototypes.has_value()) {
+            loadPrototypes(world_, prototypes.value());
+        }
     }
 }

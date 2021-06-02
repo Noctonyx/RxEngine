@@ -244,91 +244,100 @@ void CreateMeshCommand(args::Subparser & parser)
     archive.save(gli.md);
     std::string_view sv = archive.get_buffer();
 
-    fslua << "data.meshes[\"mesh/" << mesh_path.stem().generic_string() << "\"] = {\n";
-    fslua << "    mesh = \"" << asset_loc << "/" << mesh_path.filename().generic_string() << "\",\n";
-    fslua << "    vertices = " << gli.md.vertices.size() << ",\n";
-    fslua << "    indices = " << gli.md.indices.size() << ",\n";
-    fslua << "    submeshes = {\n";
+    fslua << "data:extend(\n  {\n    {\n";
+    fslua << "      type = \"mesh\",\n";
+    fslua << "      name = \"mesh/" << mesh_path.stem().generic_string() << "\",\n";
+    fslua << "      mesh = \"" << asset_loc << "/" << mesh_path.filename().generic_string() << "\",\n";
+    fslua << "      vertices = " << gli.md.vertices.size() << ",\n";
+    fslua << "      indices = " << gli.md.indices.size() << ",\n";
+    fslua << "      submeshes = {\n";
     for (auto sm: gli.md.primitives) {
-        fslua << "      {\n";
-        fslua << "        first_index = " << sm.firstIndex << ",\n";
-        fslua << "        index_count = " << sm.indexCount << ",\n";
-        fslua << "        material = " << sm.materialIndex << "\n";
-        fslua << "      },\n";
+        fslua << "        {\n";
+        fslua << "          first_index = " << sm.firstIndex << ",\n";
+        fslua << "          index_count = " << sm.indexCount << ",\n";
+        fslua << "          material = " << sm.materialIndex << "\n";
+        fslua << "        },\n";
     }
-    fslua << "    },\n";
-    fslua << "    materials = {\n";
+    fslua << "      },\n";
+    fslua << "      materials = {\n";
     for (auto ms: gli.mats) {
 
         fslua << "        \"material/" << ms.name << "\",\n";
     }
-    fslua << "    }\n";
-    fslua << "};\n\n";
+    fslua << "      }\n";
+    fslua << "    },\n";
+//    fslua << "    }\n  }\n);\n\n";
 
-
+    //fslua << "data:extend(\n  {\n    {\n";
     for (auto ms: gli.mats) {
-        fslua << "data.materials[\"material/" << ms.name << "\"] = {\n";
+        fslua << "    {\n";
+        fslua << "      type = \"material\",\n";
+        fslua << "      name = \"material/" << ms.name << "\",\n";
+
+        //fslua << "data.materials[\"material/" << ms.name << "\"] = {\n";
         if (ms.colorTextureAssetName != "") {
-            fslua << "    color_texture = \"texture/" << ms.colorTextureAssetName << "\",\n";
+            fslua << "      color_texture = \"texture/" << ms.colorTextureAssetName << "\",\n";
         }
         if (ms.emissionTextureAssetName != "") {
-            fslua << "    emission_texture = " << std::quoted(ms.emissionTextureAssetName) <<
+            fslua << "      emission_texture = " << std::quoted(ms.emissionTextureAssetName) <<
                 ",\n";
         }
         if (ms.normalTextureAssetName != "") {
-            fslua << "    normal_texture = " << ms.normalTextureAssetName << ",\n";
+            fslua << "      normal_texture = " << ms.normalTextureAssetName << ",\n";
         }
-        fslua << "    roughness = " << ms.roughnessValue << ",\n";
-        fslua << "    metallic = " << ms.metallicValue << ",\n";
-        fslua << "    alpha_mode = " << std::quoted(ms.transparency) << "\n";
+        fslua << "      roughness = " << ms.roughnessValue << ",\n";
+        fslua << "      metallic = " << ms.metallicValue << ",\n";
+        fslua << "      alpha_mode = " << std::quoted(ms.transparency) << "\n";
         //fslua << "    name = " << std::quoted(ms.name) << ",\n";
-        fslua << "};\n\n";
+        fslua << "    },\n";
     }
 
     for (auto tx: model.textures) {
-        fslua << "data.textures[\"texture/" << model.images[tx.source].name << "\"] = {\n";
-        fslua << "    image = \""  << asset_loc << "/" << model.images[tx.source].name << ".png\"" << ",\n";
-        fslua << "    sampler = {\n";
+        fslua << "    {\n";
+        fslua << "      type = \"texture\",\n";
+        fslua << "      name = \"texture/" << model.images[tx.source].name << "\",\n";
+        fslua << "      image = \""  << asset_loc << "/" << model.images[tx.source].name << ".png\"" << ",\n";
+        fslua << "      sampler = {\n";
         if (tx.sampler >= 0) {
             if (model.samplers[tx.sampler].minFilter == 9729 || model.samplers[tx.sampler].minFilter
                 == 9987) {
-                fslua << "      minFilter = " << std::quoted("linear") << ",\n";
+                fslua << "        minFilter = " << std::quoted("linear") << ",\n";
             }
             if (model.samplers[tx.sampler].minFilter == 9728) {
-                fslua << "      minFilter = " << std::quoted("nearest") << ",\n";
+                fslua << "        minFilter = " << std::quoted("nearest") << ",\n";
             }
             if (model.samplers[tx.sampler].magFilter == 9729 || model.samplers[tx.sampler].magFilter
                 == 9987) {
-                fslua << "      magFilter = " << std::quoted("linear") << ",\n";
+                fslua << "        magFilter = " << std::quoted("linear") << ",\n";
             }
             if (model.samplers[tx.sampler].magFilter == 9728) {
-                fslua << "      magFilter = " << std::quoted("nearest") << ",\n";
+                fslua << "        magFilter = " << std::quoted("nearest") << ",\n";
             }
 
             if (model.samplers[tx.sampler].wrapS == 33071) {
-                fslua << "      addressU = " << std::quoted("clamp-edge") << ",\n";
+                fslua << "        addressU = " << std::quoted("clamp-edge") << ",\n";
             }
             if (model.samplers[tx.sampler].wrapS == 33648) {
-                fslua << "      addressU = " << std::quoted("mirrored-repeat") << ",\n";
+                fslua << "        addressU = " << std::quoted("mirrored-repeat") << ",\n";
             }
             if (model.samplers[tx.sampler].wrapS == 10497) {
-                fslua << "      addressU = " << std::quoted("repeat") << ",\n";
+                fslua << "        addressU = " << std::quoted("repeat") << ",\n";
             }
 
             if (model.samplers[tx.sampler].wrapT == 33071) {
-                fslua << "      addressV = " << std::quoted("clamp-edge") << "\n";
+                fslua << "        addressV = " << std::quoted("clamp-edge") << "\n";
             }
             if (model.samplers[tx.sampler].wrapT == 33648) {
-                fslua << "      addressV = " << std::quoted("mirrored-repeat") << "\n";
+                fslua << "        addressV = " << std::quoted("mirrored-repeat") << "\n";
             }
             if (model.samplers[tx.sampler].wrapT == 10497) {
-                fslua << "      addressV = " << std::quoted("repeat") << "\n";
+                fslua << "        addressV = " << std::quoted("repeat") << "\n";
             }
+            fslua << "      }\n";
         }
-        fslua << "    }\n";
-        fslua << "};\n";
-
+        fslua << "    },\n";
     }
+    fslua << "  }\n);\n\n";
     //auto w = RxAssets::QuickSerialise(buf, gli.md);
     //buf.resize(sv.size());
     //std::copy(sv.begin(), sv.end(), buf.begin());

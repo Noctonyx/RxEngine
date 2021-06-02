@@ -802,19 +802,29 @@ namespace RxEngine
 
     void MaterialsModule::loadData(sol::table data)
     {
-        sol::table shaders = data.get<sol::table>("shaders");
-        sol::table layouts = data.get<sol::table>("pipeline_layouts");
-        sol::table textures = data.get<sol::table>("textures");
-        sol::table pipelines = data.get<sol::table>("material_pipelines");
-        sol::table materials = data.get<sol::table>("materials");
+        sol::optional<sol::table> shaders = data["shader"];
+        sol::optional<sol::table> layouts = data["pipeline_layout"];
+        sol::optional<sol::table> textures = data["texture"];
+        sol::optional<sol::table> pipelines = data["material_pipeline"];
+        sol::optional<sol::table> materials = data["material"];
 
         auto device = engine_->getDevice();
 
-        loadShaderData(world_, device, shaders);
-        loadLayouts(world_, device, layouts);
-        loadPipelines(world_, device, pipelines);
-        loadTextures(world_, device, textures);
-        loadMaterials(world_, device, materials);
+        if (shaders.has_value()) {
+            loadShaderData(world_, device, shaders.value());
+        }
+        if (layouts.has_value()) {
+            loadLayouts(world_, device, layouts.value());
+        }
+        if (pipelines.has_value()) {
+            loadPipelines(world_, device, pipelines.value());
+        }
+        if (textures.has_value()) {
+            loadTextures(world_, device, textures.value());
+        }
+        if (materials.has_value()) {
+            loadMaterials(world_, device, materials.value());
+        }
     }
 
     vk::Pipeline MaterialsModule::createMaterialPipeline(const MaterialPipelineDetails * mpd,
