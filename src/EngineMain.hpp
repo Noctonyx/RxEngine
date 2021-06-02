@@ -8,16 +8,7 @@
 #include <vector>
 #include <memory>
 #include <chrono>
-#include <RXCore.h>
 #include "Modules/Renderer/Renderer.hpp"
-//#include <Rendering/EntityManager.h>
-
-//#include "Delegates.hpp"
-//#include "Rendering/MaterialManager.h"
-
-//#include "UI/RmlFileInterface.h"
-//#include "UI/RmlSystemInterface.h"
-//#include "UI/RmlRenderInterface.h"
 #pragma warning(disable: 4706)
 #include "ini.h"
 #include "RxECS.h"
@@ -25,11 +16,6 @@
 #include "sol/sol.hpp"
 #include "Window.hpp"
 #include "Modules/Module.h"
-#include "imgui.h"
-//#include "LuaBridge/detail/LuaRef.h"
-
-//#include <sol/sol.hpp>
-
 
 namespace RxAssets
 {
@@ -44,10 +30,6 @@ namespace RxCore
 
 namespace RxEngine
 {
-    class Subsystem;
-    class Window;
-    class Scene;
-
     struct EngineTime
     {
         float delta;
@@ -87,7 +69,7 @@ namespace RxEngine
 
     struct WindowDetails
     {
-        RxCore::Window* window;
+        RxCore::Window * window;
 
         uint32_t width;
         uint32_t height;
@@ -233,7 +215,7 @@ namespace RxEngine
         Repeat = 2
     };
 
-    enum EInputMod 
+    enum EInputMod
     {
         EInputMod_None = 0,
         EInputMod_Shift = 1,
@@ -322,10 +304,7 @@ namespace RxEngine
 
         void bootModules();
         void createSystems();
-        void setupWorld() const;
-        bool loadLuaFiles() const;
         bool startup(const char * windowTitle);
-        void loadModules();
 
         //void setActiveScene(std::shared_ptr<Scene> scene);
         void run();
@@ -363,22 +342,23 @@ namespace RxEngine
                                       const std::string & entry,
                                       uint32_t defaultValue);
 
-
+#if 0
         void addInitConfigFile(const std::string & config);
-
+#endif
         [[nodiscard]] ecs::World * getWorld() const
         {
             return world.get();
         }
 
-        template <class T>
-        void addModule();
+        template <class T, typename ...Args>
+        void addModule(Args && ... args);
 
         [[nodiscard]] size_t getUniformBufferAlignment(size_t size) const;
         [[nodiscard]] std::shared_ptr<RxCore::Buffer> createUniformBuffer(size_t size) const;
         [[nodiscard]] std::shared_ptr<RxCore::Buffer> createStorageBuffer(size_t size) const;
 
-        void addUserModule(std::shared_ptr<Module> module);
+        template <class T, class ... Args>
+        void addUserModule(Args && ... args);
 
         void captureMouse(bool enable);
 
@@ -391,6 +371,8 @@ namespace RxEngine
         {
             return device_.get();
         }
+
+        void loadDataFile(const std::filesystem::path & path);
 
     protected:
         void replaceSwapChain();
@@ -414,6 +396,9 @@ namespace RxEngine
         void showSystemsGui(bool & showWindow);
         void updateEntityGui();
 
+        static void createDataLoaderEnvironment(sol::state & state);
+        static sol::protected_function_result loadDataFile(sol::state & state,
+                                                           const std::filesystem::path & file);
 
     private:
         //std::vector<std::unique_ptr<Subsystem>> subsystems_;
@@ -430,7 +415,7 @@ namespace RxEngine
         std::vector<vk::Semaphore> submitCompleteSemaphores_;
         std::chrono::time_point<std::chrono::steady_clock> timer_;
 
-        std::vector<std::string> configFiles;
+        //std::vector<std::string> configFiles;
 
         std::chrono::time_point<std::chrono::steady_clock> startTime;
         float delta_{};
@@ -447,16 +432,28 @@ namespace RxEngine
         bool capturedMouse = false;
     };
 
-    template <class T>
-    void EngineMain::addModule()
+    template <class T, typename ... Args>
+    void EngineMain::addModule(Args && ... args)
     {
         auto modId = world->createModule<T>();
-        //auto name = ecs::World::trimName(typeid(std::remove_reference_t<T>).name());
-        //auto modId = world->newEntity(name.c_str()).add<ecs::Module>();
-        modules.push_back(std::make_shared<T>(world.get(), this, modId));
+        modules.push_back(
+            std::make_shared<T>(world.get(), this, modId, std::forward<Args>(args)...));
     }
 
-    inline sol::protected_function_result EngineMain::loadLuaFile(const std::filesystem::path & file) const
+    template <class T, class ...Args>
+    void EngineMain::addUserModule(Args && ... args)
+    {
+        auto modId = world->createModule<T>();
+        auto mod = std::make_shared<T>(world.get(), this, modId, std::forward<Args>(args)...);
+        userModules.push_back(mod);
+        world->pushModuleScope(modId);
+        mod->registerModule();
+        mod->startup();
+        world->popModuleScope();
+    }
+
+    inline sol::protected_function_result EngineMain::loadLuaFile(
+        const std::filesystem::path & file) const
     {
         auto path = file;
         if (!path.has_extension()) {

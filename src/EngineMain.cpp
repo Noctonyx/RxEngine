@@ -35,10 +35,6 @@ namespace RxEngine
 
     void EngineMain::bootModules()
     {
-        //auto modId = world->createModule<Renderer>();
-        // auto name = ecs::World::trimName(typeid(std::remove_reference_t<Renderer>).name());
-        //auto modId = world->newEntity(name.c_str()).add<ecs::Module>();
-
         modules.push_back(std::make_shared<Renderer>(device_->VkDevice(), world.get(),
                                                      swapChain_->imageFormat(), this, 0));
 
@@ -54,12 +50,6 @@ namespace RxEngine
         addModule<RTSCameraModule>();
         addModule<SceneCameraModule>();
         addModule<LightingModule>();
-#if 0
-        for (auto & um: userModules) {
-            modules.push_back(um);
-        }
-#endif
-        userModules.clear();
 
         for (auto & m: modules) {
             world->pushModuleScope(m->getModuleId());
@@ -76,7 +66,6 @@ namespace RxEngine
             world->pushModuleScope(m->getModuleId());
             m->loadData(lua->get<sol::table>("data").get<sol::table>("raw"));
             world->popModuleScope();
-            //m->processStartupData(lua, device_.get());
         }
 
         for (auto & m: modules) {
@@ -159,7 +148,7 @@ namespace RxEngine
              });
     }
 
-    void EngineMain::setupWorld() const
+    void setupWorld(ecs::World * world, RxCore::Window * window)
     {
         world->newEntity("Pipeline:PreFrame").set<ecs::SystemGroup>({1, false, 0.0f, 0.0f});
         world->newEntity("Pipeline:Early").set<ecs::SystemGroup>({2, false, 0.0f, 0.0f});
@@ -173,7 +162,7 @@ namespace RxEngine
         world->newEntity("Pipeline:PostFrame").set<ecs::SystemGroup>({10, false, 0.0f, 0.0f});
 
         world->setSingleton<WindowDetails>({
-            window_.get(), window_->getWidth(), window_->getHeight()
+            window, window->getWidth(), window->getHeight()
         });
         //window_->setWorld(world.get());
     }
@@ -218,32 +207,28 @@ namespace RxEngine
 
         timer_ = std::chrono::high_resolution_clock::now();
 
-        setupWorld();
+        setupWorld(world.get(), window_.get());
 
         lua = new sol::state();
 
         setupLuaEnvironment();
 
-        loadModules();
-        return true;
-    }
-
-    void EngineMain::loadModules()
-    {
         bootModules();
         createSystems();
-        world->set<ComponentGui>(world->getComponentId<ecs::Name>(), {.editor = ecsNameGui});
+
+        world->set<ComponentGui>(world->getComponentId<ecs::Name>(), { .editor = ecsNameGui });
         world->set<ComponentGui>(world->getComponentId<ecs::SystemGroup>(),
-                                 {.editor = ecsSystemGroupGui});
+            { .editor = ecsSystemGroupGui });
         world->set<ComponentGui>(world->getComponentId<WindowDetails>(),
-                                 {.editor = ecsWindowDetailsGui});
-        world->set<ComponentGui>(world->getComponentId<EngineTime>(), {.editor = ecsEngineTimeGui});
+            { .editor = ecsWindowDetailsGui });
+        world->set<ComponentGui>(world->getComponentId<EngineTime>(), { .editor = ecsEngineTimeGui });
         world->set<ComponentGui>(world->getComponentId<ecs::StreamComponent>(),
-                                 {.editor = ecsStreamComponentGui});
-        world->set<ComponentGui>(world->getComponentId<ecs::System>(), {.editor = ecsSystemGui});
+            { .editor = ecsStreamComponentGui });
+        world->set<ComponentGui>(world->getComponentId<ecs::System>(), { .editor = ecsSystemGui });
         world->set<ComponentGui>(world->getComponentId<ecs::Component>(),
-                                 {.editor = ecsComponentGui});
-        world->set<ComponentGui>(world->getComponentId<FrameStats>(), {.editor = frameStatsGui});
+            { .editor = ecsComponentGui });
+        world->set<ComponentGui>(world->getComponentId<FrameStats>(), { .editor = frameStatsGui });
+        return true;
     }
 
     void EngineMain::shutdown()
@@ -549,6 +534,7 @@ namespace RxEngine
             OPTICK_EVENT("Handle Events")
             handleEvents();
         }
+
         if (RxAssets::vfs()->hasChanged()) {
             RxAssets::vfs()->scan();
         }
@@ -588,15 +574,26 @@ namespace RxEngine
             VMA_MEMORY_USAGE_CPU_TO_GPU, size);
     }
 
-    void EngineMain::addUserModule(std::shared_ptr<Module> module)
-    {
-        userModules.push_back(module);
-    }
-
     void EngineMain::captureMouse(bool enable)
     {
         capturedMouse = enable;
         window_->hideCursor(enable);
+    }
+
+    void EngineMain::loadDataFile(const std::filesystem::path & path)
+    {
+        sol::state loaderState;
+
+        createDataLoaderEnvironment(loaderState);
+        //loaderState
+
+        loadDataFile(loaderState, path);
+
+        for (auto& m : modules) {
+            world->pushModuleScope(m->getModuleId());
+            m->loadData(loaderState.get<sol::table>("data").get<sol::table>("raw"));
+            world->popModuleScope();
+        }
     }
 
     void EngineMain::replaceSwapChain()
@@ -668,12 +665,12 @@ namespace RxEngine
         }
         return v;
     }
-
+#if 0
     void EngineMain::addInitConfigFile(const std::string & config)
     {
         configFiles.push_back(config);
     }
-
+#endif
     void EngineMain::setUint32ConfigValue(const std::string & section,
                                           const std::string & entry,
                                           const uint32_t value)

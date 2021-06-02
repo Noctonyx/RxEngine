@@ -42,7 +42,7 @@ add_library(RxEngine STATIC
         src/Modules/Render.h
         src/Modules/Render.cpp
         src/Modules/Transforms/Transforms.h
-        src/EngineConfig.h
+        
         src/EngineConfig.cpp
         src/EngineUI.cpp 
         src/Modules/Stats/Stats.h

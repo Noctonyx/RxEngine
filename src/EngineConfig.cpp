@@ -1,6 +1,4 @@
 #include "EngineMain.hpp"
-#include "EngineConfig.h"
-#include "Modules/Render.h"
 #include <sol/sol.hpp>
 #include "AssetException.h"
 #include "SerialisationData.h"
@@ -130,22 +128,15 @@ namespace RxEngine
     void EngineMain::setupLuaEnvironment()
     {
         lua->open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::package, sol::lib::math);
-
-        //   lua->set("dofile", [this](std::string f)
-        //    {
-        //        loadLuaFile(f);
-        //   });
-        //
         lua->set("dofile", &dofile);
+        lua->set("loadfile", nullptr);
+        lua->set("load", nullptr);
 
-        //lua->clear_package_loaders();
-        //lua->add_package_loader()
         sol::table package = (*lua)["package"];
         sol::table loaders = package["searchers"];
         sol::function f = loaders[1];
 
         sol::table t = lua->create_table();
-        //t[1] = l;
         t[1] = f;
         t[2] = [](lua_State * L)
         {
@@ -170,5 +161,59 @@ namespace RxEngine
         {
             shouldQuit = true;
         });
+    }
+
+    void EngineMain::createDataLoaderEnvironment(sol::state & state)
+    {
+        state.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::package, sol::lib::math);
+        state.set("dofile", &dofile);
+        state.set("loadfile", nullptr);
+        state.set("load", nullptr);
+
+        sol::table package = state["package"];
+        sol::table loaders = package["searchers"];
+        sol::function f = loaders[1];
+
+        sol::table t = state.create_table();
+        t[1] = f;
+        t[2] = [](lua_State* L)
+        {
+            std::string mod = sol::stack::get<std::string>(L, 1);
+            std::string path = "/lua/" + mod + ".lua";
+            //spdlog::info("Trying to load {0}", path);
+
+            if (!RxAssets::vfs()->assetExists(path)) {
+                spdlog::critical("Lua error - cannot find module {0}", mod);
+                lua_pushboolean(L, 0);
+                return 1;
+            }
+
+            const std::string script = RxAssets::vfs()->getAssetAsString(path);
+            luaL_loadbuffer(L, script.data(), script.size(), path.c_str());
+            return 1;
+        };
+
+        package.set("searchers", t);
+
+        state.do_string("serpent = require('util/serpent'); data = require('util/data')");
+    }
+
+    sol::protected_function_result EngineMain::loadDataFile(sol::state & state, const std::filesystem::path & file)
+    {
+        auto path = file;
+        if (!path.has_extension()) {
+            path.replace_extension(".lua");
+        }
+
+        const std::string script = RxAssets::vfs()->getAssetAsString(path);
+        auto result = state.safe_script(script, path.generic_string());
+
+        if (!result.valid()) {
+            sol::error err = result;
+            std::string what = err.what();
+            spdlog::critical("Lua error - {0}", err.what());
+        }
+
+        return result;
     }
 }
