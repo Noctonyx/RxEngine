@@ -28,7 +28,10 @@ namespace RxEngine
         Module(ecs::World * world, EngineMain * engine, const ecs::entity_t moduleId)
             : world_(world)
             , engine_(engine)
-            , moduleId(moduleId) { }
+            , moduleId(moduleId)
+        {
+            world->setModuleObject(moduleId, this);
+        }
 
         virtual ~Module() = default;
 
@@ -36,18 +39,32 @@ namespace RxEngine
         virtual void loadData(sol::table table) {}
         virtual void shutdown() {}
 
-        void enable() const
+        virtual void onDisabled() {}
+        virtual void onEnabled() {}
+
+        void enable()
         {
             world_->setModuleEnabled(moduleId, true);
+            onEnabled();
         }
 
-        void disable() const
+        void disable()
         {
             world_->setModuleEnabled(moduleId, false);
+            onDisabled();
         };
 
         ecs::entity_t getModuleId() const { return moduleId; }
 
+        template<class T>
+        T* getObject();
+
         //virtual void processStartupData(sol::state* lua, RxCore::Device* device) {};
     };
+
+    template <class T>
+    T * Module::getObject()
+    {
+        return world_->getModuleObject<T>(moduleId);
+    }
 }

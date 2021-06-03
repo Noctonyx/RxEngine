@@ -222,6 +222,11 @@ namespace RxEngine
         world->set<ComponentGui>(world->getComponentId<ecs::Component>(),
             { .editor = ecsComponentGui });
         world->set<ComponentGui>(world->getComponentId<FrameStats>(), { .editor = frameStatsGui });
+
+        for (auto& m : modules) {
+            m->enable();
+        }
+
         return true;
     }
 
