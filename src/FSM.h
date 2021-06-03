@@ -15,10 +15,11 @@ namespace RxEngine
         virtual void onEntry(ecs::World * world, EngineMain * engine) { }
         virtual void onExit(ecs::World * world, EngineMain * engine) {}
         virtual void step(FSM * fsm, ecs::World * world, EngineMain * engine) = 0;
-
+#if 0
         virtual void onTransition(std::string_view target,
                                   ecs::World * world,
                                   EngineMain * engine) {}
+#endif
         virtual std::string getName() = 0;
     };
 
