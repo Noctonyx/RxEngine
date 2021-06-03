@@ -35,8 +35,9 @@ namespace RxEngine
 
     void EngineMain::bootModules()
     {
+        auto modId = world->createModule<Renderer>();
         modules.push_back(std::make_shared<Renderer>(device_->VkDevice(), world.get(),
-                                                     swapChain_->imageFormat(), this, 0));
+                                                     swapChain_->imageFormat(), this, modId));
 
         addModule<MaterialsModule>();
         addModule<RmlUiModule>();
