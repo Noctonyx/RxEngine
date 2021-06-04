@@ -85,13 +85,13 @@ namespace RxEngine
         mb->vertexCount = 0;
         mb->indexCount = 0;
         mb->vertexSize = sizeof(StaticMeshVertex);
-        mb->useDescriptor = true;
+        //mb->useDescriptor = true;
         mb->maxVertexCount = (256 * 1024 * 1024 / mb->vertexSize);
         mb->maxIndexCount = mb->maxVertexCount;
 
         mb->vertexBuffer = RxCore::iVulkan()->createBuffer(
             vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eVertexBuffer |
-            vk::BufferUsageFlagBits::eTransferDst,
+            vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eShaderDeviceAddress,
             VMA_MEMORY_USAGE_GPU_ONLY, mb->maxVertexCount * mb->vertexSize);
 
         mb->indexBuffer = RxCore::iVulkan()->createIndexBuffer(
@@ -106,10 +106,16 @@ namespace RxEngine
                 }
             }, 10);
 
-        auto pl = world->lookup("layout/general").get<PipelineLayout>();
+        //auto pl = world->lookup("layout/general").get<PipelineLayout>();
+#if 0
         mb->descriptorSet = RxCore::threadResources.getDescriptorSet(pool_template, pl->dsls[1]);
         mb->descriptorSet->
             updateDescriptor(0, vk::DescriptorType::eStorageBuffer, mb->vertexBuffer);
+#endif
+        vk::BufferDeviceAddressInfo bdai{};
+        bdai.setBuffer(mb->vertexBuffer->handle());
+
+        mb->address = RxCore::iVulkan()->VkDevice().getBufferAddress(bdai);
 
         world->getSingletonUpdate<StaticMeshActiveBundle>()->currentBundle = mbe.id;
         return mbe.id;
@@ -504,13 +510,14 @@ namespace RxEngine
                     OPTICK_EVENT("Bind Bundle")
                     auto bund = world_->get<MeshBundle>(h.bundle);
                     {
-                        if (bund->useDescriptor) {
+//                        if (bund->useDescriptor) {
                             OPTICK_EVENT("Bind Ds")
-                            buf->BindDescriptorSet(1, bund->descriptorSet);
-                        } else {
-                            OPTICK_EVENT("Bind VB")
-                            buf->bindVertexBuffer(bund->vertexBuffer);
-                        }
+                            //buf->BindDescriptorSet(1, bund->descriptorSet);
+                            buf->pushConstant(vk::ShaderStageFlagBits::eVertex, 0, sizeof(vk::DeviceAddress), &bund->address);
+//                        } else {
+  //                          OPTICK_EVENT("Bind VB")
+    //                        buf->bindVertexBuffer(bund->vertexBuffer);
+      //                  }
                     }
                     {
                         OPTICK_EVENT("Bind IB")

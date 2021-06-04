@@ -165,7 +165,7 @@ data:extend(
             {
                 stage = "vert",
                 offset = 0,
-                size = 4
+                size = 8
             }
         }
     }
