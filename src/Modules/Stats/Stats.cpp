@@ -13,7 +13,7 @@ namespace RxEngine
               .inGroup("Pipeline:UpdateUi")           
               .execute([this](ecs::World * w)
                   {
-                      RxCore::iVulkan()->getMemBudget(heaps_);
+                    engine_->getDevice()->getMemBudget(heaps_);
                       delta_ = w->deltaTime();
                       fps_ = fps_ * 0.99f + 0.01f * (1 / delta_);
                       presentStatsUi();

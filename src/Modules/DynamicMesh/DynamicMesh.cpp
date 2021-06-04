@@ -2,7 +2,6 @@
 
 #include "Modules/Mesh/Mesh.h"
 #include "Modules/WorldObject/WorldObject.h"
-#include "Vulkan/ThreadResources.h"
 
 namespace RxEngine
 {
@@ -16,14 +15,6 @@ namespace RxEngine
         sib->sizes.resize(5);
         sib->buffers.resize(5);
         //sib->descriptorSets.resize(5);
-
-        const RxCore::DescriptorPoolTemplate pool_template(
-            {
-                {
-                    vk::DescriptorType::eStorageBuffer,
-                    10
-                }
-            }, 10);
 #if 0
         auto pl = world_->lookup("layout/general").get<PipelineLayout>();
 
@@ -36,7 +27,7 @@ namespace RxEngine
     }
 
     void DynamicMeshModule::shutdown() { }
-
+#if 0
     ecs::entity_t createDynamicMeshBundle(ecs::World* world)
     {
         auto mbe = world->newEntity();
@@ -50,6 +41,7 @@ namespace RxEngine
         mb->maxVertexCount = (256 * 1024 * 1024 / mb->vertexSize);
         mb->maxIndexCount = mb->maxVertexCount;
 
+
         mb->vertexBuffer = RxCore::iVulkan()->createBuffer(
             vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eVertexBuffer |
             vk::BufferUsageFlagBits::eTransferDst,
@@ -58,14 +50,6 @@ namespace RxEngine
         mb->indexBuffer = RxCore::iVulkan()->createIndexBuffer(
             VMA_MEMORY_USAGE_GPU_ONLY, static_cast<uint32_t>(mb->maxVertexCount * sizeof(uint32_t)),
             false);
-
-        const RxCore::DescriptorPoolTemplate pool_template(
-            {
-                {
-                    vk::DescriptorType::eStorageBuffer,
-                    10
-                }
-            }, 10);
 
         //auto pl = world->lookup("layout/general").get<PipelineLayout>();
 #if 0
@@ -76,7 +60,7 @@ namespace RxEngine
         vk::BufferDeviceAddressInfo bdai{};
         bdai.setBuffer(mb->vertexBuffer->handle());
 
-        mb->address = RxCore::iVulkan()->VkDevice().getBufferAddress(bdai);
+        mb->address =  RxCore::iVulkan()->VkDevice().getBufferAddress(bdai);
 
         world->getSingletonUpdate<DynamicMeshActiveBundle>()->currentBundle = mbe.id;
         return mbe.id;
@@ -92,4 +76,5 @@ namespace RxEngine
 
         return createDynamicMeshBundle(world);
     }
+#endif
 }

@@ -348,7 +348,7 @@ namespace RxEngine
         //vk::PipelineLayout pipelineLayout;
         //std::vector<vk::DescriptorSetLayout> dsLayouts;
 
-        std::shared_ptr<RxCore::DescriptorPool> descriptorPool;
+        RxApi::DescriptorPoolPtr descriptorPool;
         void ensureDepthBufferExists(RxApi::Extent & extent);
         void ensureShadowImages(uint32_t shadowMapSize, uint32_t numCascades);
 
@@ -369,6 +369,7 @@ namespace RxEngine
             uint32_t pipelineIndex,
             IndirectDrawSet & drawSet) const;
 #endif
+#if 0
         static void cullEntitiesProj(
             const DirectX::XMMATRIX & proj,
             const DirectX::XMMATRIX & view,
@@ -384,7 +385,7 @@ namespace RxEngine
             const DirectX::XMMATRIX & projView,
             const DirectX::XMVECTOR & viewRight,
             const DirectX::BoundingSphere & sphere);
-
+#endif
         std::vector<RxApi::BufferPtr> instanceBuffers;
         std::vector<RxApi::DescriptorSetPtr> instanceBufferDS;
         //uint32_t ibCycle{};

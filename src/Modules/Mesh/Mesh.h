@@ -21,7 +21,7 @@ namespace RxEngine
         //bool useDescriptor{};
 
         std::vector<ecs::entity_t> entries;
-        vk::DeviceAddress address;
+        RxApi::DeviceAddress address;
     };
 
     struct Mesh
