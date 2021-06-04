@@ -318,11 +318,11 @@ namespace RxEngine
                     auto tx = XMLoadFloat4x4(&wt->transform);
                     vp->boundingSphere.Transform(bs, tx);
 
-                    for (size_t i = 0; i < 6; i++) {
+                    for (auto & plane : planes) {
                         DirectX::XMVECTOR c = DirectX::XMLoadFloat3(&bs.Center);
                         c = DirectX::XMVectorSetW(c, 1.f);
 
-                        DirectX::XMVECTOR Dist = DirectX::XMVector4Dot(c, planes[i]);
+                        DirectX::XMVECTOR Dist = DirectX::XMVector4Dot(c, plane);
                         if (DirectX::XMVectorGetX(Dist) > bs.Radius) {
                             return;
                         }
@@ -421,8 +421,8 @@ namespace RxEngine
                 ids.commands[commandIndex].instanceCount++;
 
                 if (ids.instances.size() > 19990) {
-                    spdlog::info("too many instances");
-                    break;
+                    //spdlog::info("too many instances");
+                    //break;
                 }
             }
         }
@@ -486,7 +486,6 @@ namespace RxEngine
         world_->getStream<Render::OpaqueRenderCommand>()
               ->add<Render::OpaqueRenderCommand>({buf});
     }
-
 
     void StaticMeshModule::renderIndirectDraws(
         IndirectDrawSet ids,

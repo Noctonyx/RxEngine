@@ -15,6 +15,7 @@
 #include "Vfs.h"
 #include "sol/sol.hpp"
 #include "Window.hpp"
+#include "Log.h"
 #include "Modules/Module.h"
 
 namespace RxAssets
@@ -26,6 +27,7 @@ namespace RxCore
 {
     class Window;
     class SwapChain;
+    class Buffer;
 }
 
 namespace RxEngine
@@ -43,28 +45,13 @@ namespace RxEngine
 
     struct RxJobAdaptor : ecs::JobInterface
     {
-        JobHandle create(std::function<void()> f) override
-        {
-            return RxCore::CreateJob<void>(f);
-        }
+        JobHandle create(std::function<void()> f) override;
 
-        void schedule(JobHandle job_handle) override
-        {
-            auto x = std::static_pointer_cast<RxCore::Job<void>>(job_handle);
-            x->schedule();
-        }
+        void schedule(JobHandle job_handle) override;
 
-        bool isComplete(JobHandle job_handle) const override
-        {
-            auto x = std::static_pointer_cast<RxCore::Job<void>>(job_handle);
-            return x->isCompleted();
-        }
+        bool isComplete(JobHandle job_handle) const override;
 
-        void awaitCompletion(JobHandle job_handle) override
-        {
-            auto x = std::static_pointer_cast<RxCore::Job<void>>(job_handle);
-            x->waitComplete();
-        }
+        void awaitCompletion(JobHandle job_handle) override;
     };
 
     struct WindowDetails

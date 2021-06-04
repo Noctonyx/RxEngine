@@ -18,7 +18,6 @@
 #include "Modules/Stats/Stats.h"
 #include "Modules/Prototypes/Prototypes.h"
 #include "Modules/RmlUI/RmlUI.h"
-//#include "Modules/RmlUI/UiContext.h"
 #include "Events.h"
 #include "Modules/RTSCamera/RTSCamera.h"
 #include "Modules/SceneCamera/SceneCamera.h"
@@ -696,5 +695,28 @@ namespace RxEngine
                                         const bool value)
     {
         setConfigValue(section, entry, value ? "1" : "0");
+    }
+
+    ecs::JobInterface::JobHandle RxJobAdaptor::create(std::function<void()> f)
+    {
+        return RxCore::CreateJob<void>(f);
+    }
+
+    void RxJobAdaptor::schedule(ecs::JobInterface::JobHandle job_handle)
+    {
+        auto x = std::static_pointer_cast<RxCore::Job<void>>(job_handle);
+        x->schedule();
+    }
+
+    bool RxJobAdaptor::isComplete(ecs::JobInterface::JobHandle job_handle) const
+    {
+        auto x = std::static_pointer_cast<RxCore::Job<void>>(job_handle);
+        return x->isCompleted();
+    }
+
+    void RxJobAdaptor::awaitCompletion(ecs::JobInterface::JobHandle job_handle)
+    {
+        auto x = std::static_pointer_cast<RxCore::Job<void>>(job_handle);
+        x->waitComplete();
     }
 } // namespace RXEngine
