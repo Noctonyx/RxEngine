@@ -117,7 +117,6 @@ namespace RxEngine
     {
         uint32_t count;
         std::vector<RxApi::BufferPtr> buffers;
-        std::vector<RxApi::DescriptorSetPtr> descriptorSets;
         std::vector<uint32_t> sizes;
 
         uint32_t ix;

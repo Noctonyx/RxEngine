@@ -15,7 +15,7 @@ namespace RxEngine
         sib->count = 5;
         sib->sizes.resize(5);
         sib->buffers.resize(5);
-        sib->descriptorSets.resize(5);
+        //sib->descriptorSets.resize(5);
 
         const RxCore::DescriptorPoolTemplate pool_template(
             {
@@ -24,7 +24,7 @@ namespace RxEngine
                     10
                 }
             }, 10);
-
+#if 0
         auto pl = world_->lookup("layout/general").get<PipelineLayout>();
 
         for (uint32_t i = 0; i < sib->count; i++) {
@@ -32,6 +32,7 @@ namespace RxEngine
             sib->descriptorSets[i] = RxCore::threadResources.getDescriptorSet(
                 pool_template, pl->dsls[2]);
         }
+#endif
     }
 
     void DynamicMeshModule::shutdown() { }
@@ -45,7 +46,7 @@ namespace RxEngine
         mb->vertexCount = 0;
         mb->indexCount = 0;
         mb->vertexSize = sizeof(DynamicMeshVertex);
-        mb->useDescriptor = true;
+        //mb->useDescriptor = true;
         mb->maxVertexCount = (256 * 1024 * 1024 / mb->vertexSize);
         mb->maxIndexCount = mb->maxVertexCount;
 
@@ -66,10 +67,16 @@ namespace RxEngine
                 }
             }, 10);
 
-        auto pl = world->lookup("layout/general").get<PipelineLayout>();
+        //auto pl = world->lookup("layout/general").get<PipelineLayout>();
+#if 0
         mb->descriptorSet = RxCore::threadResources.getDescriptorSet(pool_template, pl->dsls[1]);
         mb->descriptorSet->
             updateDescriptor(0, vk::DescriptorType::eStorageBuffer, mb->vertexBuffer);
+#endif
+        vk::BufferDeviceAddressInfo bdai{};
+        bdai.setBuffer(mb->vertexBuffer->handle());
+
+        mb->address = RxCore::iVulkan()->VkDevice().getBufferAddress(bdai);
 
         world->getSingletonUpdate<DynamicMeshActiveBundle>()->currentBundle = mbe.id;
         return mbe.id;

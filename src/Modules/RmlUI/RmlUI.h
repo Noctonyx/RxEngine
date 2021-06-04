@@ -127,12 +127,12 @@ namespace RxEngine
         std::vector<Rml::Vertex> vertices_;
         std::vector<uint32_t> indices_;
 
-        RxCore::DescriptorPoolTemplate poolTemplate_;
         RxApi::DescriptorSetPtr currentDescriptorSet;
         std::unordered_map<uintptr_t, uint32_t> textureSamplerMap;
 
         RxApi::DescriptorSetPtr set0_;
         ecs::EntityHandle pipeline_{};
+        std::shared_ptr<RxCore::DescriptorPool> descriptorPool;
 
         RxApi::UniformBufferPtr ub_;
         DirectX::XMFLOAT4X4 projectionMatrix_{};

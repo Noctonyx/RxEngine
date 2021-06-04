@@ -1,7 +1,9 @@
 #version 460
 
 #extension GL_GOOGLE_include_directive: enable
-//!#extension GL_KHR_vulkan_glsl : enable
+//#extension GL_vulkan_glsl : enable
+#extension GL_EXT_buffer_reference : require
+#extension GL_EXT_buffer_reference_uvec2 : require
 
 #include "lighting.glsl"
 
@@ -42,9 +44,19 @@ struct Material {
     uint colorMapIndex;
 };
 
-layout(set=1, binding =0) readonly buffer V {
+//layout(set=1, binding =0) readonly buffer V {
+    //Vertex vertices[];
+//} ;
+
+layout(buffer_reference, std430, buffer_reference_align = 16) readonly buffer ReadVertex
+{
     Vertex vertices[];
-} ;
+};
+
+layout(buffer_reference, std430, buffer_reference_align = 16) readonly buffer ReadInstances
+{
+    InstanceData instance[];
+};
 
 layout(std430, set=0, binding =3) readonly buffer M {
     Material materials[];
@@ -52,13 +64,15 @@ layout(std430, set=0, binding =3) readonly buffer M {
 
 layout(set=0, binding =4) uniform sampler2D textures[];
 
-layout(set=2, binding=0) readonly buffer I {
-    InstanceData instance[];
-};
+//layout(set=2, binding=0) readonly buffer I {
+//    InstanceData instance[];
+//};
 
 layout(push_constant) uniform uPushConstant {
-    mat4 local; 
-    uint cascadeIndex;
+    //mat4 local; 
+    //uint cascadeIndex;
+    ReadVertex src;
+    ReadInstances inst;
  } pc;
 
 out gl_PerVertex { vec4 gl_Position; };
@@ -71,13 +85,13 @@ layout(location=4) flat out uint outTexId;
 
 void main()
 {
-    Vertex v = vertices[gl_VertexIndex];
+    Vertex v = pc.src.vertices[gl_VertexIndex];
     vec3 inPos = v.aPos;
     vec2 inUV = v.aUv;
     vec3 inNormal = v.aNormal;
 
-    mat4 local = instance[gl_InstanceIndex].transform;
-    uint matId = instance[gl_InstanceIndex].materialID;
+    mat4 local = pc.inst.instance[gl_InstanceIndex].transform;
+    uint matId = pc.inst.instance[gl_InstanceIndex].materialID;
     outTexId = materials[matId].colorMapIndex;
 
     vec4 p = uboCamera.projection * uboCamera.view * local * vec4(inPos, 1.0);

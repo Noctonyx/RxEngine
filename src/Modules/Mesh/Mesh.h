@@ -9,7 +9,6 @@ namespace RxEngine
     {
         RxApi::BufferPtr vertexBuffer;
         RxApi::IndexBufferPtr indexBuffer;
-        RxApi::DescriptorSetPtr descriptorSet;
 
         uint32_t vertexSize{};
 
@@ -19,9 +18,10 @@ namespace RxEngine
         uint32_t maxIndexCount{};
         uint32_t maxVertexCount{};
 
-        bool useDescriptor{};
+        //bool useDescriptor{};
 
         std::vector<ecs::entity_t> entries;
+        vk::DeviceAddress address;
     };
 
     struct Mesh

@@ -5,6 +5,7 @@
 #include <utility>
 #include "robin_hood.h"
 #include "DirectXCollision.h"
+#include "EngineMain.hpp"
 #include "Modules/Render.h"
 
 using namespace DirectX;
@@ -18,15 +19,7 @@ namespace RxEngine
                        const ecs::entity_t moduleId)
         : Module(world, engine, moduleId)
         , imageFormat_(imageFormat)
-        , shadowImagesChanged(true)
-        , poolTemplate(
-            {
-                {vk::DescriptorType::eCombinedImageSampler, 15000},
-                {vk::DescriptorType::eUniformBufferDynamic, 600},
-                {vk::DescriptorType::eStorageBuffer, 600},
-                {vk::DescriptorType::eUniformBuffer, 800}
-            },
-            400)
+        , shadowImagesChanged(true)      
     //, world_(world)
     //, query_(*world, "!RxEngine.Render.Pipeline")
     {
@@ -41,6 +34,14 @@ namespace RxEngine
     {
         createRenderPass();
         createDepthRenderPass();
+
+        descriptorPool = engine_->getDevice()->CreateDescriptorPool({
+                {vk::DescriptorType::eCombinedImageSampler, 15000},
+                {vk::DescriptorType::eUniformBufferDynamic, 600},
+                {vk::DescriptorType::eStorageBuffer, 600},
+                {vk::DescriptorType::eUniformBuffer, 800}
+            },
+            400);
 
         world_->setSingleton<RenderPasses>({
             renderPass_, 0,
@@ -132,9 +133,10 @@ namespace RxEngine
               .executeIfNone([this](ecs::World * world)
               {
                   auto pl = world_->lookup("layout/general").get<PipelineLayout>();
-                  auto ds0_ = RxCore::threadResources.getDescriptorSet(
-                      poolTemplate,
-                      pl->dsls[0], {1});
+                  auto ds0_ = descriptorPool->allocateDescriptorSet(pl->dsls[0], { 1 });
+//                  auto ds0_ = //RxCore::threadResources.getDescriptorSet(
+  //                    poolTemplate,
+    //                  pl->dsls[0], {1});
 
                   auto e = world->newEntity();
                   auto x = e.addAndUpdate<DescriptorSet>();
