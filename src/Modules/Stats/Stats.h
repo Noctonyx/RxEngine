@@ -4,7 +4,8 @@
 
 #include "Modules/Module.h"
 #include "RxECS.h"
-#include "Vulkan/Device.h"
+#include "RxCore.h"
+//#include "Vulkan/Device.h"
 
 namespace RxEngine
 {
@@ -17,7 +18,7 @@ namespace RxEngine
         std::deque<float> fpsHistory_{};
         std::deque<float> gpuHistory_{};
 
-        std::vector<RxCore::MemHeapStatus> heaps_{};
+        std::vector<RxApi::MemHeapStatus> heaps_{};
 
     public:
         StatsModule(ecs::World * world, EngineMain * engine, const ecs::entity_t moduleId)

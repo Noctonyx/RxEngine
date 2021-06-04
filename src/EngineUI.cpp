@@ -1,4 +1,5 @@
 #include "EngineMain.hpp"
+#include "optick/optick.h"
 #include "imgui.h"
 #include "Modules/ImGui/ImGuiRender.hpp"
 

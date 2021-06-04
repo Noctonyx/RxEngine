@@ -1,25 +1,12 @@
 #pragma once
 #include "Modules/Module.h"
-//#include "RmlFileInterface.h"
-//#include "RmlRenderInterface.h"
-//#include "RmlSystemInterface.h"
+#include <RxCore.h>
 #include "DirectXMath.h"
 #include "Vfs.h"
 #include "RmlUi/Core/FileInterface.h"
 #include "RmlUi/Core/Log.h"
 #include "RmlUi/Core/RenderInterface.h"
 #include "RmlUi/Core/SystemInterface.h"
-#include "Vulkan/DescriptorPool.hpp"
-
-namespace RxCore
-{
-    class Image;
-    class ImageView;
-    class Buffer;
-    class VertexBuffer;
-    class IndexBuffer;
-    struct DescriptorPoolTemplate;
-}
 
 namespace Rml
 {
@@ -69,15 +56,15 @@ namespace RxEngine
         Rml::TextureHandle texture;
         DirectX::XMFLOAT2 translation;
         bool scissorEnable;
-        vk::Rect2D scissor;
+        RxApi::Rect scissor;
         DirectX::XMFLOAT4X4 transform;
     };
 
     struct RenderTextureEntry
     {
-        std::shared_ptr<RxCore::Image> image;
-        std::shared_ptr<RxCore::ImageView> imageView;
-        vk::Sampler sampler;
+       RxApi::ImagePtr image;
+        RxApi::ImageViewPtr imageView;
+        RxApi::Sampler sampler;
     };
 
     struct RmlPushConstantData
@@ -126,7 +113,7 @@ namespace RxEngine
         }
 
     private:
-        std::tuple<std::shared_ptr<RxCore::VertexBuffer>, std::shared_ptr<RxCore::IndexBuffer>>
+        std::tuple<RxApi::VertexBufferPtr ,RxApi::IndexBufferPtr>
         CreateBuffers() const;
 
         std::unordered_map<uintptr_t, RenderTextureEntry> textureEntries_;
@@ -134,20 +121,20 @@ namespace RxEngine
 
         uintptr_t getNextTextureHandle() const;
         bool scissorEnabled_{};
-        vk::Rect2D scissorRect;
+        RxApi::Rect scissorRect;
         DirectX::XMFLOAT4X4 transform_{};
         std::vector<UiRenderEntry> renders;
         std::vector<Rml::Vertex> vertices_;
         std::vector<uint32_t> indices_;
 
         RxCore::DescriptorPoolTemplate poolTemplate_;
-        std::shared_ptr<RxCore::DescriptorSet> currentDescriptorSet;
+        RxApi::DescriptorSetPtr currentDescriptorSet;
         std::unordered_map<uintptr_t, uint32_t> textureSamplerMap;
 
-        std::shared_ptr<RxCore::DescriptorSet> set0_;
+        RxApi::DescriptorSetPtr set0_;
         ecs::EntityHandle pipeline_{};
 
-        std::shared_ptr<RxCore::Buffer> ub_;
+        RxApi::UniformBufferPtr ub_;
         DirectX::XMFLOAT4X4 projectionMatrix_{};
     };
 

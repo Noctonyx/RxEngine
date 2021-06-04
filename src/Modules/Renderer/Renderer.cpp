@@ -2,27 +2,21 @@
 #include <algorithm>
 #include <tuple>
 #include "Renderer.hpp"
-#include "Vulkan/CommandBuffer.hpp"
-#include "Vulkan/Image.hpp"
-#include "Vulkan/Queue.hpp"
 #include <utility>
-#include "Vulkan/FrameBuffer.h"
 #include "robin_hood.h"
 #include "DirectXCollision.h"
 #include "Modules/Render.h"
-#include "Vulkan/ThreadResources.h"
 
 using namespace DirectX;
 
 namespace RxEngine
 {
-    Renderer::Renderer(vk::Device device,
+    Renderer::Renderer(RxApi::DevicePtr device,
                        ecs::World * world,
-                       vk::Format imageFormat,
+                       RxApi::ImageFormat imageFormat,
                        EngineMain * engine,
                        const ecs::entity_t moduleId)
-        : DeviceObject(device)
-        , Module(world, engine, moduleId)
+        : Module(world, engine, moduleId)
         , imageFormat_(imageFormat)
         , shadowImagesChanged(true)
         , poolTemplate(

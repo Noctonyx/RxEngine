@@ -8,9 +8,6 @@
 #include "EngineMain.hpp"
 #include "RXCore.h"
 #include "RxECS.h"
-#include "Modules/Renderer/Renderer.hpp"
-
-#include "Modules/Module.h"
 #include "Modules/Environment/Environment.h"
 #include "Modules/ImGui/ImGuiRender.hpp"
 #include "Modules/Lighting/Lighting.h"
@@ -18,16 +15,14 @@
 #include "Modules/Stats/Stats.h"
 #include "Modules/Prototypes/Prototypes.h"
 #include "Modules/RmlUI/RmlUI.h"
-//#include "Modules/RmlUI/UiContext.h"
 #include "Events.h"
 #include "Modules/RTSCamera/RTSCamera.h"
 #include "Modules/SceneCamera/SceneCamera.h"
 #include "Modules/StaticMesh/StaticMesh.h"
 #include "Modules/Transforms/Transforms.h"
 #include "Modules/WorldObject/WorldObject.h"
-#include "Vulkan/ThreadResources.h"
-#include "Vulkan/Device.h"
 #include "Window.hpp"
+#include "JobAdapter.h"
 
 namespace RxEngine
 {
@@ -143,7 +138,7 @@ namespace RxEngine
              });
     }
 
-    void setupWorld(ecs::World * world, RxCore::Window * window)
+    void setupWorld(ecs::World * world, RxApi::WindowPtr window)
     {
         world->newEntity("Pipeline:PreFrame").set<ecs::SystemGroup>({1, false, 0.0f, 0.0f});
         world->newEntity("Pipeline:Early").set<ecs::SystemGroup>({2, false, 0.0f, 0.0f});
@@ -177,15 +172,15 @@ namespace RxEngine
         }
 
         world = std::make_unique<ecs::World>();
-        world->setJobInterface(&jobAdapter);
+        world->setJobInterface(std::make_unique<RxJobAdaptor>());
 
         RxCore::Events::startup();
 
-        window_ = std::make_unique<RxCore::Window>(width, height, windowTitle);
+        window_ = std::move(RxApi::createWindow(width, height, windowTitle));
+        device_ = std::move(RxApi::createDevice(window_.get()));
+        //device_ = std::make_unique<RxCore::Device>(window_.get());
 
-        device_ = std::make_unique<RxCore::Device>(window_->GetWindow());
-
-        auto surface = RxCore::Device::Context()->surface;
+        auto surface = device_->getSurface();
 
         RxCore::JobManager::instance().freeAllResourcesFunction = []()
         {
@@ -197,7 +192,7 @@ namespace RxEngine
             RxCore::threadResources.freeUnused();
         };
 
-        swapChain_ = surface->CreateSwapChain();
+        swapChain_ = std::move(surface->CreateSwapChain());
         swapChain_->setSwapChainOutOfDate(true);
 
         timer_ = std::chrono::high_resolution_clock::now();
@@ -433,9 +428,10 @@ namespace RxEngine
             return EKey::Down;
         case SDLK_UP:
             return EKey::Up;
-
+            default:
+                return EKey::Unknown;
         }
-        return EKey::Unknown;
+        //return EKey::Unknown;
     }
 
     void EngineMain::handleEvents()

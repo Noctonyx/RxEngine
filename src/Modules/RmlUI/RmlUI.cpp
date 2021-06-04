@@ -3,7 +3,6 @@
 #include "AssetException.h"
 #include "EngineMain.hpp"
 #include "Loader.h"
-#include "Window.hpp"
 #include "Modules/Render.h"
 #include "optick/optick.h"
 #include "RmlUi/Core/Context.h"
@@ -13,7 +12,6 @@
 #include "RmlUi/Debugger/Debugger.h"
 #include "RmlUi/Lua/Lua.h"
 #include "spdlog/spdlog.h"
-#include "Vulkan/ThreadResources.h"
 
 using namespace DirectX;
 
@@ -99,9 +97,9 @@ namespace RxEngine
 
     void RmlRenderInterface::SetScissorRegion(int x, int y, int width, int height)
     {
-        scissorRect = vk::Rect2D{
-            vk::Offset2D{x, y},
-            vk::Extent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)}
+        scissorRect = RxApi::Rect{
+            RxApi::Offset{x, y},
+            RxApi::Extent{static_cast<uint32_t>(width), static_cast<uint32_t>(height)}
         };
     }
 

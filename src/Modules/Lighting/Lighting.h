@@ -2,6 +2,7 @@
 #include "DirectXCollision.h"
 #include "DirectXMath.h"
 #include "Modules/Module.h"
+#include "RxCore.h"
 
 #define MAX_SHADOW_CASCADES 4
 
@@ -40,14 +41,14 @@ namespace RxEngine
 
     struct Lighting
     {
-        std::shared_ptr<RxCore::Buffer> lightingBuffer;
-        size_t bufferAlignment;
+        RxApi::UniformDynamicBufferPtr lightingBuffer;
+        //size_t bufferAlignment;
         uint32_t ix;
         LightingShaderData shaderData;
 
         uint32_t getDescriptorOffset() const
         {
-            return static_cast<uint32_t>((ix * bufferAlignment));
+            return static_cast<uint32_t>((ix * lightingBuffer->getAlignment()));
         }
     };
 

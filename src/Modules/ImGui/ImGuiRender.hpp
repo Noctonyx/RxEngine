@@ -8,8 +8,8 @@
 #include <memory>
 #include "Modules/Module.h"
 #include <imgui.h>
-#include "Window.hpp"
-#include "RXCore.h"
+//#include "Window.hpp"
+#include "RxCore.h"
 #include "RxECS.h"
 
 namespace RxEngine
@@ -38,11 +38,11 @@ namespace RxEngine
 
     private:
         //std::vector<DelegateHandle> delegates_{};
-        std::shared_ptr<RxCore::Image> fontImage_{};
+        RxApi::ImagePtr fontImage_{};
 
-        RxCore::Window * window_{};
+        //RxCore::Window * window_{};
 
-        std::shared_ptr<RxCore::DescriptorSet> set0_;
+        RxApi::DescriptorSetPtr set0_;
         ecs::EntityHandle pipeline_;
 
         bool enabled = false;

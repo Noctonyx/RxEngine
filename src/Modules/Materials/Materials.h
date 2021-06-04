@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Modules/Module.h"
-#include "RXCore.h"
+#include "RxCore.h"
 #include "RXAssets.h"
 
 namespace RxEngine
@@ -11,8 +11,8 @@ namespace RxEngine
 
     struct GraphicsPipeline
     {
-        std::shared_ptr<RxCore::Pipeline> pipeline;
-        vk::RenderPass renderPass;
+        RxApi::PipelinePtr pipeline;
+        RxApi::RenderPass renderPass;
         uint32_t subPass;
     };
 #if 0
@@ -46,20 +46,20 @@ namespace RxEngine
 #endif
     struct VertexShader
     {
-        std::shared_ptr<RxCore::Shader> shader;
+        RxApi::ShaderPtr shader;
         std::string shaderAssetName{};
     };
 
     struct FragmentShader
     {
-        std::shared_ptr<RxCore::Shader> shader;
+        RxApi::ShaderPtr shader;
         std::string shaderAssetName{};
     };
 
     struct PipelineLayout
     {
-        vk::PipelineLayout layout;
-        std::vector<vk::DescriptorSetLayout> dsls;
+        RxApi::PipelineLayout layout;
+        std::vector<RxApi::DescriptorSetLayout> dsls;
     };
 
     struct UsesFragmentShader : ecs::Relation {};
@@ -102,8 +102,8 @@ namespace RxEngine
 
     struct MaterialImage
     {
-        std::shared_ptr<RxCore::Image> image;
-        std::shared_ptr<RxCore::ImageView> imageView;
+        RxApi::ImagePtr image;
+        RxApi::ImageViewPtr imageView;
     };
 
     enum class MaterialAlphaMode : uint8_t
@@ -142,11 +142,11 @@ namespace RxEngine
         void loadData(sol::table table) override;
         //void processStartupData(sol::state * lua, RxCore::Device * device) override;
 
-        static vk::Pipeline createMaterialPipeline(const MaterialPipelineDetails * mpd,
+        static RxApi::PipelinePtr createMaterialPipeline(const MaterialPipelineDetails * mpd,
                                                    const FragmentShader * frag,
                                                    const VertexShader * vert,
-                                                   vk::PipelineLayout layout,
-                                                   vk::RenderPass rp,
+                                                   RxApi::PipelineLayout layout,
+                                                   RxApi::RenderPass rp,
                                                    uint32_t subpass);
 
         static void createPipelines(ecs::EntityHandle e,

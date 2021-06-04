@@ -12,7 +12,7 @@ namespace RxEngine
         auto lighting = world_->getSingletonUpdate<Lighting>();
 
         lighting->bufferAlignment = engine_->getUniformBufferAlignment(sizeof(LightingShaderData));
-        lighting->lightingBuffer = engine_->createUniformBuffer(
+        lighting->lightingBuffer = engine_->createUniformDynamicBuffer(
             lighting_buffer_count * lighting->bufferAlignment);
 
         lighting->lightingBuffer->map();
@@ -48,9 +48,8 @@ namespace RxEngine
               {
                   auto sc = e.world->getSingleton<Lighting>();
 
-                  ds->ds->updateDescriptor(1, vk::DescriptorType::eUniformBufferDynamic,
-                                           sc->lightingBuffer, sizeof(LightingShaderData),
-                                           static_cast<uint32_t>(sc->ix * sc->bufferAlignment));
+                  ds->ds->updateDescriptor(1, sc->lightingBuffer, sizeof(LightingShaderData),
+                                           static_cast<uint32_t>(sc->ix * sc->lightingBuffer->getAlignment()));
 
                   e.addDeferred<LightingDescriptor>();
               });

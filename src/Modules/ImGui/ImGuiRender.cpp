@@ -7,10 +7,8 @@
 #include <memory>
 #include "ImGuiRender.hpp"
 #include "RXCore.h"
-#include "Window.hpp"
 #include "AssetException.h"
 #include "Vfs.h"
-#include "Vulkan/ThreadResources.h"
 #include "EngineMain.hpp"
 #include "Modules/Render.h"
 
@@ -18,7 +16,6 @@ namespace RxEngine
 {
     IMGuiRender::IMGuiRender(ecs::World * world, EngineMain * engine, const ecs::entity_t moduleId)
         : Module(world, engine, moduleId)
-        , window_(engine->getWindow())
     {
         ImGui::CreateContext();
         ImGui::StyleColorsDark();

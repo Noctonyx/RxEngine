@@ -3,7 +3,6 @@
 #include <RxECS.h>
 #include "DirectXCollision.h"
 #include "SerialisationData.h"
-#include "Vulkan/CommandBuffer.hpp"
 
 namespace RxCore
 {
@@ -31,12 +30,12 @@ namespace RxEngine
 
         struct UiRenderCommand
         {
-            std::shared_ptr<RxCore::SecondaryCommandBuffer> buf;
+            RxApi::SecondaryCommandBufferPtr buf;
         };
 
         struct OpaqueRenderCommand
         {
-            std::shared_ptr<RxCore::SecondaryCommandBuffer> buf;
+            RxApi::SecondaryCommandBufferPtr buf;
         };
 
 #if 0
@@ -98,7 +97,7 @@ namespace RxEngine
 #endif
         struct MaterialSampler
         {
-            vk::Sampler sampler;
+            RxApi::Sampler sampler;
             uint32_t sequence;
         };
 #if 0

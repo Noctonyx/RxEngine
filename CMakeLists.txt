@@ -71,7 +71,7 @@ add_library(RxEngine STATIC
         src/Modules/Mesh/Mesh.cpp  
         src/FSM.h
         src/FSM.cpp
-    )
+        src/JobAdapter.h)
 
 target_compile_options(RxEngine PUBLIC -DVK_USE_PLATFORM_WIN32_KHR -DNOMINMAX)
 

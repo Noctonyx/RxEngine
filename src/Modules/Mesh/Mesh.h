@@ -2,16 +2,14 @@
 #include "Modules/Module.h"
 #include "DirectXCollision.h"
 #include "Modules/Renderer/Renderer.hpp"
-#include "Vulkan/DescriptorSet.hpp"
-#include "Vulkan/IndexBuffer.hpp"
 
 namespace RxEngine
 {
     struct MeshBundle
     {
-        std::shared_ptr<RxCore::Buffer> vertexBuffer;
-        std::shared_ptr<RxCore::IndexBuffer> indexBuffer;
-        std::shared_ptr<RxCore::DescriptorSet> descriptorSet;
+        RxApi::BufferPtr vertexBuffer;
+        RxApi::IndexBufferPtr indexBuffer;
+        RxApi::DescriptorSetPtr descriptorSet;
 
         uint32_t vertexSize{};
 

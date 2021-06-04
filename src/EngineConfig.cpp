@@ -19,7 +19,7 @@ bool sol_lua_check(sol::types<ecs::World *>,
 {
     // not actually taking anything off the stack
     tracking.use(0);
-    // get the field from global storage
+    // get the field from global storage1
     sol::stack::get_field<true>(L, script_key_world);
     // verify type
     sol::type t = static_cast<sol::type>(lua_type(L, -1));

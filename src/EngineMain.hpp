@@ -8,13 +8,14 @@
 #include <vector>
 #include <memory>
 #include <chrono>
+#include "Log.h"
 #include "Modules/Renderer/Renderer.hpp"
 #pragma warning(disable: 4706)
 #include "ini.h"
 #include "RxECS.h"
 #include "Vfs.h"
 #include "sol/sol.hpp"
-#include "Window.hpp"
+//#include "Window.hpp"
 #include "Modules/Module.h"
 
 namespace RxAssets
@@ -41,35 +42,9 @@ namespace RxEngine
         std::function<void(ecs::World *, void *)> editor;
     };
 
-    struct RxJobAdaptor : ecs::JobInterface
-    {
-        JobHandle create(std::function<void()> f) override
-        {
-            return RxCore::CreateJob<void>(f);
-        }
-
-        void schedule(JobHandle job_handle) override
-        {
-            auto x = std::static_pointer_cast<RxCore::Job<void>>(job_handle);
-            x->schedule();
-        }
-
-        bool isComplete(JobHandle job_handle) const override
-        {
-            auto x = std::static_pointer_cast<RxCore::Job<void>>(job_handle);
-            return x->isCompleted();
-        }
-
-        void awaitCompletion(JobHandle job_handle) override
-        {
-            auto x = std::static_pointer_cast<RxCore::Job<void>>(job_handle);
-            x->waitComplete();
-        }
-    };
-
     struct WindowDetails
     {
-        RxCore::Window * window;
+        RxApi::WindowPtr window;
 
         uint32_t width;
         uint32_t height;
@@ -319,7 +294,7 @@ namespace RxEngine
             return totalElapsed_;
         }
 
-        RxCore::Window * getWindow() const
+        RxApi::WindowPtr getWindow() const
         {
             return window_.get();
         }
@@ -352,11 +327,12 @@ namespace RxEngine
 
         template <class T, typename ...Args>
         void addModule(Args && ... args);
-
+#if 0
         [[nodiscard]] size_t getUniformBufferAlignment(size_t size) const;
-        [[nodiscard]] std::shared_ptr<RxCore::Buffer> createUniformBuffer(size_t size) const;
-        [[nodiscard]] std::shared_ptr<RxCore::Buffer> createStorageBuffer(size_t size) const;
-
+        [[nodiscard]] RxApi::UniformBufferPtr createUniformBuffer(size_t size) const;
+        [[nodiscard]] RxApi::UniformDynamicBufferPtr createUniformDynamicBuffer(size_t size, size_t count) const;
+        [[nodiscard]] RxApi::StorageBufferPtr createStorageBuffer(size_t size) const;
+#endif
         template <class T, class ... Args>
         void addUserModule(Args && ... args);
 
@@ -366,13 +342,15 @@ namespace RxEngine
         {
             return lua;
         }
-
+#if 0
         [[nodiscard]] RxCore::Device * getDevice() const
         {
             return device_.get();
         }
-
+#endif
         void loadDataFile(const std::filesystem::path & path);
+
+        RxApi::DevicePtr getDevice() const;
 
     protected:
         void replaceSwapChain();
@@ -401,17 +379,17 @@ namespace RxEngine
 
     private:
         //std::vector<std::unique_ptr<Subsystem>> subsystems_;
-        std::unique_ptr<RxCore::Window> window_;
+        std::unique_ptr<RxApi::Window> window_;
         //std::unique_ptr<Renderer> renderer_;
-        std::unique_ptr<RxCore::Device> device_;
-        std::unique_ptr<RxCore::SwapChain> swapChain_;
+        std::unique_ptr<RxApi::Device> device_;
+        RxApi::SwapChainPtr swapChain_;
         //std::unique_ptr<MaterialManager> materialManager_;
         //std::unique_ptr<EntityManager> entityManager_;
 
         std::vector<std::shared_ptr<Module>> modules;
         std::vector<std::shared_ptr<Module>> userModules;
 
-        std::vector<vk::Semaphore> submitCompleteSemaphores_;
+        std::vector<RxApi::Semaphore> submitCompleteSemaphores_;
         std::chrono::time_point<std::chrono::steady_clock> timer_;
 
         //std::vector<std::string> configFiles;
@@ -425,7 +403,7 @@ namespace RxEngine
         mINI::INIStructure iniData;
 
         std::unique_ptr<ecs::World> world;
-        RxJobAdaptor jobAdapter;
+        //RxJobAdaptor jobAdapter;
 
         bool shouldQuit = false;
         bool capturedMouse = false;
