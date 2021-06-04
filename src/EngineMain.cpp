@@ -571,7 +571,8 @@ namespace RxEngine
     std::shared_ptr<RxCore::Buffer> EngineMain::createStorageBuffer(size_t size) const
     {
         return device_->createBuffer(
-            vk::BufferUsageFlagBits::eStorageBuffer,
+            vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress
+            ,
             VMA_MEMORY_USAGE_CPU_TO_GPU, size);
     }
 

@@ -34,8 +34,8 @@ namespace RxEngine
         sib->count = 5;
         sib->sizes.resize(5);
         sib->buffers.resize(5);
-        sib->descriptorSets.resize(5);
-
+        //sib->descriptorSets.resize(5);
+#if 0
         const RxCore::DescriptorPoolTemplate pool_template(
             {
                 {
@@ -43,13 +43,13 @@ namespace RxEngine
                     10
                 }
             }, 10);
-
-        auto pl = world_->lookup("layout/general").get<PipelineLayout>();
+#endif
+       // auto pl = world_->lookup("layout/general").get<PipelineLayout>();
 
         for (uint32_t i = 0; i < sib->count; i++) {
 
-            sib->descriptorSets[i] = RxCore::threadResources.getDescriptorSet(
-                pool_template, pl->dsls[2]);
+         //   sib->descriptorSets[i] = RxCore::threadResources.getDescriptorSet(
+          //      pool_template, pl->dsls[2]);
         }
 
         world_->createSystem("StaticMesh:Render")
@@ -112,10 +112,10 @@ namespace RxEngine
         mb->descriptorSet->
             updateDescriptor(0, vk::DescriptorType::eStorageBuffer, mb->vertexBuffer);
 #endif
-        vk::BufferDeviceAddressInfo bdai{};
-        bdai.setBuffer(mb->vertexBuffer->handle());
+        //vk::BufferDeviceAddressInfo bdai{};
+        //bdai.setBuffer(mb->vertexBuffer->handle());
 
-        mb->address = RxCore::iVulkan()->VkDevice().getBufferAddress(bdai);
+        mb->address = mb->vertexBuffer->getDeviceAddress();//  RxCore::iVulkan()->VkDevice().getBufferAddress(bdai);
 
         world->getSingletonUpdate<StaticMeshActiveBundle>()->currentBundle = mbe.id;
         return mbe.id;
@@ -436,12 +436,14 @@ namespace RxEngine
         if (sib->sizes[sib->ix] < ids.instances.size()) {
             auto n = ids.instances.size() * 2;
             auto b = engine_->createStorageBuffer(n * sizeof(IndirectDrawInstance));
+
             sib->buffers[sib->ix] = b;
             b->map();
             sib->sizes[sib->ix] = static_cast<uint32_t>(n);
-            sib->descriptorSets[sib->ix]->
-                updateDescriptor(0, vk::DescriptorType::eStorageBuffer, b);
+            //sib->descriptorSets[sib->ix]->
+//                updateDescriptor(0, vk::DescriptorType::eStorageBuffer, b);
         }
+
 
         sib->buffers[sib->ix]->update(ids.instances.data(),
                                       ids.instances.size() * sizeof(IndirectDrawInstance));
@@ -473,7 +475,9 @@ namespace RxEngine
                     : static_cast<float>(windowDetails->height), 0.0f,
                 1.0f);
 
-            buf->BindDescriptorSet(2, sib->descriptorSets[sib->ix]);
+            //buf->BindDescriptorSet(2, sib->descriptorSets[sib->ix]);
+            vk::DeviceAddress da = sib->buffers[sib->ix]->getDeviceAddress();
+            buf->pushConstant(vk::ShaderStageFlagBits::eVertex, 8, sizeof(vk::DeviceAddress), &da);
             renderIndirectDraws(ids, buf);
             //buf->BindPipeline(pipeline->pipeline->Handle());
         }

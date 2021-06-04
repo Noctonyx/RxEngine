@@ -108,9 +108,10 @@ namespace RxEngine
     RmlRenderInterface::RmlRenderInterface()
         : dirtyTextures(true)
         , transform_()
-        , poolTemplate_({{vk::DescriptorType::eCombinedImageSampler, 5000},}, 10)
     {
         XMStoreFloat4x4(&transform_, XMMatrixIdentity());
+        descriptorPool = RxCore::Device::Context()->CreateDescriptorPool(
+            {{vk::DescriptorType::eCombinedImageSampler, 5000}}, 5);
     }
 
     bool RmlRenderInterface::LoadTexture(
@@ -283,10 +284,12 @@ namespace RxEngine
         auto layout = pipeline_.getRelated<UsesLayout, PipelineLayout>();
 
         if (dirtyTextures) {
-            auto descriptor_set = RxCore::threadResources.getDescriptorSet(
-                poolTemplate_, layout->dsls[0], {
-                    static_cast<uint32_t>(textureEntries_.size())
-                });
+            auto descriptor_set = descriptorPool->allocateDescriptorSet(
+                layout->dsls[0], {static_cast<uint32_t>(textureEntries_.size())});
+            //            auto descriptor_set = RxCore::threadResources.getDescriptorSet(
+            //              poolTemplate_, layout->dsls[0], {
+            //                static_cast<uint32_t>(textureEntries_.size())
+            //          });
 
             std::vector<RxCore::CombinedSampler> samplers;
 
@@ -599,6 +602,7 @@ namespace RxEngine
         Rml::LoadFontFace("/ui/fonts/Roboto-Regular.ttf");
         Rml::LoadFontFace("/ui/fonts/Roboto-Bold.ttf");
         Rml::Lua::Initialise(engine_->getLua()->lua_state());
+
 
 #if 0
         world_->createSystem("RmlUI:NewContext")

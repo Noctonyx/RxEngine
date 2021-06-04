@@ -15,7 +15,7 @@ namespace RxEngine
         sib->count = 5;
         sib->sizes.resize(5);
         sib->buffers.resize(5);
-        sib->descriptorSets.resize(5);
+        //sib->descriptorSets.resize(5);
 
         const RxCore::DescriptorPoolTemplate pool_template(
             {
@@ -24,7 +24,7 @@ namespace RxEngine
                     10
                 }
             }, 10);
-
+#if 0
         auto pl = world_->lookup("layout/general").get<PipelineLayout>();
 
         for (uint32_t i = 0; i < sib->count; i++) {
@@ -32,6 +32,7 @@ namespace RxEngine
             sib->descriptorSets[i] = RxCore::threadResources.getDescriptorSet(
                 pool_template, pl->dsls[2]);
         }
+#endif
     }
 
     void DynamicMeshModule::shutdown() { }

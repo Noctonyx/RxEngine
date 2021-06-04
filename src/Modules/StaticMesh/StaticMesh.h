@@ -119,7 +119,7 @@ namespace RxEngine
     {
         uint32_t count;
         std::vector<std::shared_ptr<RxCore::Buffer>> buffers;
-        std::vector<std::shared_ptr<RxCore::DescriptorSet>> descriptorSets;
+        //std::vector<std::shared_ptr<RxCore::DescriptorSet>> descriptorSets;
         std::vector<uint32_t> sizes;
 
         uint32_t ix;

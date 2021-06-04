@@ -364,10 +364,11 @@ namespace RxEngine
         //vk::PipelineLayout pipelineLayout;
         //std::vector<vk::DescriptorSetLayout> dsLayouts;
 
+        std::shared_ptr<RxCore::DescriptorPool> descriptorPool;
         void ensureDepthBufferExists(vk::Extent2D & extent);
         void ensureShadowImages(uint32_t shadowMapSize, uint32_t numCascades);
 
-        RxCore::DescriptorPoolTemplate poolTemplate;
+        //RxCore::DescriptorPoolTemplate poolTemplate;
         //void ensureFrameBufferSize(const vk::ImageView & imageView, const vk::Extent2D & extent);
 
         std::shared_ptr<RxCore::FrameBuffer> createRenderFrameBuffer(
