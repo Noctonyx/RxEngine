@@ -41,6 +41,7 @@
 //#include "Window.hpp"
 #include "Log.h"
 #include "Modules/Module.h"
+#include "RxCore.h"
 
 namespace RxAssets
 {
@@ -356,10 +357,6 @@ namespace RxEngine
 #if 0
         void addInitConfigFile(const std::string & config);
 #endif
-        [[nodiscard]] ecs::World * getWorld() const
-        {
-            return world.get();
-        }
 
         template <class T, typename ...Args>
         void addModule(Args && ... args);
