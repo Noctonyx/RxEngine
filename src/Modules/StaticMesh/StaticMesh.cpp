@@ -76,7 +76,7 @@ namespace RxEngine
 
     void StaticMeshModule::shutdown() { }
 
-    ecs::entity_t createStaticMeshBundle(ecs::World * world)
+    ecs::entity_t createStaticMeshBundle(RxCore::Device * device, ecs::World * world)
     {
         auto mbe = world->newEntity();
 
@@ -89,12 +89,12 @@ namespace RxEngine
         mb->maxVertexCount = (256 * 1024 * 1024 / mb->vertexSize);
         mb->maxIndexCount = mb->maxVertexCount;
 
-        mb->vertexBuffer = RxCore::iVulkan()->createBuffer(
+        mb->vertexBuffer = device->createBuffer(
             vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eVertexBuffer |
             vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eShaderDeviceAddress,
             VMA_MEMORY_USAGE_GPU_ONLY, mb->maxVertexCount * mb->vertexSize);
 
-        mb->indexBuffer = RxCore::iVulkan()->createIndexBuffer(
+        mb->indexBuffer = device->createIndexBuffer(
             VMA_MEMORY_USAGE_GPU_ONLY, static_cast<uint32_t>(mb->maxVertexCount * sizeof(uint32_t)),
             false);
 #if 0
@@ -121,7 +121,7 @@ namespace RxEngine
         return mbe.id;
     }
 
-    ecs::entity_t getActiveMeshBundle(ecs::World * world)
+    ecs::entity_t getActiveMeshBundle(RxCore::Device * device, ecs::World * world)
     {
         auto smab = world->getSingleton<StaticMeshActiveBundle>();
         if(!smab) {
@@ -133,21 +133,21 @@ namespace RxEngine
             return smab->currentBundle;
         }
 
-        return createStaticMeshBundle(world);
+        return createStaticMeshBundle(device,world);
     }
 
-    void copyToBuffers(const std::vector<StaticMeshVertex> & meshVertices,
+    void copyToBuffers(RxCore::Device * device,  const std::vector<StaticMeshVertex> & meshVertices,
                        const std::vector<uint32_t> & meshIndices,
                        MeshBundle * smb)
     {
         size_t v_size = meshVertices.size() * sizeof(StaticMeshVertex);
         size_t i_size = meshIndices.size() * sizeof(uint32_t);
 
-        auto cb = RxCore::iVulkan()->transferCommandPool_->createTransferCommandBuffer();
+        auto cb = device->transferCommandPool_->createTransferCommandBuffer();
         cb->begin();
 
-        const auto b1 = RxCore::iVulkan()->createStagingBuffer(v_size, meshVertices.data());
-        const auto b2 = RxCore::iVulkan()->createStagingBuffer(i_size, meshIndices.data());
+        const auto b1 = device->createStagingBuffer(v_size, meshVertices.data());
+        const auto b2 = device->createStagingBuffer(i_size, meshIndices.data());
 
         cb->copyBuffer(b1, smb->vertexBuffer, 0, smb->vertexCount * smb->vertexSize, v_size);
         cb->copyBuffer(b2, smb->indexBuffer, 0, smb->indexCount * sizeof(uint32_t), i_size);
@@ -188,14 +188,14 @@ namespace RxEngine
                 };
             });
 
-        auto mb = getActiveMeshBundle(world);
+        auto mb = getActiveMeshBundle(device, world);
         {
             auto smb = world->get<MeshBundle>(mb);
 
             if (mesh_vertices.size() + smb->vertexCount > smb->maxVertexCount || mesh_indices.size()
                 +
                 smb->indexCount > smb->maxIndexCount) {
-                mb = createStaticMeshBundle(world);
+                mb = createStaticMeshBundle(device, world);
                 world->getSingletonUpdate<StaticMeshActiveBundle>()->currentBundle = mb;
             }
         }
@@ -211,7 +211,7 @@ namespace RxEngine
                                        })
                                        .set<InBundle>({{mb}});
 
-        copyToBuffers(mesh_vertices, mesh_indices, smb);
+        copyToBuffers(device, mesh_vertices, mesh_indices, smb);
 
         smb->entries.push_back(static_mesh_entity.id);
 

@@ -142,14 +142,14 @@ namespace RxEngine
         void loadData(sol::table table) override;
         //void processStartupData(sol::state * lua, RxCore::Device * device) override;
 
-        static vk::Pipeline createMaterialPipeline(const MaterialPipelineDetails * mpd,
+        vk::Pipeline createMaterialPipeline(const MaterialPipelineDetails * mpd,
                                                    const FragmentShader * frag,
                                                    const VertexShader * vert,
                                                    vk::PipelineLayout layout,
                                                    vk::RenderPass rp,
                                                    uint32_t subpass);
 
-        static void createPipelines(ecs::EntityHandle e,
+        void createPipelines(ecs::EntityHandle e,
                                     const MaterialPipelineDetails * mpd,
                                     const FragmentShader * frag,
                                     const VertexShader * vert,

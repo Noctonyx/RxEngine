@@ -39,7 +39,7 @@ namespace RxEngine
 
     void DynamicMeshModule::shutdown() { }
 
-    ecs::entity_t createDynamicMeshBundle(ecs::World* world)
+    ecs::entity_t createDynamicMeshBundle(RxCore::Device * device, ecs::World* world)
     {
         auto mbe = world->newEntity();
 
@@ -52,12 +52,12 @@ namespace RxEngine
         mb->maxVertexCount = (256 * 1024 * 1024 / mb->vertexSize);
         mb->maxIndexCount = mb->maxVertexCount;
 
-        mb->vertexBuffer = RxCore::iVulkan()->createBuffer(
+        mb->vertexBuffer = device->createBuffer(
             vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eVertexBuffer |
             vk::BufferUsageFlagBits::eTransferDst,
             VMA_MEMORY_USAGE_GPU_ONLY, mb->maxVertexCount * mb->vertexSize);
 
-        mb->indexBuffer = RxCore::iVulkan()->createIndexBuffer(
+        mb->indexBuffer = device->createIndexBuffer(
             VMA_MEMORY_USAGE_GPU_ONLY, static_cast<uint32_t>(mb->maxVertexCount * sizeof(uint32_t)),
             false);
 #if 0
@@ -78,13 +78,13 @@ namespace RxEngine
         vk::BufferDeviceAddressInfo bdai{};
         bdai.setBuffer(mb->vertexBuffer->handle());
 
-        mb->address = RxCore::iVulkan()->VkDevice().getBufferAddress(bdai);
+        mb->address = device->VkDevice().getBufferAddress(bdai);
 
         world->getSingletonUpdate<DynamicMeshActiveBundle>()->currentBundle = mbe.id;
         return mbe.id;
     }
 
-    ecs::entity_t getActiveDynamicMeshBundle(ecs::World* world)
+    ecs::entity_t getActiveDynamicMeshBundle(RxCore::Device * device, ecs::World* world)
     {
         const auto bundle = world->getSingleton<DynamicMeshActiveBundle>();
 
@@ -92,6 +92,6 @@ namespace RxEngine
             return bundle->currentBundle;
         }
 
-        return createDynamicMeshBundle(world);
+        return createDynamicMeshBundle(device, world);
     }
 }

@@ -33,8 +33,10 @@ namespace RxEngine
 
     void MaterialsModule::startup()
     {
-        world_->set<ComponentGui>(world_->getComponentId<Material>(),
-                                  ComponentGui{.editor = materialUi});
+        world_->set<ComponentGui>(
+            world_->getComponentId<Material>(),
+            ComponentGui{.editor = materialUi}
+        );
 
         world_->createSystem("Material:Pipelines")
               .inGroup("Pipeline:PreFrame")
@@ -45,10 +47,19 @@ namespace RxEngine
               .withRelation<UsesLayout, PipelineLayout>()
               .withSingleton<RenderPasses>()
               .each<MaterialPipelineDetails,
-                    FragmentShader,
-                    VertexShader,
-                    PipelineLayout,
-                    RenderPasses>(&createPipelines);
+                  FragmentShader,
+                  VertexShader,
+                  PipelineLayout,
+                  RenderPasses>(
+                  [this](ecs::EntityHandle e,
+                         const MaterialPipelineDetails * mpd,
+                         const FragmentShader * frag,
+                         const VertexShader * vert,
+                         const PipelineLayout * pll,
+                         const RenderPasses * rp) {
+                      createPipelines(e, mpd, frag, vert, pll, rp);
+                  }
+              );
 
         world_->createSystem("Material:setDescriptor")
               .inGroup("Pipeline:PreFrame")
@@ -56,15 +67,17 @@ namespace RxEngine
               .without<MaterialDescriptor>()
               .withRead<Material>()
               .withRead<MaterialImage>()
-              .each<DescriptorSet>([this](ecs::EntityHandle e, DescriptorSet * ds)
-              {
-                  createShaderMaterialData(e, ds);
-              });
+              .each<DescriptorSet>(
+                  [this](ecs::EntityHandle e, DescriptorSet * ds) {
+                      createShaderMaterialData(e, ds);
+                  }
+              );
 
         materialQuery = world_->createQuery<Material>().id;
     }
 
-    void MaterialsModule::shutdown() {
+    void MaterialsModule::shutdown()
+    {
         world_->remove<ComponentGui>(world_->getComponentId<Material>());
         world_->lookup("Material:Pipelines").destroy();
         world_->lookup("Material:setDescriptor").destroy();
@@ -74,14 +87,15 @@ namespace RxEngine
     {
         if (stage == "both") {
             return vk::ShaderStageFlagBits::eFragment |
-                vk::ShaderStageFlagBits::eVertex;
+                   vk::ShaderStageFlagBits::eVertex;
         } else if (stage == "vert") {
             return vk::ShaderStageFlagBits::eVertex;
         } else if (stage == "frag") {
             return vk::ShaderStageFlagBits::eFragment;
         } else {
             throw std::runtime_error(
-                R"(Invalid value for stage - valid values: "both", "frag", "vert")");
+                R"(Invalid value for stage - valid values: "both", "frag", "vert")"
+            );
         }
 
         //return {};
@@ -91,7 +105,7 @@ namespace RxEngine
     {
         //sol::table shaders = lua["data"]["shaders"];
 
-        for (auto & [key, value]: shaders) {
+        for (auto &[key, value]: shaders) {
             auto name = key.as<std::string>();
             sol::table data = value;
             auto stage = data.get<std::string>("stage");
@@ -103,13 +117,17 @@ namespace RxEngine
             auto sh = device->createShader(sd.bytes);
 
             if (stage == "vert") {
-                world->newEntityReplace(name.c_str()).set<VertexShader>({
-                    .shader = sh, .shaderAssetName = spv
-                });
+                world->newEntityReplace(name.c_str()).set<VertexShader>(
+                    {
+                        .shader = sh, .shaderAssetName = spv
+                    }
+                );
             } else {
-                world->newEntityReplace(name.c_str()).set<FragmentShader>({
-                    .shader = sh, .shaderAssetName = spv
-                });
+                world->newEntityReplace(name.c_str()).set<FragmentShader>(
+                    {
+                        .shader = sh, .shaderAssetName = spv
+                    }
+                );
             }
         }
     }
@@ -128,18 +146,17 @@ namespace RxEngine
         PipelineLayout pll;
 
         sol::table dsLayouts = layout.get<sol::table>("ds_layouts");
-        for (auto & [dsLayoutKey, dsLayoutValue]: dsLayouts) {
+        for (auto &[dsLayoutKey, dsLayoutValue]: dsLayouts) {
             sol::table dsLayoutData = dsLayoutValue;
 
             std::vector<vk::DescriptorSetLayoutBinding> binding = {};
             std::vector<vk::DescriptorBindingFlags> binding_flags = {};
 
             sol::table bindings = dsLayoutData.get<sol::table>("bindings");
-            for (auto & [bindingKey, bindingValue]: bindings) {
+            for (auto &[bindingKey, bindingValue]: bindings) {
                 sol::table bindingData = bindingValue;
                 auto & b = binding.emplace_back();
                 auto & bf = binding_flags.emplace_back();
-
 
                 b.binding = bindingData.get<uint32_t>("binding");
                 b.descriptorCount = bindingData.get_or<uint32_t>("count", 1);
@@ -160,7 +177,8 @@ namespace RxEngine
                     b.descriptorType = vk::DescriptorType::eStorageBufferDynamic;
                 } else {
                     throw std::runtime_error(
-                        R"(Invalid value for stage - valid values: "combined-sampler", "storage-buffer", "uniform-buffer", "storage-buffer-dynamic", "uniform-buffer-dynamic")");
+                        R"(Invalid value for stage - valid values: "combined-sampler", "storage-buffer", "uniform-buffer", "storage-buffer-dynamic", "uniform-buffer-dynamic")"
+                    );
                 }
 
                 if (bindingData.get_or("variable", false)) {
@@ -190,7 +208,7 @@ namespace RxEngine
         }
 
         sol::table pushConstants = layout.get<sol::table>("push_constants");
-        for (auto & [pcKey, pcValue]: pushConstants) {
+        for (auto &[pcKey, pcValue]: pushConstants) {
             sol::table pcData = pcValue;
 
             auto & p = pcr.emplace_back();
@@ -212,7 +230,7 @@ namespace RxEngine
 
     void loadLayouts(ecs::World * world, RxCore::Device * device, sol::table & layouts)
     {
-        for (auto & [key, value]: layouts) {
+        for (auto &[key, value]: layouts) {
             auto layoutName = key.as<std::string>();
 
             sol::table details = value;
@@ -248,7 +266,8 @@ namespace RxEngine
             return RxAssets::MaterialPipelineBlendFactor::eDstAlpha;
         }
         throw std::runtime_error(
-            R"(Invalid value for blendFactor - valid values: "zero", "one", "src-color", "1-src-color", "dest-color", "src-alpha", "1-src-alpha", "dest-alpha")");
+            R"(Invalid value for blendFactor - valid values: "zero", "one", "src-color", "1-src-color", "dest-color", "src-alpha", "1-src-alpha", "dest-alpha")"
+        );
     }
 
     RxAssets::MaterialPipelineBlendOp getBlendOp(const std::string & value)
@@ -269,7 +288,8 @@ namespace RxEngine
             return RxAssets::MaterialPipelineBlendOp::eMax;
         }
         throw std::runtime_error(
-            R"(Invalid value for blendOp - valid values: "add", "subtract", "reverse-subtract", "min", "max")");
+            R"(Invalid value for blendOp - valid values: "add", "subtract", "reverse-subtract", "min", "max")"
+        );
     }
 
     void populateMaterialPipelineDetails(sol::table & details,
@@ -295,7 +315,8 @@ namespace RxEngine
             mpd.stage = RxAssets::PipelineRenderStage::UI;
         } else {
             throw std::runtime_error(
-                R"(Invalid value for renderStage - valid values: "opaque", "shadow", "transparent", "ui")");
+                R"(Invalid value for renderStage - valid values: "opaque", "shadow", "transparent", "ui")"
+            );
         }
 
         std::string fillMode = details.get_or("fillMode", std::string{"fill"});
@@ -307,7 +328,8 @@ namespace RxEngine
             mpd.fillMode = RxAssets::MaterialPipelineFillMode::ePoint;
         } else {
             throw std::runtime_error(
-                R"(Invalid value for fillMode - valid values: "fill", "line", "point")");
+                R"(Invalid value for fillMode - valid values: "fill", "line", "point")"
+            );
         }
 
         std::string cullMode = details.get_or("cullMode", std::string{"back"});
@@ -322,7 +344,8 @@ namespace RxEngine
             mpd.cullMode = RxAssets::MaterialPipelineCullMode::eNone;
         } else {
             throw std::runtime_error(
-                R"(Invalid value for fillMode - valid values: "back", "front", "both", "none")");
+                R"(Invalid value for fillMode - valid values: "back", "front", "both", "none")"
+            );
         }
 
         std::string frontFace = details.get_or("frontFace", std::string{"counter-clockwise"});
@@ -332,7 +355,8 @@ namespace RxEngine
             mpd.frontFace = RxAssets::MaterialPipelineFrontFace::eClockwise;
         } else {
             throw std::runtime_error(
-                R"(Invalid value for frontFace - valid values: "counter-clockwise", "clockwise")");
+                R"(Invalid value for frontFace - valid values: "counter-clockwise", "clockwise")"
+            );
         }
 
         std::string depthCompare = details.get_or("depthCompare", std::string{"less-equal"});
@@ -354,11 +378,12 @@ namespace RxEngine
             mpd.depthCompareOp = RxAssets::MaterialPipelineDepthCompareOp::eAlways;
         } else {
             throw std::runtime_error(
-                R"(Invalid value for depthCompare - valid values: "never", "less", "equal", "less-equal", "greater", "not-equal", "greater-equal", "always")");
+                R"(Invalid value for depthCompare - valid values: "never", "less", "equal", "less-equal", "greater", "not-equal", "greater-equal", "always")"
+            );
         }
 
         sol::table vertices = details.get<sol::table>("vertices");
-        for (auto & [key, value]: vertices) {
+        for (auto &[key, value]: vertices) {
             uint32_t count;
             uint32_t offset;
             sol::table v = value;
@@ -376,12 +401,13 @@ namespace RxEngine
                 ip.inputType = RxAssets::MaterialPipelineInputType::eByte;
             } else {
                 throw std::runtime_error(
-                    R"(Invalid value for input type - valid values: "byte", "float")");
+                    R"(Invalid value for input type - valid values: "byte", "float")"
+                );
             }
         }
 
         sol::table blends = details.get<sol::table>("blends");
-        for (auto & [blendKey, blendValue]: blends) {
+        for (auto &[blendKey, blendValue]: blends) {
             sol::table blendData = blendValue;
 
             auto & blend = mpd.blends.emplace_back();
@@ -396,22 +422,26 @@ namespace RxEngine
             blend.enable = blendData.get_or("enable", false);
 
             if (sol::optional<std::string> f = blendData.get<sol::optional<std::string>>(
-                    "sourceFactor");
+                    "sourceFactor"
+                );
                 f != sol::nullopt) {
                 blend.sourceFactor = getBlendFactor(f.value());
             }
             if (sol::optional<std::string> f = blendData.get<sol::optional<std::string>>(
-                    "destFactor");
+                    "destFactor"
+                );
                 f != sol::nullopt) {
                 blend.destFactor = getBlendFactor(f.value());
             }
             if (sol::optional<std::string> f = blendData.get<sol::optional<std::string>>(
-                    "sourceAlphaFactor");
+                    "sourceAlphaFactor"
+                );
                 f != sol::nullopt) {
                 blend.sourceAlphaFactor = getBlendFactor(f.value());
             }
             if (sol::optional<std::string> f = blendData.get<sol::optional<std::string>>(
-                    "destAlphaFactor");
+                    "destAlphaFactor"
+                );
                 f != sol::nullopt) {
                 blend.destAlphaFactor = getBlendFactor(f.value());
             }
@@ -466,7 +496,7 @@ namespace RxEngine
 
     void loadPipelines(ecs::World * world, RxCore::Device * device, sol::table & pipelines)
     {
-        for (auto & [key, value]: pipelines) {
+        for (auto &[key, value]: pipelines) {
             auto pipelineName = key.as<std::string>();
 
             sol::table details = value;
@@ -474,7 +504,6 @@ namespace RxEngine
             loadPipeline(world, device, pipelineName, details);
         }
     }
-
 
     void getSamplerDetails(RxAssets::SamplerData & sd, sol::table & sampler)
     {
@@ -485,7 +514,8 @@ namespace RxEngine
             sd.minFilter = VK_FILTER_LINEAR;
         } else {
             throw std::runtime_error(
-                R"(Invalid value for minFilter - valid values: "nearest", "linear")");
+                R"(Invalid value for minFilter - valid values: "nearest", "linear")"
+            );
         }
 
         std::string magFilter = sampler.get_or("magFilter", std::string{"nearest"});
@@ -495,7 +525,8 @@ namespace RxEngine
             sd.magFilter = VK_FILTER_LINEAR;
         } else {
             throw std::runtime_error(
-                R"(Invalid value for magFilter - valid values: "nearest", "linear")");
+                R"(Invalid value for magFilter - valid values: "nearest", "linear")"
+            );
         }
 
         std::string mipMapMode = sampler.get_or("mipMapMode", std::string{"nearest"});
@@ -505,7 +536,8 @@ namespace RxEngine
             sd.mipMapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
         } else {
             throw std::runtime_error(
-                R"(Invalid value for mipMapMode - valid values: "nearest", "linear")");
+                R"(Invalid value for mipMapMode - valid values: "nearest", "linear")"
+            );
         }
 
         std::string addressU = sampler.get_or("addressU", std::string{"nearest"});
@@ -519,7 +551,8 @@ namespace RxEngine
             sd.addressU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
         } else {
             throw std::runtime_error(
-                R"(Invalid value for addressU - valid values: "repeat", "mirrored-repeat", "clamp-edge", "clamp-border")");
+                R"(Invalid value for addressU - valid values: "repeat", "mirrored-repeat", "clamp-edge", "clamp-border")"
+            );
         }
 
         std::string addressV = sampler.get_or("addressV", std::string{"nearest"});
@@ -533,7 +566,8 @@ namespace RxEngine
             sd.addressV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
         } else {
             throw std::runtime_error(
-                R"(Invalid value for addressV - valid values: "repeat", "mirrored-repeat", "clamp-edge", "clamp-border")");
+                R"(Invalid value for addressV - valid values: "repeat", "mirrored-repeat", "clamp-edge", "clamp-border")"
+            );
         }
 
         std::string addressW = sampler.get_or("addressW", std::string{"nearest"});
@@ -547,7 +581,8 @@ namespace RxEngine
             sd.addressW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
         } else {
             throw std::runtime_error(
-                R"(Invalid value for addressW - valid values: "repeat", "mirrored-repeat", "clamp-edge", "clamp-border")");
+                R"(Invalid value for addressW - valid values: "repeat", "mirrored-repeat", "clamp-edge", "clamp-border")"
+            );
         }
 
         sd.mipLodBias = sampler.get_or("mipLodBias", 0.f);
@@ -556,8 +591,10 @@ namespace RxEngine
         sd.minLod = sampler.get_or("minLod", 0.f);
         sd.maxLod = sampler.get_or("maxLod", VK_LOD_CLAMP_NONE);
 
-        std::string borderColor = sampler.get_or("borderColor",
-                                                 std::string{"float-transparent-black"});
+        std::string borderColor = sampler.get_or(
+            "borderColor",
+            std::string{"float-transparent-black"}
+        );
         if (borderColor == "float-transparent-black") {
             sd.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
         } else if (borderColor == "int-transparent-black") {
@@ -572,7 +609,8 @@ namespace RxEngine
             sd.borderColor = VK_BORDER_COLOR_INT_OPAQUE_WHITE;
         } else {
             throw std::runtime_error(
-                R"(Invalid value for borderColor - valid values are "float-transparent-black", "int-transparent-black", "float-opaque-black", "int-opaque-black", "float-opaque-white", "int-opaque-white" )");
+                R"(Invalid value for borderColor - valid values are "float-transparent-black", "int-transparent-black", "float-opaque-black", "int-opaque-black", "float-opaque-white", "int-opaque-white" )"
+            );
         }
     }
 
@@ -610,13 +648,14 @@ namespace RxEngine
 
         auto image = device->createImage(
             id.imType == RxAssets::eBC7
-                ? vk::Format::eBc7UnormBlock
-                : vk::Format::eR8G8B8A8Unorm,
+            ? vk::Format::eBc7UnormBlock
+            : vk::Format::eR8G8B8A8Unorm,
             vk::Extent3D{id.width, id.height, 1},
             static_cast<uint32_t>(id.mipLevels.size()),
             1,
             vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
-            vk::ImageType::e2D);
+            vk::ImageType::e2D
+        );
 
         auto iv =
             image->createImageView(vk::ImageViewType::e2D, vk::ImageAspectFlagBits::eColor);
@@ -632,7 +671,8 @@ namespace RxEngine
                 vk::ImageLayout::eShaderReadOnlyOptimal,
                 1,
                 0,
-                j);
+                j
+            );
         }
         MaterialImage mi;
         mi.image = image;
@@ -664,7 +704,7 @@ namespace RxEngine
 
     void loadTextures(ecs::World * world, RxCore::Device * device, sol::table & textures)
     {
-        for (auto & [key, value]: textures) {
+        for (auto &[key, value]: textures) {
             const std::string texture_name = key.as<std::string>();
             sol::table details = value;
 
@@ -678,13 +718,17 @@ namespace RxEngine
                       sol::table & material)
     {
         sol::optional<std::string> opaquePipeline = material.get<sol::optional<std::string>>(
-            "opaquePipeline");
+            "opaquePipeline"
+        );
         sol::optional<std::string> shadowPipeline = material.get<sol::optional<std::string>>(
-            "shadowPipeline");
+            "shadowPipeline"
+        );
         sol::optional<std::string> transparentPipeline = material.get<sol::optional<std::string>>(
-            "transparentPipeline");
+            "transparentPipeline"
+        );
         sol::optional<std::string> uiPipeline = material.get<sol::optional<std::string>>(
-            "uiPipeline");
+            "uiPipeline"
+        );
 
         Material mi{};
 #if 0
@@ -776,7 +820,8 @@ namespace RxEngine
         mi.metallic = metallic;
 
         sol::optional<std::string> colorTexture = material.get<sol::optional<std::string>>(
-            "color_texture");
+            "color_texture"
+        );
 
         if (colorTexture.has_value()) {
             auto te = world->lookup(colorTexture.value().c_str());
@@ -792,7 +837,7 @@ namespace RxEngine
 
     void loadMaterials(ecs::World * world, RxCore::Device * device, sol::table & materials)
     {
-        for (auto & [key, value]: materials) {
+        for (auto &[key, value]: materials) {
             const std::string name = key.as<std::string>();
             sol::table details = value;
             loadMaterial(world, device, name, details);
@@ -885,7 +930,8 @@ namespace RxEngine
                   vk::ColorComponentFlagBits::eA |
                   vk::ColorComponentFlagBits::eR |
                   vk::ColorComponentFlagBits::eG |
-                  vk::ColorComponentFlagBits::eB)
+                  vk::ColorComponentFlagBits::eB
+              )
               .setBlendEnable(mpa.enable)
               .setSrcColorBlendFactor(static_cast<vk::BlendFactor>(mpa.sourceFactor))
               .setDstColorBlendFactor(static_cast<vk::BlendFactor>(mpa.destFactor))
@@ -947,7 +993,7 @@ namespace RxEngine
                         attributes.emplace_back(loc++, 0, vk::Format::eR32G32B32A32Sfloat, offset);
                         offset += 16;
                         break;
-                    default: ;
+                    default:;
                     }
                 }
                 if (i.inputType == RxAssets::MaterialPipelineInputType::eByte) {
@@ -968,21 +1014,23 @@ namespace RxEngine
                         attributes.emplace_back(loc++, 0, vk::Format::eR8G8B8A8Unorm, offset);
                         offset += 4;
                         break;
-                    default: ;
+                    default:;
                     }
                 }
             }
 
             bindings.emplace_back(0, offset, vk::VertexInputRate::eVertex);
             pvisci.setVertexBindingDescriptions(bindings).
-                   setVertexAttributeDescriptions(attributes);
+                setVertexAttributeDescriptions(attributes);
 
         }
 
         pcbsci.setAttachments(attachments);
         pdsci.setDynamicStates(dynamicStates);
 
-        auto rv = RxCore::iVulkan()->getDevice().createGraphicsPipeline(nullptr, gpci);
+        auto device = engine_->getDevice();
+
+        auto rv = device->getDevice().createGraphicsPipeline(nullptr, gpci);
         assert(rv.result == vk::Result::eSuccess);
 
         return rv.value;
@@ -1002,41 +1050,53 @@ namespace RxEngine
         if (vert && frag && mpd) {
             if (mpd->stage == RxAssets::PipelineRenderStage::UI) {
                 auto pl = createMaterialPipeline(
-                    mpd, frag, vert, pll->layout, rp->uiRenderPass, rp->uiSubPass);
-                e.setDeferred<GraphicsPipeline>({
-                    std::make_shared<RxCore::Pipeline>(pl), rp->uiRenderPass,
-                    rp->uiSubPass
-                });
+                    mpd, frag, vert, pll->layout, rp->uiRenderPass, rp->uiSubPass
+                );
+                e.setDeferred<GraphicsPipeline>(
+                    {
+                        std::make_shared<RxCore::Pipeline>(pl), rp->uiRenderPass,
+                        rp->uiSubPass
+                    }
+                );
             }
 
             if (mpd->stage == RxAssets::PipelineRenderStage::Opaque) {
                 auto pl = createMaterialPipeline(
                     mpd, frag, vert, pll->layout, rp->opaqueRenderPass,
-                    rp->opaqueSubPass);
-                e.setDeferred<GraphicsPipeline>({
-                    std::make_shared<RxCore::Pipeline>(pl), rp->opaqueRenderPass,
                     rp->opaqueSubPass
-                });
+                );
+                e.setDeferred<GraphicsPipeline>(
+                    {
+                        std::make_shared<RxCore::Pipeline>(pl), rp->opaqueRenderPass,
+                        rp->opaqueSubPass
+                    }
+                );
             }
 
             if (mpd->stage == RxAssets::PipelineRenderStage::Shadow) {
                 auto pl = createMaterialPipeline(
                     mpd, frag, vert, pll->layout, rp->shadowRenderPass,
-                    rp->shadowSubPass);
-                e.setDeferred<GraphicsPipeline>({
-                    std::make_shared<RxCore::Pipeline>(pl), rp->shadowRenderPass,
                     rp->shadowSubPass
-                });
+                );
+                e.setDeferred<GraphicsPipeline>(
+                    {
+                        std::make_shared<RxCore::Pipeline>(pl), rp->shadowRenderPass,
+                        rp->shadowSubPass
+                    }
+                );
             }
 
             if (mpd->stage == RxAssets::PipelineRenderStage::Transparent) {
                 auto pl = createMaterialPipeline(
                     mpd, frag, vert, pll->layout, rp->transparentRenderPass,
-                    rp->transparentSubPass);
-                e.setDeferred<GraphicsPipeline>({
-                    std::make_shared<RxCore::Pipeline>(pl), rp->transparentRenderPass,
                     rp->transparentSubPass
-                });
+                );
+                e.setDeferred<GraphicsPipeline>(
+                    {
+                        std::make_shared<RxCore::Pipeline>(pl), rp->transparentRenderPass,
+                        rp->transparentSubPass
+                    }
+                );
             }
         }
     }
@@ -1052,21 +1112,22 @@ namespace RxEngine
         std::vector<MaterialShaderEntry> mv;
         std::vector<RxCore::CombinedSampler> ts;
 
-        res.each<Material>([&](ecs::EntityHandle e, Material * m)
-        {
-            m->sequence = static_cast<uint32_t>(mv.size());
+        res.each<Material>(
+            [&](ecs::EntityHandle e, Material * m) {
+                m->sequence = static_cast<uint32_t>(mv.size());
 
-            //auto me = mv.emplace_back();
-            //me.roughness = m->roughness;
-            auto te = m->materialTextures[0];
+                //auto me = mv.emplace_back();
+                //me.roughness = m->roughness;
+                auto te = m->materialTextures[0];
 
-            auto tx = world_->get<MaterialImage>(te, true);
-            auto sm = world_->get<Render::MaterialSampler>(te);
+                auto tx = world_->get<MaterialImage>(te, true);
+                auto sm = world_->get<Render::MaterialSampler>(te);
 
-            //me.colorTextureIndex = ts.size();
-            mv.push_back({static_cast<uint32_t>(ts.size()), m->roughness});
-            ts.push_back({sm->sampler, tx->imageView});
-        });
+                //me.colorTextureIndex = ts.size();
+                mv.push_back({static_cast<uint32_t>(ts.size()), m->roughness});
+                ts.push_back({sm->sampler, tx->imageView});
+            }
+        );
 
         buffer->map();
         buffer->update(mv.data(), mv.size());

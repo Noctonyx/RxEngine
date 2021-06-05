@@ -107,8 +107,9 @@ namespace RxEngine
         };
     }
 
-    RmlRenderInterface::RmlRenderInterface()
-        : dirtyTextures(true)
+    RmlRenderInterface::RmlRenderInterface(RxCore::Device * device)
+        : device_(device)
+        , dirtyTextures(true)
         , transform_()
     {
         XMStoreFloat4x4(&transform_, XMMatrixIdentity());
@@ -131,7 +132,7 @@ namespace RxEngine
             return false;
         }
 
-        auto image = RxCore::iVulkan()->createImage(
+        auto image = device_->createImage(
             id.imType == RxAssets::eBC7
                 ? vk::Format::eBc7UnormBlock
                 : vk::Format::eR8G8B8A8Unorm,
@@ -145,10 +146,10 @@ namespace RxEngine
             image->createImageView(vk::ImageViewType::e2D, vk::ImageAspectFlagBits::eColor);
 
         for (uint32_t j = 0; j < id.mipLevels.size(); j++) {
-            auto staging_buffer = RxCore::iVulkan()->createStagingBuffer(
+            auto staging_buffer = device_->createStagingBuffer(
                 id.mipLevels[j].bytes.size(), id.mipLevels[j].bytes.data());
 
-            RxCore::iVulkan()->transferBufferToImage(
+            device_->transferBufferToImage(
                 staging_buffer,
                 image,
                 vk::Extent3D(id.mipLevels[j].width, id.mipLevels[j].height, 1),
@@ -169,7 +170,7 @@ namespace RxEngine
            .setMaxLod(1.0f)
            .setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
 
-        auto sampler = RxCore::iVulkan()->createSampler(sci);
+        auto sampler = device_->createSampler(sci);
 
         auto h = getNextTextureHandle();
 
@@ -189,7 +190,7 @@ namespace RxEngine
         const Rml::Vector2i & source_dimensions)
     {
         OPTICK_EVENT()
-        auto image = RxCore::iVulkan()->createImage(
+        auto image = device_->createImage(
             vk::Format::eR8G8B8A8Unorm,
             vk::Extent3D{
                 static_cast<uint32_t>(source_dimensions.x),
@@ -203,10 +204,10 @@ namespace RxEngine
         auto iv =
             image->createImageView(vk::ImageViewType::e2D, vk::ImageAspectFlagBits::eColor);
 
-        auto staging_buffer = RxCore::iVulkan()->createStagingBuffer(
+        auto staging_buffer = device_->createStagingBuffer(
             (source_dimensions.x * source_dimensions.y * 4), source);
 
-        RxCore::iVulkan()->transferBufferToImage(
+        device_->transferBufferToImage(
             staging_buffer,
             image,
             vk::Extent3D(static_cast<uint32_t>(source_dimensions.x),
@@ -226,7 +227,7 @@ namespace RxEngine
            .setMaxLod(1.0f)
            .setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
 
-        auto sampler = RxCore::iVulkan()->createSampler(sci);
+        auto sampler = device_->createSampler(sci);
 
         auto h = getNextTextureHandle();
 
@@ -320,7 +321,7 @@ namespace RxEngine
 
             XMStoreFloat4x4(&projectionMatrix_, pm);
 
-            ub_ = RxCore::iVulkan()->createBuffer(
+            ub_ = device_->createBuffer(
                 vk::BufferUsageFlagBits::eUniformBuffer,
                 VMA_MEMORY_USAGE_CPU_TO_GPU,
                 sizeof(XMFLOAT4X4),
@@ -418,11 +419,11 @@ namespace RxEngine
     RmlRenderInterface::CreateBuffers() const
     {
         auto vb =
-            RxCore::iVulkan()->createVertexBuffer(
+           device_->createVertexBuffer(
                 VMA_MEMORY_USAGE_CPU_TO_GPU, static_cast<uint32_t>(vertices_.size()),
                 static_cast<uint32_t>(sizeof(Rml::Vertex)));
 
-        auto ib = RxCore::iVulkan()->createIndexBuffer(
+        auto ib = device_->createIndexBuffer(
             VMA_MEMORY_USAGE_CPU_TO_GPU,
             static_cast<uint32_t>(indices_.size()), false);
 
@@ -592,7 +593,7 @@ namespace RxEngine
     {
         rmlSystem = std::make_unique<RmlSystemInterface>(world_);
         rmlFile = std::make_unique<RmlFileInterface>();
-        rmlRender = std::make_unique<RmlRenderInterface>();
+        rmlRender = std::make_unique<RmlRenderInterface>(engine_->getDevice());
 
         Rml::SetSystemInterface(rmlSystem.get());
         Rml::SetFileInterface(rmlFile.get());

@@ -604,7 +604,7 @@ namespace RxEngine
     {
         world_->deleteSystem(world_->lookup("Renderer:Render").id);
 
-        RxCore::iVulkan()->WaitIdle();
+        engine_->getDevice()->WaitIdle();
         device_->getDevice().destroyQueryPool(queryPool_);
         // frameBuffers_.clear();
         depthBufferView_.reset();
@@ -628,8 +628,9 @@ namespace RxEngine
         if (shadowMap_ && shadowMap_->extent_.width == shadowMapSize) {
             return;
         }
+        auto device = engine_->getDevice();
         shadowImagesChanged = true;
-        shadowMap_ = RxCore::iVulkan()->createImage(
+        shadowMap_ = device->createImage(
             RxCore::Device::Context()->GetDepthFormat(false),
             {shadowMapSize, shadowMapSize, 1},
             1,
@@ -671,7 +672,7 @@ namespace RxEngine
                .setMaxLod(5.0f)
                .setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
 
-            shadowSampler_ = RxCore::iVulkan()->createSampler(sci);
+            shadowSampler_ = device->createSampler(sci);
         }
     }
 

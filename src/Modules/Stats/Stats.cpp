@@ -9,11 +9,13 @@ namespace RxEngine
 {
     void StatsModule::startup()
     {
+        auto device = engine_->getDevice();
+
         world_->createSystem("Stats:Ui")
               .inGroup("Pipeline:UpdateUi")           
-              .execute([this](ecs::World * w)
+              .execute([this, device](ecs::World * w)
                   {
-                      RxCore::iVulkan()->getMemBudget(heaps_);
+                      device->getMemBudget(heaps_);
                       delta_ = w->deltaTime();
                       fps_ = fps_ * 0.99f + 0.01f * (1 / delta_);
                       presentStatsUi();

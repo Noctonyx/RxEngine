@@ -91,7 +91,7 @@ namespace RxEngine
     class RmlRenderInterface final : public Rml::RenderInterface
     {
     public:
-        RmlRenderInterface();
+        RmlRenderInterface(RxCore::Device * device);
         ~RmlRenderInterface() override;
         void RenderGeometry(
             Rml::Vertex * vertices,
@@ -126,6 +126,7 @@ namespace RxEngine
         }
 
     private:
+        RxCore::Device * device_;
         std::tuple<std::shared_ptr<RxCore::VertexBuffer>, std::shared_ptr<RxCore::IndexBuffer>>
         CreateBuffers() const;
 

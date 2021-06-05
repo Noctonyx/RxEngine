@@ -214,7 +214,7 @@ namespace RxEngine
             m->disable();
         }
 
-        RxCore::iVulkan()->WaitIdle();
+        device_->WaitIdle();
 
         device_->clearQueues();
         RxCore::JobManager::instance().Shutdown();

@@ -280,9 +280,10 @@ namespace RxEngine
             {static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1}, 1, 1,
             vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst);
 
-        auto b = RxCore::iVulkan()->createStagingBuffer(upload_size, pixels);
+        auto device = engine_->getDevice();
+        auto b = device->createStagingBuffer(upload_size, pixels);
 
-        RxCore::iVulkan()->transferBufferToImage(
+        device->transferBufferToImage(
             b, fontImage_, vk::Extent3D(width, height, 1), vk::ImageLayout::eShaderReadOnlyOptimal,
             1,
             0);
@@ -305,7 +306,8 @@ namespace RxEngine
            .setMaxLod(1.0f)
            .setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
 
-        auto sampler = RxCore::iVulkan()->createSampler(sci);
+        auto device = engine_->getDevice();
+        auto sampler = device->createSampler(sci);
 
         set0_->updateDescriptor(0, vk::DescriptorType::eCombinedImageSampler, fontImage_, sampler);
     }
@@ -354,18 +356,18 @@ namespace RxEngine
         ImGui::NewFrame();
     }
 
-    auto createBuffers()
+    auto createBuffers(RxCore::Device * device)
     {
         OPTICK_EVENT("Build IMGui Buffers")
 
         const auto dd = ImGui::GetDrawData();
 
         auto vb =
-            RxCore::iVulkan()->createVertexBuffer(
+            device->createVertexBuffer(
                 VMA_MEMORY_USAGE_CPU_TO_GPU, dd->TotalVtxCount,
                 static_cast<uint32_t>(sizeof(ImDrawVert)));
 
-        auto ib = RxCore::iVulkan()->createIndexBuffer(
+        auto ib = device->createIndexBuffer(
             VMA_MEMORY_USAGE_CPU_TO_GPU,
             dd->TotalIdxCount, true);
 
@@ -424,7 +426,7 @@ namespace RxEngine
         }
 
         // Create Vertex/Index Buffers
-        auto [vb, ib] = createBuffers();
+        auto [vb, ib] = createBuffers(engine_->getDevice());
 
         buf->begin(pipeline->renderPass, pipeline->subPass);
         {
