@@ -4,7 +4,6 @@
 
 #include "SwapChain.h"
 #include "EngineMain.hpp"
-#include "Vulkan/Surface.hpp"
 #include "RxECS.h"
 #include "optick/optick.h"
 
@@ -13,8 +12,10 @@ namespace RxEngine
     SwapChainModule::SwapChainModule(ecs::World * world, EngineMain * engine, const ecs::entity_t moduleId)
         : Module(world, engine, moduleId)
     {
-        auto surface = engine->getDevice()->surface;
-        swapChain_ = surface->CreateSwapChain();
+        auto device = engine->getDevice();
+
+        //auto surface = engine->getDevice()->surface;
+        swapChain_ = device->createSwapChain();
         swapChain_->setSwapChainOutOfDate(true);
     }
 
@@ -85,8 +86,8 @@ namespace RxEngine
         }
 
         swapChain_.reset();
-        device->surface->updateSurfaceCapabilities();
-        swapChain_ = device->surface->CreateSwapChain();
+        device->updateSurfaceCapabilities();
+        swapChain_ = device->createSwapChain();
     }
 
     void SwapChainModule::createSemaphores(uint32_t semaphoreCount)

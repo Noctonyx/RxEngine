@@ -156,7 +156,7 @@ namespace RxEngine
             delete d;
         }};
 
-        auto surface = RxCore::Device::Context()->surface;
+       // auto surface = RxCore::Device::Context()->surface;
 
         RxCore::JobManager::instance().freeAllResourcesFunction = []() {
             RxCore::threadResources.freeAllResources();
