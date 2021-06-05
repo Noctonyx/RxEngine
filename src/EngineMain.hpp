@@ -8,7 +8,6 @@
 #include <vector>
 #include <memory>
 #include <chrono>
-//#include "Modules/Renderer/Renderer.hpp"
 
 #pragma warning(disable: 4706)
 #include "ini.h"
@@ -378,23 +377,13 @@ namespace RxEngine
                                                            const std::filesystem::path & file);
 
     private:
-        //std::vector<std::unique_ptr<Subsystem>> subsystems_;
         std::unique_ptr<RxCore::Window> window_;
-        //std::unique_ptr<Renderer> renderer_;
-        //struct DeviceDeleter // Add custom deleter of Impl
-          //  {
-//            void operator()(RxCore::Device*);
-  //          };
         std::unique_ptr<RxCore::Device, std::function<void(RxCore::Device *)>> device_;
-        //std::unique_ptr<MaterialManager> materialManager_;
-        //std::unique_ptr<EntityManager> entityManager_;
 
         std::vector<std::shared_ptr<Module>> modules;
         std::vector<std::shared_ptr<Module>> userModules;
 
         std::chrono::time_point<std::chrono::steady_clock> timer_;
-
-        //std::vector<std::string> configFiles;
 
         std::chrono::time_point<std::chrono::steady_clock> startTime;
         float delta_{};

@@ -35,10 +35,7 @@ add_library(RxEngine STATIC
         src/Modules/Renderer/Renderer.hpp
         src/Modules/Renderer/Renderer.cpp
         src/Geometry/Camera.hpp
-        src/Rendering/MaterialManager.cpp
         src/ini.h
-        src/Rendering/MaterialManager.h
-        src/Rendering/Defines.h
         src/Modules/Render.h
         src/Modules/Render.cpp
         src/Modules/Transforms/Transforms.h

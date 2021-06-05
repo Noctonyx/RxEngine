@@ -40,7 +40,7 @@ namespace RxEngine
         SwapChainModule(ecs::World * world, EngineMain * engine, ecs::entity_t moduleId);
         void startup() override;
         void shutdown() override;
-        vk::Format getImageFormat() const;
+        [[nodiscard]] vk::Format getImageFormat() const;
 
     protected:
         void replaceSwapChain();
