@@ -11,6 +11,7 @@
 #include "Vfs.h"
 #include "EngineMain.hpp"
 #include "Modules/Render.h"
+#include "Modules/Renderer/Renderer.hpp"
 
 namespace RxEngine
 {

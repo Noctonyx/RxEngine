@@ -2,6 +2,7 @@
 #include "optick/optick.h"
 #include "imgui.h"
 #include "Modules/ImGui/ImGuiRender.hpp"
+#include "Modules/Renderer/Renderer.hpp"
 
 namespace RxEngine
 {
@@ -74,7 +75,8 @@ namespace RxEngine
             //ImGui::Text("%s", e.path().c_str());
             if (ImGui::Selectable(
                 e.description().c_str(),
-                selectedEntity == e)) {
+                selectedEntity == e
+            )) {
                 selectedEntity = e;
             }
             ImGui::PopID();
@@ -93,9 +95,10 @@ namespace RxEngine
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
             ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-            bool open = ImGui::TreeNodeEx(object.description().c_str(),
-                                          ImGuiTreeNodeFlags_SpanFullWidth,
-                                          "IsA(%s)", object.description().c_str());
+            bool open = ImGui::TreeNodeEx(
+                object.description().c_str(),
+                ImGuiTreeNodeFlags_SpanFullWidth,
+                "IsA(%s)", object.description().c_str());
             ImGui::TableNextColumn();
             ImGui::TableNextColumn();
             ImGui::TableNextColumn();
@@ -137,40 +140,46 @@ namespace RxEngine
 
                 ImGui::TableNextColumn();
                 if (world->has<ComponentGui>(c)) {
-                    if (ImGui::BeginTable("ComponentGui", 2, /*ImGuiTableFlags_Borders | */
-                                          ImGuiTableFlags_Resizable |
-                                          ImGuiTableFlags_Hideable)) {
+                    if (ImGui::BeginTable(
+                        "ComponentGui", 2, /*ImGuiTableFlags_Borders | */
+                        ImGuiTableFlags_Resizable |
+                        ImGuiTableFlags_Hideable
+                    )) {
                         ImGui::TableSetupColumn("Name");
                         ImGui::TableSetupColumn("Value");
 
                         world->get<ComponentGui>(c)->
-                               editor(world.get(), world->getUpdate(entity.id, c));
+                            editor(world.get(), world->getUpdate(entity.id, c));
 
                         ImGui::EndTable();
                     }
                 }
             } else {
                 auto r = reinterpret_cast<const ecs::Relation *>(entity.getWorld()->get(
-                    entity.id, c));
+                    entity.id, c
+                ));
                 auto object = entity.getHandle(r->entity);
 
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
                 ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-                bool open = ImGui::TreeNodeEx(object.description().c_str(),
-                                              ImGuiTreeNodeFlags_SpanFullWidth,
-                                              "%s(%s)", cd->name.c_str(),
-                                              object.description().c_str());
+                bool open = ImGui::TreeNodeEx(
+                    object.description().c_str(),
+                    ImGuiTreeNodeFlags_SpanFullWidth,
+                    "%s(%s)", cd->name.c_str(),
+                    object.description().c_str());
                 ImGui::TableNextColumn();
                 if (world->has<ComponentGui>(c)) {
-                    if (ImGui::BeginTable("ComponentGui", 2, /*ImGuiTableFlags_Borders | */
-                                          ImGuiTableFlags_Resizable |
-                                          ImGuiTableFlags_Hideable)) {
+                    if (ImGui::BeginTable(
+                        "ComponentGui", 2, /*ImGuiTableFlags_Borders | */
+                        ImGuiTableFlags_Resizable |
+                        ImGuiTableFlags_Hideable
+                    )) {
                         ImGui::TableSetupColumn("Name");
                         ImGui::TableSetupColumn("Value");
 
                         world->get<ComponentGui>(c)->
-                               editor(world.get(), world->getUpdate(entity.id, c));
+                            editor(world.get(), world->getUpdate(entity.id, c));
 
                         ImGui::EndTable();
                     }
@@ -196,24 +205,28 @@ namespace RxEngine
 
         if (ImGui::Begin("Entities", &is_open)) {
 
-            if (ImGui::BeginCombo("Archetype",
-                                  world->getTableForArchetype(selectedArchetype)->description().
-                                         c_str())) {
+            if (ImGui::BeginCombo(
+                "Archetype",
+                world->getTableForArchetype(selectedArchetype)->description().
+                    c_str())) {
                 for (auto it: *world) {
                     auto table = world->getTableForArchetype(it.id);
                     if (table && table->entities.size() > 0) {
-                        if (ImGui::Selectable(table->description().c_str(),
-                                              it.id == selectedArchetype)) {
+                        if (ImGui::Selectable(
+                            table->description().c_str(),
+                            it.id == selectedArchetype
+                        )) {
                             selectedArchetype = it.id;
                         }
                     }
                 }
                 ImGui::EndCombo();
             }
-            if (ImGui::BeginTable("Entities", 2,
-                                  ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit |
-                                  ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg,
-                                  ImVec2(0, 400))) {
+            if (ImGui::BeginTable(
+                "Entities", 2,
+                ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit |
+                ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg,
+                ImVec2(0, 400))) {
                 ImGui::TableSetupColumn("ID");
                 ImGui::TableSetupColumn("Name");
                 ImGui::TableSetupScrollFreeze(0, 1);
@@ -227,16 +240,19 @@ namespace RxEngine
                 //table_index++;
                 //if (labels[selected_index] == table_type.str().c_str()) {
                 //                    if (it.count() > 0) {
-                ecsInspectorShowTableDetails(selectedEntity,
-                                             world->getTableForArchetype(selectedArchetype));
+                ecsInspectorShowTableDetails(
+                    selectedEntity,
+                    world->getTableForArchetype(selectedArchetype));
                 //                  }
                 //}
                 ImGui::EndTable();
             }
-            if (ImGui::BeginTable("FocusedEntity", 2,
-                                  ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuterH |
-                                  ImGuiTableFlags_Resizable | ImGuiWindowFlags_NoBackground |
-                                  ImGuiTableFlags_NoBordersInBody)) {
+            if (ImGui::BeginTable(
+                "FocusedEntity", 2,
+                ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuterH |
+                ImGuiTableFlags_Resizable | ImGuiWindowFlags_NoBackground |
+                ImGuiTableFlags_NoBordersInBody
+            )) {
                 ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
                 //                ImGui::TableSetupColumn("Role", ImGuiTableColumnFlags_NoHide);
                 //ImGui::TableSetupColumn("Relation", ImGuiTableColumnFlags_NoHide);
@@ -257,11 +273,13 @@ namespace RxEngine
                         type = "Prefab";
                     }
 
-                    bool open = ImGui::TreeNodeEx(entity.description().c_str(),
-                                                  ImGuiTreeNodeFlags_SpanFullWidth,
-                                                  "%s (%s) %lld", type.c_str(),
-                                                  entity.description().c_str(),
-                                                  entity.id);
+                    bool open = ImGui::TreeNodeEx(
+                        entity.description().c_str(),
+                        ImGuiTreeNodeFlags_SpanFullWidth,
+                        "%s (%s) %lld", type.c_str(),
+                        entity.description().c_str(),
+                        entity.id
+                    );
                     ImGui::TableNextColumn();
                     //                    ImGui::TableNextColumn();
                     //                  ImGui::TableNextColumn();
@@ -294,29 +312,33 @@ namespace RxEngine
 
         if (ImGui::Begin("Singletons", &is_open)) {
 
-            if (ImGui::BeginTable("Singletons", 1,
-                                  ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit |
-                                  ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg,
-                                  ImVec2(0, 400))) {
+            if (ImGui::BeginTable(
+                "Singletons", 1,
+                ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit |
+                ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg,
+                ImVec2(0, 400))) {
                 ImGui::TableSetupColumn("Name");
                 ImGui::TableSetupScrollFreeze(0, 1);
                 ImGui::TableHeadersRow();
 
-                for (auto & [k, v]: world->allSingletons()) {
+                for (auto &[k, v]: world->allSingletons()) {
                     ImGui::TableNextRow();
                     ImGui::TableNextColumn();
                     if (ImGui::Selectable(
                         world->description(k).c_str(),
-                        selectedSingleton == k)) {
+                        selectedSingleton == k
+                    )) {
                         selectedSingleton = k;
                     }
                 }
                 ImGui::EndTable();
             }
-            if (ImGui::BeginTable("FocusedSingleton", 2,
-                                  ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuterH |
-                                  ImGuiTableFlags_Resizable | ImGuiWindowFlags_NoBackground |
-                                  ImGuiTableFlags_NoBordersInBody)) {
+            if (ImGui::BeginTable(
+                "FocusedSingleton", 2,
+                ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuterH |
+                ImGuiTableFlags_Resizable | ImGuiWindowFlags_NoBackground |
+                ImGuiTableFlags_NoBordersInBody
+            )) {
                 ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
                 //                ImGui::TableSetupColumn("Role", ImGuiTableColumnFlags_NoHide);
                 //ImGui::TableSetupColumn("Relation", ImGuiTableColumnFlags_NoHide);
@@ -349,11 +371,11 @@ namespace RxEngine
 
             auto pgs = world->getPipelineGroupSequence();
 
-
-            if (ImGui::BeginTable("Pipeline", 4,
-                                  ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit |
-                                  ImGuiTableFlags_ScrollY,// | ImGuiTableFlags_RowBg,
-                                  ImVec2(0, 0))) {
+            if (ImGui::BeginTable(
+                "Pipeline", 4,
+                ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit |
+                ImGuiTableFlags_ScrollY,// | ImGuiTableFlags_RowBg,
+                ImVec2(0, 0))) {
                 ImGui::TableSetupColumn("Name");
                 ImGui::TableSetupColumn("Active");
                 ImGui::TableSetupColumn("Count");
@@ -370,14 +392,14 @@ namespace RxEngine
                     //ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
                     //ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f));
                     ImGui::PushStyleColor(ImGuiCol_Text, static_cast<ImVec4>(ImColor(226, 255, 138)));
-                    bool open = ImGui::TreeNodeEx(world->description(pg).c_str(),ImGuiTreeNodeFlags_SpanFullWidth);
+                    bool open = ImGui::TreeNodeEx(world->description(pg).c_str(), ImGuiTreeNodeFlags_SpanFullWidth);
                     ImGui::PopStyleColor(1);
 
                     ImGui::TableNextColumn();
                     ImGui::TableNextColumn();
                     ImGui::Text("%lld", sg->systems.size());
                     ImGui::TableNextColumn();
-                    ImGui::Text("%.3f", sg->lastTime* 1000.f);
+                    ImGui::Text("%.3f", sg->lastTime * 1000.f);
                     if (sg && open) {
                         for (auto e : sg->executionSequence) {
                             auto sys = world->get<ecs::System>(e);
@@ -385,7 +407,7 @@ namespace RxEngine
                             ImGui::TableNextColumn();
                             ImGui::Text("%s", world->description(e).c_str());
                             ImGui::TableNextColumn();
-                            ImGui::Text("%s",sys->enabled ? "Active" : "Inactive");
+                            ImGui::Text("%s", sys->enabled ? "Active" : "Inactive");
                             ImGui::TableNextColumn();
                             ImGui::Text("%lld", sys->count);
                             ImGui::TableNextColumn();
@@ -447,10 +469,11 @@ namespace RxEngine
         static bool show_entity_window = getBoolConfigValue("editor", "ecsEntityWindow", false);
         static bool show_systems_window = getBoolConfigValue("editor", "ecsSystemsWindow", false);
         static bool show_singletons_window = getBoolConfigValue(
-            "editor", "ecsSingletonsWindow", false);
+            "editor", "ecsSingletonsWindow", false
+        );
 
-        auto& io = ImGui::GetIO();
-        if (io.UserData && !static_cast<IMGuiRender*>(io.UserData)->isEnabled()) {
+        auto & io = ImGui::GetIO();
+        if (io.UserData && !static_cast<IMGuiRender *>(io.UserData)->isEnabled()) {
             return;
         }
 
@@ -615,9 +638,10 @@ namespace RxEngine
             ImGui::TableNextColumn();
             ImGui::Text("Type");
             ImGui::TableNextColumn();
-            ImGui::Text("%s", system->query
-                                  ? "Query"
-                                  : (system->stream ? "Stream" : "Execute"));
+            ImGui::Text(
+                "%s", system->query
+                      ? "Query"
+                      : (system->stream ? "Stream" : "Execute"));
 
             ImGui::TableNextRow();
             ImGui::TableNextColumn();

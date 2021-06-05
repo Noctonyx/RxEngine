@@ -1,3 +1,28 @@
+////////////////////////////////////////////////////////////////////////////////
+// MIT License
+//
+// Copyright (c) 2021.  Shane Hyde
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//
+////////////////////////////////////////////////////////////////////////////////
+
 //
 // Created by shane on 27/12/2020.
 //
@@ -8,14 +33,13 @@
 #include <vector>
 #include <memory>
 #include <chrono>
-#include "Log.h"
-#include "Modules/Renderer/Renderer.hpp"
 #pragma warning(disable: 4706)
 #include "ini.h"
 #include "RxECS.h"
 #include "Vfs.h"
 #include "sol/sol.hpp"
 //#include "Window.hpp"
+#include "Log.h"
 #include "Modules/Module.h"
 
 namespace RxAssets
@@ -27,6 +51,8 @@ namespace RxCore
 {
     class Window;
     class SwapChain;
+    class Buffer;
+    class Device;
 }
 
 namespace RxEngine
@@ -40,6 +66,15 @@ namespace RxEngine
     struct ComponentGui
     {
         std::function<void(ecs::World *, void *)> editor;
+    };
+
+    struct RxJobAdaptor : ecs::JobInterface
+    {
+        JobHandle create(std::function<void()> f) override;
+
+        void schedule(JobHandle job_handle) override;
+        bool isComplete(JobHandle job_handle) const override;
+        void awaitCompletion(JobHandle job_handle) override;
     };
 
     struct WindowDetails
@@ -225,7 +260,6 @@ namespace RxEngine
         Centered
     };
 
-
     struct MousePosition
     {
         float x;
@@ -267,10 +301,7 @@ namespace RxEngine
     class EngineMain
     {
     public:
-        EngineMain()
-        {
-            // world_ = std::make_unique<flecs::world>();
-        };
+        EngineMain() = default;
 
         ~EngineMain()
         {
@@ -289,7 +320,7 @@ namespace RxEngine
 
         //void setLoader(RXAssets::Loader * );
 
-        float getTotalElapsed() const
+        [[nodiscard]] float getTotalElapsed() const
         {
             return totalElapsed_;
         }
@@ -297,6 +328,11 @@ namespace RxEngine
         RxApi::WindowPtr getWindow() const
         {
             return window_.get();
+        }
+
+        [[nodiscard]] ecs::World * getWorld() const
+        {
+            return world.get();
         }
 
         void loadConfig();
@@ -353,9 +389,6 @@ namespace RxEngine
         RxApi::DevicePtr getDevice() const;
 
     protected:
-        void replaceSwapChain();
-        void createSemaphores(uint32_t semaphoreCount);
-        void destroySemaphores();
 
         sol::protected_function_result loadLuaFile(const std::filesystem::path & file) const;
         void setupLuaEnvironment();
@@ -382,17 +415,14 @@ namespace RxEngine
         std::unique_ptr<RxApi::Window> window_;
         //std::unique_ptr<Renderer> renderer_;
         std::unique_ptr<RxApi::Device> device_;
-        RxApi::SwapChainPtr swapChain_;
+        //RxApi::SwapChainPtr swapChain_;
         //std::unique_ptr<MaterialManager> materialManager_;
         //std::unique_ptr<EntityManager> entityManager_;
 
         std::vector<std::shared_ptr<Module>> modules;
         std::vector<std::shared_ptr<Module>> userModules;
 
-        std::vector<RxApi::Semaphore> submitCompleteSemaphores_;
         std::chrono::time_point<std::chrono::steady_clock> timer_;
-
-        //std::vector<std::string> configFiles;
 
         std::chrono::time_point<std::chrono::steady_clock> startTime;
         float delta_{};
@@ -409,7 +439,7 @@ namespace RxEngine
         bool capturedMouse = false;
     };
 
-    template <class T, typename ... Args>
+    template<class T, typename ... Args>
     void EngineMain::addModule(Args && ... args)
     {
         auto modId = world->createModule<T>();
@@ -417,7 +447,7 @@ namespace RxEngine
             std::make_shared<T>(world.get(), this, modId, std::forward<Args>(args)...));
     }
 
-    template <class T, class ...Args>
+    template<class T, class ...Args>
     void EngineMain::addUserModule(Args && ... args)
     {
         auto modId = world->createModule<T>();

@@ -1,8 +1,10 @@
+#include <Modules/Renderer/Renderer.hpp>
 #include "SceneCamera.h"
 
 #include "EngineMain.hpp"
 #include "Geometry/Camera.hpp"
 #include "Modules/RTSCamera/RTSCamera.h"
+#include "Vulkan/Buffer.hpp"
 
 constexpr int camera_buffer_count = 5;
 

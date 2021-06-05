@@ -7,6 +7,8 @@
 #include "DirectXCollision.h"
 #include "EngineMain.hpp"
 #include "Modules/Render.h"
+#include "Vulkan/ThreadResources.h"
+#include "Modules/SwapChain/SwapChain.h"
 
 using namespace DirectX;
 

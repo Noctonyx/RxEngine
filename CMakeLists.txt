@@ -35,14 +35,10 @@ add_library(RxEngine STATIC
         src/Modules/Renderer/Renderer.hpp
         src/Modules/Renderer/Renderer.cpp
         src/Geometry/Camera.hpp
-        src/Rendering/MaterialManager.cpp
         src/ini.h
-        src/Rendering/MaterialManager.h
-        src/Rendering/Defines.h
         src/Modules/Render.h
         src/Modules/Render.cpp
         src/Modules/Transforms/Transforms.h
-        
         src/EngineConfig.cpp
         src/EngineUI.cpp 
         src/Modules/Stats/Stats.h
@@ -71,7 +67,10 @@ add_library(RxEngine STATIC
         src/Modules/Mesh/Mesh.cpp  
         src/FSM.h
         src/FSM.cpp
-        src/JobAdapter.h)
+        src/Modules/SwapChain/SwapChain.h
+        src/Modules/SwapChain/SwapChain.cpp
+        src/JobAdapter.h
+    )
 
 target_compile_options(RxEngine PUBLIC -DVK_USE_PLATFORM_WIN32_KHR -DNOMINMAX)
 
