@@ -439,6 +439,7 @@ namespace RxEngine
                             }
                         );
                     }
+                    break;
                 case SDL_MOUSEMOTION: {
                     MousePosition pos{
                         static_cast<float>(ev->motion.x),
