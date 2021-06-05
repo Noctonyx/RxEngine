@@ -75,10 +75,8 @@ namespace RxEngine
         mb->descriptorSet->
             updateDescriptor(0, vk::DescriptorType::eStorageBuffer, mb->vertexBuffer);
 #endif
-        vk::BufferDeviceAddressInfo bdai{};
-        bdai.setBuffer(mb->vertexBuffer->handle());
 
-        mb->address = device->VkDevice().getBufferAddress(bdai);
+        mb->address = mb->vertexBuffer->getDeviceAddress();
 
         world->getSingletonUpdate<DynamicMeshActiveBundle>()->currentBundle = mbe.id;
         return mbe.id;

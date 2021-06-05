@@ -24,9 +24,9 @@ namespace RxEngine
                        EngineMain * engine,
                        const ecs::entity_t moduleId)
         : device_(device)
-        , Module(world, engine, moduleId)
-        , imageFormat_(imageFormat)
-        , shadowImagesChanged(true)      
+          , Module(world, engine, moduleId)
+          , imageFormat_(imageFormat)
+          , shadowImagesChanged(true)
     //, world_(world)
     //, query_(*world, "!RxEngine.Render.Pipeline")
     {
@@ -42,20 +42,24 @@ namespace RxEngine
         createRenderPass();
         createDepthRenderPass();
 
-        descriptorPool = engine_->getDevice()->CreateDescriptorPool({
+        descriptorPool = engine_->getDevice()->CreateDescriptorPool(
+            {
                 {vk::DescriptorType::eCombinedImageSampler, 15000},
                 {vk::DescriptorType::eUniformBufferDynamic, 600},
-                {vk::DescriptorType::eStorageBuffer, 600},
-                {vk::DescriptorType::eUniformBuffer, 800}
+                {vk::DescriptorType::eStorageBuffer,        600},
+                {vk::DescriptorType::eUniformBuffer,        800}
             },
-            400);
+            400
+        );
 
-        world_->setSingleton<RenderPasses>({
-            renderPass_, 0,
-            depthRenderPass_, 0,
-            renderPass_, 0,
-            renderPass_, 0
-        });
+        world_->setSingleton<RenderPasses>(
+            {
+                renderPass_, 0,
+                depthRenderPass_, 0,
+                renderPass_, 0,
+                renderPass_, 0
+            }
+        );
 
         world_->addSingleton<FrameStats>();
         {
@@ -81,7 +85,7 @@ namespace RxEngine
         qpci.queryType = vk::QueryType::eTimestamp;
         qpci.queryCount = 128;
 
-        queryPool_ = RxCore::Device::VkDevice().createQueryPool(qpci);
+        queryPool_ = device_->getDevice().createQueryPool(qpci);
 #if 0
         for (uint32_t i = 0; i < 20; i++) {
             auto b = RxCore::iVulkan()->createBuffer(
@@ -100,30 +104,33 @@ namespace RxEngine
 #endif
         world_->createSystem("Renderer:RunCommandBuffers")
               .inGroup("Pipeline:PostRender")
-              //.after<AcquireImage>()
-              //.before<PresentImage>()
+                  //.after<AcquireImage>()
+                  //.before<PresentImage>()
               .withStream<MainRenderImageInput>()
               .withWrite<MainRenderImageOutput>()
               .execute<MainRenderImageInput>(
-                  [this](ecs::World * world, const MainRenderImageInput * mri)
-                  {
-                      render(mri->imageView,
-                             mri->extent,
-                             {mri->imageAvailableSempahore},
-                             {vk::PipelineStageFlagBits::eColorAttachmentOutput},
-                             mri->finishRenderSemaphore);
+                  [this](ecs::World * world, const MainRenderImageInput * mri) {
+                      render(
+                          mri->imageView,
+                          mri->extent,
+                          {mri->imageAvailableSempahore},
+                          {vk::PipelineStageFlagBits::eColorAttachmentOutput},
+                          mri->finishRenderSemaphore
+                      );
 
                       world->getStream<MainRenderImageOutput>()
                            ->add<MainRenderImageOutput>(
-                               {mri->imageView, mri->finishRenderSemaphore});
+                               {mri->imageView, mri->finishRenderSemaphore}
+                           );
 
                       return true;
-                  });
+                  }
+              );
 
         world_->createSystem("Renderer:CleanLastFrame")
               .inGroup("Pipeline:PreRender")
-              .execute([this](ecs::World *)
-                  {
+              .execute(
+                  [this](ecs::World *) {
                       OPTICK_EVENT("Release Previous Frame Resource")
                       device_->graphicsQueue_->ReleaseCompleted();
                   }
@@ -137,20 +144,21 @@ namespace RxEngine
               .withRead<PipelineLayout>()
               .withWrite<DescriptorSet>()
               .withWrite<CurrentMainDescriptorSet>()
-              .executeIfNone([this](ecs::World * world)
-              {
-                  auto pl = world_->lookup("layout/general").get<PipelineLayout>();
-                  auto ds0_ = descriptorPool->allocateDescriptorSet(pl->dsls[0], { 1 });
+              .executeIfNone(
+                  [this](ecs::World * world) {
+                      auto pl = world_->lookup("layout/general").get<PipelineLayout>();
+                      auto ds0x_ = descriptorPool->allocateDescriptorSet(pl->dsls[0], {1});
 //                  auto ds0_ = //RxCore::threadResources.getDescriptorSet(
-  //                    poolTemplate,
-    //                  pl->dsls[0], {1});
+                      //                    poolTemplate,
+                      //                  pl->dsls[0], {1});
 
-                  auto e = world->newEntity();
-                  auto x = e.addAndUpdate<DescriptorSet>();
-                  x->ds = ds0_;
+                      auto e = world->newEntity();
+                      auto x = e.addAndUpdate<DescriptorSet>();
+                      x->ds = ds0x_;
 
-                  world->setSingleton<CurrentMainDescriptorSet>({e.id});
-              });
+                      world->setSingleton<CurrentMainDescriptorSet>({e.id});
+                  }
+              );
         //world_->addSingleton<Descriptors>();
     }
 
@@ -450,7 +458,8 @@ namespace RxEngine
                     for (uint32_t i = 0; i < NUM_CASCADES; i++) {
                         buf->beginRenderPass(
                             depthRenderPass_, cascadeFrameBuffers_[i],
-                            vk::Extent2D{4096, 4096}, depth_clear_values);
+                            vk::Extent2D{4096, 4096}, depth_clear_values
+                        );
                         {
                             OPTICK_EVENT("Execute Secondaries")
 
@@ -471,8 +480,7 @@ namespace RxEngine
 
                         world_->getStream<Render::OpaqueRenderCommand>()
                               ->each<Render::OpaqueRenderCommand>(
-                                  [&](ecs::World * w, const Render::OpaqueRenderCommand * b)
-                                  {
+                                  [&](ecs::World * w, const Render::OpaqueRenderCommand * b) {
                                       buf->executeSecondary(b->buf);
                                       return true;
                                   }
@@ -480,8 +488,7 @@ namespace RxEngine
 
                         world_->getStream<Render::UiRenderCommand>()
                               ->each<Render::UiRenderCommand>(
-                                  [&](ecs::World * w, const Render::UiRenderCommand * b)
-                                  {
+                                  [&](ecs::World * w, const Render::UiRenderCommand * b) {
                                       buf->executeSecondary(b->buf);
                                       return true;
                                   }
@@ -492,7 +499,8 @@ namespace RxEngine
 
                 buf->Handle().writeTimestamp(
                     vk::PipelineStageFlagBits::eBottomOfPipe, queryPool_,
-                    1);
+                    1
+                );
             }
             buf->end();
         }
@@ -503,7 +511,8 @@ namespace RxEngine
         {
             OPTICK_EVENT("GPU Submit", Optick::Category::Rendering)
             device_->graphicsQueue_->Submit(
-                {buf}, std::move(waitSemaphores), std::move(waitStages), {completeSemaphore});
+                {buf}, std::move(waitSemaphores), std::move(waitStages), {completeSemaphore}
+            );
         }
 
         const auto end_time = std::chrono::high_resolution_clock::now();
@@ -513,6 +522,7 @@ namespace RxEngine
         fs->index = (fs->index + 1) % 10;
         fs->frames[fs->index].cpuTime = static_cast<float>(cpuTime);
     }
+
 #if 0
     void Renderer::updateDescriptorSet0(const std::shared_ptr<RenderCamera> & renderCamera)
     {
@@ -552,8 +562,10 @@ namespace RxEngine
         std::vector<vk::ImageView> attachments = {imageView, depthBufferView_->handle};
 
         auto frame_buffer = std::make_shared<RxCore::FrameBuffer>(
+            device_,
             device_->getDevice().createFramebuffer(
-                {{}, renderPass_, attachments, extent.width, extent.height, 1}));
+                {{}, renderPass_, attachments, extent.width, extent.height, 1}
+            ));
 
         return frame_buffer;
     }
@@ -589,13 +601,15 @@ namespace RxEngine
                 device_->GetDepthFormat(false),
                 {extent.width, extent.height, 1},
                 1, 1,
-                vk::ImageUsageFlagBits::eDepthStencilAttachment);
+                vk::ImageUsageFlagBits::eDepthStencilAttachment
+            );
 
             depthBufferView_ = depthBuffer_->createImageView(
                 vk::ImageViewType::e2D,
                 vk::ImageAspectFlagBits::eDepth,
                 0,
-                1);
+                1
+            );
             bufferExtent_ = extent;
         }
     }
@@ -654,6 +668,7 @@ namespace RxEngine
 
             cascadeFrameBuffers_[i] =
                 std::make_shared<RxCore::FrameBuffer>(
+                    device_,
                     device_->getDevice()
                     .createFramebuffer(
                         {

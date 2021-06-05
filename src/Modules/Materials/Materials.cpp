@@ -1047,6 +1047,8 @@ namespace RxEngine
         if (!rp) {
             return;
         }
+        auto device = engine_->getDevice();
+
         if (vert && frag && mpd) {
             if (mpd->stage == RxAssets::PipelineRenderStage::UI) {
                 auto pl = createMaterialPipeline(
@@ -1054,7 +1056,7 @@ namespace RxEngine
                 );
                 e.setDeferred<GraphicsPipeline>(
                     {
-                        std::make_shared<RxCore::Pipeline>(pl), rp->uiRenderPass,
+                        std::make_shared<RxCore::Pipeline>(device, pl), rp->uiRenderPass,
                         rp->uiSubPass
                     }
                 );
@@ -1067,7 +1069,7 @@ namespace RxEngine
                 );
                 e.setDeferred<GraphicsPipeline>(
                     {
-                        std::make_shared<RxCore::Pipeline>(pl), rp->opaqueRenderPass,
+                        std::make_shared<RxCore::Pipeline>(device, pl), rp->opaqueRenderPass,
                         rp->opaqueSubPass
                     }
                 );
@@ -1080,7 +1082,7 @@ namespace RxEngine
                 );
                 e.setDeferred<GraphicsPipeline>(
                     {
-                        std::make_shared<RxCore::Pipeline>(pl), rp->shadowRenderPass,
+                        std::make_shared<RxCore::Pipeline>(device, pl), rp->shadowRenderPass,
                         rp->shadowSubPass
                     }
                 );
@@ -1093,7 +1095,7 @@ namespace RxEngine
                 );
                 e.setDeferred<GraphicsPipeline>(
                     {
-                        std::make_shared<RxCore::Pipeline>(pl), rp->transparentRenderPass,
+                        std::make_shared<RxCore::Pipeline>(device, pl), rp->transparentRenderPass,
                         rp->transparentSubPass
                     }
                 );

@@ -92,16 +92,20 @@ namespace RxEngine
 
     void SwapChainModule::createSemaphores(uint32_t semaphoreCount)
     {
+        auto device = engine_->getDevice();
+
         for (uint32_t i = 0; i < semaphoreCount; i++) {
-            auto s = RxCore::Device::VkDevice().createSemaphore({});
+            auto s =  device->createSemaphore();
             submitCompleteSemaphores_.push_back(s);
         }
     }
 
     void SwapChainModule::destroySemaphores()
     {
+        auto device = engine_->getDevice();
+
         for (const auto & semaphore: submitCompleteSemaphores_) {
-            RxCore::Device::VkDevice().destroySemaphore(semaphore);
+            device->destroySemaphore(semaphore);
         }
         submitCompleteSemaphores_.clear();
     }
