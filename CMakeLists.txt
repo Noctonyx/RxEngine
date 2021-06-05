@@ -42,7 +42,6 @@ add_library(RxEngine STATIC
         src/Modules/Render.h
         src/Modules/Render.cpp
         src/Modules/Transforms/Transforms.h
-        
         src/EngineConfig.cpp
         src/EngineUI.cpp 
         src/Modules/Stats/Stats.h
@@ -71,6 +70,8 @@ add_library(RxEngine STATIC
         src/Modules/Mesh/Mesh.cpp  
         src/FSM.h
         src/FSM.cpp
+        src/Modules/SwapChain/SwapChain.h
+        src/Modules/SwapChain/SwapChain.cpp
     )
 
 target_compile_options(RxEngine PUBLIC -DVK_USE_PLATFORM_WIN32_KHR -DNOMINMAX)

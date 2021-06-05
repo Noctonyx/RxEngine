@@ -1,6 +1,7 @@
 #include "EngineMain.hpp"
 #include "imgui.h"
 #include "Modules/ImGui/ImGuiRender.hpp"
+#include "Modules/Renderer/Renderer.hpp"
 
 namespace RxEngine
 {

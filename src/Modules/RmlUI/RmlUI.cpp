@@ -1,3 +1,4 @@
+#include <Modules/Materials/Materials.h>
 #include "RmlUI.h"
 
 #include "AssetException.h"
@@ -14,6 +15,7 @@
 #include "RmlUi/Lua/Lua.h"
 #include "spdlog/spdlog.h"
 #include "Vulkan/ThreadResources.h"
+#include "Vulkan/Image.hpp"
 
 using namespace DirectX;
 

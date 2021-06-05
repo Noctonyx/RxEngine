@@ -1,5 +1,7 @@
+#include <Modules/Renderer/Renderer.hpp>
 #include "Lighting.h"
 #include "EngineMain.hpp"
+#include "Vulkan/Buffer.hpp"
 //#include "RxCore.h"
 
 constexpr int lighting_buffer_count = 5;

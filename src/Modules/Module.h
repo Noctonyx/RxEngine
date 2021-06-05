@@ -3,11 +3,6 @@
 #include "RxECS.h"
 #include "sol/table.hpp"
 
-namespace RxCore
-{
-    class Device;
-}
-
 namespace sol
 {
     class state;

@@ -5,6 +5,7 @@
 #include <vector>
 #include <filesystem>
 #include <memory>
+#include <Modules/SwapChain/SwapChain.h>
 #include "EngineMain.hpp"
 #include "RXCore.h"
 #include "RxECS.h"
@@ -27,6 +28,7 @@
 #include "Vulkan/ThreadResources.h"
 #include "Vulkan/Device.h"
 #include "Window.hpp"
+#include "Modules/SwapChain/SwapChain.h"
 
 namespace RxEngine
 {
@@ -34,11 +36,15 @@ namespace RxEngine
 
     void EngineMain::bootModules()
     {
+        addModule<SwapChainModule>();
+
+        auto f = world->getModuleObject<SwapChainModule>()->getImageFormat();
+
         auto modId = world->createModule<Renderer>();
         modules.push_back(
             std::make_shared<Renderer>(
                 device_->VkDevice(), world.get(),
-                swapChain_->imageFormat(), this, modId
+                f, this, modId
             ));
 
         addModule<MaterialsModule>();
@@ -78,56 +84,10 @@ namespace RxEngine
              .withStream<WindowResize>()
              .inGroup("Pipeline:PostUpdate")
              .execute<WindowResize>(
-                 [this](ecs::World *, const WindowResize *rs) {
+                 [this](ecs::World *, const WindowResize * rs) {
                      setUint32ConfigValue("window", "width", rs->width);
                      setUint32ConfigValue("window", "height", rs->height);
                      return false;
-                 }
-             );
-
-        world->createSystem("Engine:CheckSwapchain")
-             .inGroup("Pipeline:PreFrame")
-             .execute(
-                 [this](ecs::World *) {
-                     OPTICK_EVENT("Check SwapChain")
-                     if (swapChain_->swapChainOutOfDate()) {
-                         replaceSwapChain();
-                     }
-                 }
-             );
-
-        world->createSystem("Engine:AcquireImage")
-             .inGroup("Pipeline:PostRender")
-             .label<AcquireImage>()
-             .withWrite<MainRenderImageInput>()
-             .execute(
-                 [this](ecs::World *w) {
-                     OPTICK_EVENT("AcquireImage")
-                     const auto current_extent = swapChain_->GetExtent();
-
-                     auto[next_swap_image_view, next_image_available, next_image_index] =
-                     swapChain_->AcquireNextImage();
-
-                     w->getStream<MainRenderImageInput>()->add<MainRenderImageInput>(
-                         {
-                             next_swap_image_view, next_image_available, next_image_index,
-                             current_extent, submitCompleteSemaphores_[next_image_index]
-                         }
-                     );
-                 }
-             );
-
-        world->createSystem("Engine:PresentImage")
-             .inGroup("Pipeline:PostRender")
-             .label<PresentImage>()
-             .withStream<MainRenderImageOutput>()
-             .execute<MainRenderImageOutput>(
-                 [this](ecs::World *, const MainRenderImageOutput *mri) {
-                     OPTICK_GPU_FLIP(nullptr)
-                     OPTICK_CATEGORY("Present", Optick::Category::Rendering)
-
-                     swapChain_->PresentImage(mri->imageView, mri->finishRenderSemaphore);
-                     return true;
                  }
              );
 
@@ -150,7 +110,7 @@ namespace RxEngine
              );
     }
 
-    void setupWorld(ecs::World *world, RxCore::Window *window)
+    void setupWorld(ecs::World * world, RxCore::Window * window)
     {
         world->newEntity("Pipeline:PreFrame").set<ecs::SystemGroup>({1, false, 0.0f, 0.0f});
         world->newEntity("Pipeline:Early").set<ecs::SystemGroup>({2, false, 0.0f, 0.0f});
@@ -171,7 +131,7 @@ namespace RxEngine
         //window_->setWorld(world.get());
     }
 
-    bool EngineMain::startup(const char *windowTitle)
+    bool EngineMain::startup(const char * windowTitle)
     {
         loadConfig();
 
@@ -192,7 +152,9 @@ namespace RxEngine
 
         window_ = std::make_unique<RxCore::Window>(width, height, windowTitle);
 
-        device_ = std::make_unique<RxCore::Device>(window_->GetWindow());
+        device_ = decltype(device_){new RxCore::Device(window_->GetWindow()), [](RxCore::Device * d) {
+            delete d;
+        }};
 
         auto surface = RxCore::Device::Context()->surface;
 
@@ -203,9 +165,6 @@ namespace RxEngine
         RxCore::JobManager::instance().freeResourcesFunction = []() {
             RxCore::threadResources.freeUnused();
         };
-
-        swapChain_ = surface->CreateSwapChain();
-        swapChain_->setSwapChainOutOfDate(true);
 
         timer_ = std::chrono::high_resolution_clock::now();
 
@@ -272,9 +231,6 @@ namespace RxEngine
         world.reset();
 
         delete lua;
-
-        destroySemaphores();
-        swapChain_.reset();
 
         window_.reset();
         device_.reset();
@@ -456,7 +412,7 @@ namespace RxEngine
     void EngineMain::handleEvents()
     {
         RxCore::Events::pollEvents(
-            [this](SDL_Event *ev) {
+            [this](SDL_Event * ev) {
                 switch (ev->type) {
                 case SDL_QUIT:
                     shouldQuit = true;
@@ -616,36 +572,6 @@ namespace RxEngine
             m->loadData(loaderState.get<sol::table>("data").get<sol::table>("raw"));
             world->popModuleScope();
         }
-    }
-
-    void EngineMain::replaceSwapChain()
-    {
-        RxCore::Device::Context()->WaitIdle();
-
-        if (swapChain_->imageCount() != submitCompleteSemaphores_.size()) {
-            destroySemaphores();
-            createSemaphores(swapChain_->imageCount());
-        }
-
-        swapChain_.reset();
-        RxCore::Device::Context()->surface->updateSurfaceCapabilities();
-        swapChain_ = RxCore::Device::Context()->surface->CreateSwapChain();
-    }
-
-    void EngineMain::createSemaphores(const uint32_t semaphoreCount)
-    {
-        for (uint32_t i = 0; i < semaphoreCount; i++) {
-            auto s = RxCore::Device::VkDevice().createSemaphore({});
-            submitCompleteSemaphores_.push_back(s);
-        }
-    }
-
-    void EngineMain::destroySemaphores()
-    {
-        for (const auto & semaphore: submitCompleteSemaphores_) {
-            RxCore::Device::VkDevice().destroySemaphore(semaphore);
-        }
-        submitCompleteSemaphores_.clear();
     }
 
     void EngineMain::loadConfig()

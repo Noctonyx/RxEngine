@@ -8,7 +8,7 @@
 #include <vector>
 #include <memory>
 #include <chrono>
-#include "Modules/Renderer/Renderer.hpp"
+//#include "Modules/Renderer/Renderer.hpp"
 
 #pragma warning(disable: 4706)
 #include "ini.h"
@@ -29,6 +29,7 @@ namespace RxCore
     class Window;
     class SwapChain;
     class Buffer;
+    class Device;
 }
 
 namespace RxEngine
@@ -49,9 +50,7 @@ namespace RxEngine
         JobHandle create(std::function<void()> f) override;
 
         void schedule(JobHandle job_handle) override;
-
         bool isComplete(JobHandle job_handle) const override;
-
         void awaitCompletion(JobHandle job_handle) override;
     };
 
@@ -279,10 +278,7 @@ namespace RxEngine
     class EngineMain
     {
     public:
-        EngineMain()
-        {
-            // world_ = std::make_unique<flecs::world>();
-        };
+        EngineMain() = default;
 
         ~EngineMain()
         {
@@ -306,9 +302,14 @@ namespace RxEngine
             return totalElapsed_;
         }
 
-        RxCore::Window * getWindow() const
+        [[nodiscard]] RxCore::Window * getWindow() const
         {
             return window_.get();
+        }
+
+        [[nodiscard]] ecs::World * getWorld() const
+        {
+            return world.get();
         }
 
         void loadConfig();
@@ -329,21 +330,13 @@ namespace RxEngine
                                       const std::string & entry,
                                       uint32_t defaultValue);
 
-#if 0
-        void addInitConfigFile(const std::string & config);
-#endif
-
-        [[nodiscard]] ecs::World * getWorld() const
-        {
-            return world.get();
-        }
-
-        template<class T, typename ...Args>
-        void addModule(Args && ... args);
 
         [[nodiscard]] size_t getUniformBufferAlignment(size_t size) const;
         [[nodiscard]] std::shared_ptr<RxCore::Buffer> createUniformBuffer(size_t size) const;
         [[nodiscard]] std::shared_ptr<RxCore::Buffer> createStorageBuffer(size_t size) const;
+
+        template<class T, typename ...Args>
+            void addModule(Args && ... args);
 
         template<class T, class ... Args>
         void addUserModule(Args && ... args);
@@ -363,9 +356,6 @@ namespace RxEngine
         void loadDataFile(const std::filesystem::path & path);
 
     protected:
-        void replaceSwapChain();
-        void createSemaphores(uint32_t semaphoreCount);
-        void destroySemaphores();
 
         sol::protected_function_result loadLuaFile(const std::filesystem::path & file) const;
         void setupLuaEnvironment();
@@ -391,15 +381,17 @@ namespace RxEngine
         //std::vector<std::unique_ptr<Subsystem>> subsystems_;
         std::unique_ptr<RxCore::Window> window_;
         //std::unique_ptr<Renderer> renderer_;
-        std::unique_ptr<RxCore::Device> device_;
-        std::unique_ptr<RxCore::SwapChain> swapChain_;
+        //struct DeviceDeleter // Add custom deleter of Impl
+          //  {
+//            void operator()(RxCore::Device*);
+  //          };
+        std::unique_ptr<RxCore::Device, std::function<void(RxCore::Device *)>> device_;
         //std::unique_ptr<MaterialManager> materialManager_;
         //std::unique_ptr<EntityManager> entityManager_;
 
         std::vector<std::shared_ptr<Module>> modules;
         std::vector<std::shared_ptr<Module>> userModules;
 
-        std::vector<vk::Semaphore> submitCompleteSemaphores_;
         std::chrono::time_point<std::chrono::steady_clock> timer_;
 
         //std::vector<std::string> configFiles;

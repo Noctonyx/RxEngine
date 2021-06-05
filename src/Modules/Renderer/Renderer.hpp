@@ -130,25 +130,6 @@ namespace RxEngine
         std::vector<IndirectDrawCommandHeader> headers;
     };
 
-    struct AcquireImage {};
-
-    struct PresentImage {};
-
-    struct MainRenderImageInput
-    {
-        vk::ImageView imageView;
-        vk::Semaphore imageAvailableSempahore;
-        uint32_t imageIndex;
-        vk::Extent2D extent;
-        vk::Semaphore finishRenderSemaphore;
-    };
-
-    struct MainRenderImageOutput
-    {
-        vk::ImageView imageView;
-        vk::Semaphore finishRenderSemaphore;
-    };
-
 
     struct UiCommandBuffer
     {
