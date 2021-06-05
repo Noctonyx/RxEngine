@@ -8,7 +8,6 @@
 #include <Modules/Module.h>
 #include <Vulkan/SwapChain.hpp>
 #include "Vulkan/DescriptorSet.hpp"
-#include "Vulkan/DeviceObject.h"
 
 namespace RxEngine
 {

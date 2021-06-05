@@ -18,12 +18,12 @@ using namespace DirectX;
 
 namespace RxEngine
 {
-    Renderer::Renderer(vk::Device device,
+    Renderer::Renderer(RxCore::Device * device,
                        ecs::World * world,
                        vk::Format imageFormat,
                        EngineMain * engine,
                        const ecs::entity_t moduleId)
-        : DeviceObject(device)
+        : device_(device)
         , Module(world, engine, moduleId)
         , imageFormat_(imageFormat)
         , shadowImagesChanged(true)      
@@ -214,7 +214,7 @@ namespace RxEngine
         vk::RenderPassCreateInfo rpci;
         rpci.setAttachments(ad).setSubpasses(sp).setDependencies(spd);
 
-        auto rph = device_.createRenderPass(rpci);
+        auto rph = device_->getDevice().createRenderPass(rpci);
         depthRenderPass_ = rph;
     }
 
@@ -283,7 +283,7 @@ namespace RxEngine
         vk::RenderPassCreateInfo rpci;
         rpci.setAttachments(ads).setSubpasses(sp).setDependencies(spd);
 
-        auto rph = device_.createRenderPass(rpci);
+        auto rph = device_->getDevice().createRenderPass(rpci);
 
         renderPass_ = rph;
     }
@@ -552,7 +552,7 @@ namespace RxEngine
         std::vector<vk::ImageView> attachments = {imageView, depthBufferView_->handle};
 
         auto frame_buffer = std::make_shared<RxCore::FrameBuffer>(
-            device_.createFramebuffer(
+            device_->getDevice().createFramebuffer(
                 {{}, renderPass_, attachments, extent.width, extent.height, 1}));
 
         return frame_buffer;
@@ -605,7 +605,7 @@ namespace RxEngine
         world_->deleteSystem(world_->lookup("Renderer:Render").id);
 
         RxCore::iVulkan()->WaitIdle();
-        device_.destroyQueryPool(queryPool_);
+        device_->getDevice().destroyQueryPool(queryPool_);
         // frameBuffers_.clear();
         depthBufferView_.reset();
         depthBuffer_.reset();
@@ -619,8 +619,8 @@ namespace RxEngine
 
         ds0_.reset();
 
-        device_.destroyRenderPass(renderPass_);
-        device_.destroyRenderPass(depthRenderPass_);
+        device_->getDevice().destroyRenderPass(renderPass_);
+        device_->getDevice().destroyRenderPass(depthRenderPass_);
     }
 
     void Renderer::ensureShadowImages(uint32_t shadowMapSize, uint32_t numCascades)
@@ -653,7 +653,7 @@ namespace RxEngine
 
             cascadeFrameBuffers_[i] =
                 std::make_shared<RxCore::FrameBuffer>(
-                    device_
+                    device_->getDevice()
                     .createFramebuffer(
                         {
                             {

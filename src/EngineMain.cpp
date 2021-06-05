@@ -43,7 +43,7 @@ namespace RxEngine
         auto modId = world->createModule<Renderer>();
         modules.push_back(
             std::make_shared<Renderer>(
-                device_->VkDevice(), world.get(),
+                device_.get(), world.get(),
                 f, this, modId
             ));
 

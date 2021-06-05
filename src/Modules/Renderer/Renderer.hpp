@@ -3,7 +3,6 @@
 #include <vector>
 #include <memory>
 #include "Vulkan/DescriptorSet.hpp"
-#include "Vulkan/DeviceObject.h"
 #include "DirectXCollision.h"
 #include "RxECS.h"
 #include "Modules/Module.h"
@@ -264,10 +263,10 @@ namespace RxEngine
         std::shared_ptr<RxCore::DescriptorSet> ds0 {};
     };
 #endif
-    class Renderer : public RxCore::DeviceObject, public Module
+    class Renderer : public Module
     {
     public:
-        explicit Renderer(vk::Device device,
+        explicit Renderer(RxCore::Device * device,
                           ecs::World * world,
                           vk::Format imageFormat,
                           EngineMain * engine, const ecs::entity_t moduleId);
@@ -319,6 +318,7 @@ namespace RxEngine
         double cpuTime{};
 
     private:
+        RxCore::Device * device_;
         vk::Format imageFormat_;
 
         vk::Extent2D bufferExtent_;

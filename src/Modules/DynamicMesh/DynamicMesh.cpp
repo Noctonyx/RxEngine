@@ -16,14 +16,16 @@ namespace RxEngine
         sib->sizes.resize(5);
         sib->buffers.resize(5);
         //sib->descriptorSets.resize(5);
-
+#if 0
         const RxCore::DescriptorPoolTemplate pool_template(
             {
                 {
                     vk::DescriptorType::eStorageBuffer,
                     10
                 }
+
             }, 10);
+#endif
 #if 0
         auto pl = world_->lookup("layout/general").get<PipelineLayout>();
 
@@ -58,7 +60,7 @@ namespace RxEngine
         mb->indexBuffer = RxCore::iVulkan()->createIndexBuffer(
             VMA_MEMORY_USAGE_GPU_ONLY, static_cast<uint32_t>(mb->maxVertexCount * sizeof(uint32_t)),
             false);
-
+#if 0
         const RxCore::DescriptorPoolTemplate pool_template(
             {
                 {
@@ -66,7 +68,7 @@ namespace RxEngine
                     10
                 }
             }, 10);
-
+#endif
         //auto pl = world->lookup("layout/general").get<PipelineLayout>();
 #if 0
         mb->descriptorSet = RxCore::threadResources.getDescriptorSet(pool_template, pl->dsls[1]);

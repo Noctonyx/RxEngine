@@ -97,7 +97,7 @@ namespace RxEngine
         mb->indexBuffer = RxCore::iVulkan()->createIndexBuffer(
             VMA_MEMORY_USAGE_GPU_ONLY, static_cast<uint32_t>(mb->maxVertexCount * sizeof(uint32_t)),
             false);
-
+#if 0
         const RxCore::DescriptorPoolTemplate pool_template(
             {
                 {
@@ -105,7 +105,7 @@ namespace RxEngine
                     10
                 }
             }, 10);
-
+#endif
         //auto pl = world->lookup("layout/general").get<PipelineLayout>();
 #if 0
         mb->descriptorSet = RxCore::threadResources.getDescriptorSet(pool_template, pl->dsls[1]);
