@@ -1,10 +1,34 @@
+////////////////////////////////////////////////////////////////////////////////
+// MIT License
+//
+// Copyright (c) 2021.  Shane Hyde
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//
+////////////////////////////////////////////////////////////////////////////////
+
 #include <Modules/Renderer/Renderer.hpp>
 #include "SceneCamera.h"
 
 #include "EngineMain.hpp"
 #include "Geometry/Camera.hpp"
 #include "Modules/RTSCamera/RTSCamera.h"
-#include "Vulkan/Buffer.hpp"
 
 constexpr int camera_buffer_count = 5;
 
@@ -36,8 +60,10 @@ namespace RxEngine
         world_->addSingleton<SceneCamera>();
         auto sc = world_->getSingletonUpdate<SceneCamera>();
 
-        sc->bufferAlignment = engine_->getUniformBufferAlignment(sizeof(SceneCameraShaderData));
-        sc->camBuffer = engine_->createUniformBuffer(camera_buffer_count * sc->bufferAlignment);
+        auto device = engine_->getDevice();
+
+        //sc->bufferAlignment = engine_->getUniformBufferAlignment(sizeof(SceneCameraShaderData));
+        sc->camBuffer = engine_->createUniformDynamicBuffer(sizeof(SceneCameraShaderData), camera_buffer_count);
         sc->camBuffer->map();
         sc->ix = 0;
 
@@ -56,7 +82,7 @@ namespace RxEngine
 
                       sc->ix = (sc->ix + 1) % camera_buffer_count;
                       sc->camBuffer->update(&sc->shaderData,
-                                            sc->ix * sc->bufferAlignment,
+                                            sc->ix * sc->camBuffer->getAlignment(),
                                             sizeof(SceneCameraShaderData));
                   }
               );

@@ -1,10 +1,34 @@
+////////////////////////////////////////////////////////////////////////////////
+// MIT License
+//
+// Copyright (c) 2021.  Shane Hyde
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//
+////////////////////////////////////////////////////////////////////////////////
+
 //
 // Created by shane on 5/06/2021.
 //
 
 #include "SwapChain.h"
 #include "EngineMain.hpp"
-#include "Vulkan/Surface.hpp"
 #include "RxECS.h"
 #include "optick/optick.h"
 
@@ -13,7 +37,7 @@ namespace RxEngine
     SwapChainModule::SwapChainModule(ecs::World * world, EngineMain * engine, const ecs::entity_t moduleId)
         : Module(world, engine, moduleId)
     {
-        auto surface = engine->getDevice()->surface;
+        auto surface = engine->getDevice()->getSurface();
         swapChain_ = surface->CreateSwapChain();
         swapChain_->setSwapChainOutOfDate(true);
     }
@@ -38,10 +62,10 @@ namespace RxEngine
               .execute(
                   [this](ecs::World * w) {
                       OPTICK_EVENT("AcquireImage")
-                      const auto current_extent = swapChain_->GetExtent();
+                      const auto current_extent = swapChain_->getExtent();
 
                       auto[next_swap_image_view, next_image_available, next_image_index] =
-                      swapChain_->AcquireNextImage();
+                      swapChain_->acquireNextImage();
 
                       w->getStream<MainRenderImageInput>()->add<MainRenderImageInput>(
                           {
@@ -61,7 +85,7 @@ namespace RxEngine
                       OPTICK_GPU_FLIP(nullptr)
                       OPTICK_CATEGORY("Present", Optick::Category::Rendering)
 
-                      swapChain_->PresentImage(mri->imageView, mri->finishRenderSemaphore);
+                      swapChain_->presentImage(mri->imageView, mri->finishRenderSemaphore);
                       return true;
                   }
               );
@@ -77,7 +101,7 @@ namespace RxEngine
     void SwapChainModule::replaceSwapChain()
     {
         auto device = engine_->getDevice();
-        device->WaitIdle();
+        device->waitIdle();
 
         if (swapChain_->imageCount() != submitCompleteSemaphores_.size()) {
             destroySemaphores();
