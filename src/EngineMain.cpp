@@ -166,6 +166,15 @@ namespace RxEngine
             RxCore::threadResources.freeUnused();
         };
 
+        auto d = device_.get();
+        RxCore::JobManager::instance().initFunction = [d](){
+            RxCore::setThreadDevice(d);
+            //RxCore::threadResources.device = d;
+        };
+        RxCore::threadResources.setDevice(d);
+
+        RxCore::JobManager::instance().startup();
+
         timer_ = std::chrono::high_resolution_clock::now();
 
         setupWorld(world.get(), window_.get());

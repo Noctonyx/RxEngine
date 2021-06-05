@@ -113,7 +113,7 @@ namespace RxEngine
         , transform_()
     {
         XMStoreFloat4x4(&transform_, XMMatrixIdentity());
-        descriptorPool = RxCore::Device::Context()->CreateDescriptorPool(
+        descriptorPool = device->CreateDescriptorPool(
             {{vk::DescriptorType::eCombinedImageSampler, 5000}}, 5);
     }
 

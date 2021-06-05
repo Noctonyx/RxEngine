@@ -74,7 +74,7 @@ namespace RxEngine
         //dsLayouts[1] = pl->dsls[1];
         //dsLayouts[2] = pl->dsls[2];
 
-        graphicsCommandPool_ = RxCore::Device::Context()->CreateGraphicsCommandPool();
+        graphicsCommandPool_ = device_->CreateGraphicsCommandPool();
 
         vk::QueryPoolCreateInfo qpci;
 
@@ -122,10 +122,10 @@ namespace RxEngine
 
         world_->createSystem("Renderer:CleanLastFrame")
               .inGroup("Pipeline:PreRender")
-              .execute([](ecs::World *)
+              .execute([this](ecs::World *)
                   {
                       OPTICK_EVENT("Release Previous Frame Resource")
-                      RxCore::Device::Context()->graphicsQueue_->ReleaseCompleted();
+                      device_->graphicsQueue_->ReleaseCompleted();
                   }
               );
 
@@ -159,7 +159,7 @@ namespace RxEngine
         std::vector<vk::AttachmentDescription> ad = {
             {
                 {},
-                RxCore::Device::Context()->GetDepthFormat(true),
+                device_->GetDepthFormat(true),
                 vk::SampleCountFlagBits::e1,
                 vk::AttachmentLoadOp::eClear,
                 vk::AttachmentStoreOp::eStore,
@@ -234,7 +234,7 @@ namespace RxEngine
             },
             {
                 {},
-                RxCore::Device::Context()->GetDepthFormat(false),
+                device_->GetDepthFormat(false),
                 vk::SampleCountFlagBits::e1,
                 vk::AttachmentLoadOp::eClear,
                 vk::AttachmentStoreOp::eDontCare,
@@ -502,7 +502,7 @@ namespace RxEngine
         // frameBufferIndex_ = (frameBufferIndex_ + 1) % imageCount_;
         {
             OPTICK_EVENT("GPU Submit", Optick::Category::Rendering)
-            RxCore::Device::Context()->graphicsQueue_->Submit(
+            device_->graphicsQueue_->Submit(
                 {buf}, std::move(waitSemaphores), std::move(waitStages), {completeSemaphore});
         }
 
@@ -585,8 +585,8 @@ namespace RxEngine
     void Renderer::ensureDepthBufferExists(vk::Extent2D & extent)
     {
         if (extent != bufferExtent_) {
-            depthBuffer_ = RxCore::Device::Context()->createImage(
-                RxCore::Device::Context()->GetDepthFormat(false),
+            depthBuffer_ = device_->createImage(
+                device_->GetDepthFormat(false),
                 {extent.width, extent.height, 1},
                 1, 1,
                 vk::ImageUsageFlagBits::eDepthStencilAttachment);
@@ -631,7 +631,7 @@ namespace RxEngine
         auto device = engine_->getDevice();
         shadowImagesChanged = true;
         shadowMap_ = device->createImage(
-            RxCore::Device::Context()->GetDepthFormat(false),
+            device->GetDepthFormat(false),
             {shadowMapSize, shadowMapSize, 1},
             1,
             numCascades,

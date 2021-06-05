@@ -275,12 +275,13 @@ namespace RxEngine
         auto d = std::make_unique<uint8_t[]>(upload_size);
         memcpy(d.get(), pixels, upload_size);
 
-        fontImage_ = RxCore::Device::Context()->createImage(
+        auto device = engine_->getDevice();
+
+        fontImage_ = device->createImage(
             vk::Format::eR8G8B8A8Unorm,
             {static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1}, 1, 1,
             vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst);
 
-        auto device = engine_->getDevice();
         auto b = device->createStagingBuffer(upload_size, pixels);
 
         device->transferBufferToImage(
@@ -292,8 +293,9 @@ namespace RxEngine
     void IMGuiRender::createDescriptorSet()
     {
         auto layout = pipeline_.getRelated<UsesLayout, PipelineLayout>();
+        auto device = engine_->getDevice();
 
-        auto dp = RxCore::Device::Context()->CreateDescriptorPool(
+        auto dp = device->CreateDescriptorPool(
             {{vk::DescriptorType::eCombinedImageSampler, 1}}, 1);
 
         set0_ = dp->allocateDescriptorSet(layout->dsls[0]);
@@ -306,7 +308,6 @@ namespace RxEngine
            .setMaxLod(1.0f)
            .setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
 
-        auto device = engine_->getDevice();
         auto sampler = device->createSampler(sci);
 
         set0_->updateDescriptor(0, vk::DescriptorType::eCombinedImageSampler, fontImage_, sampler);
