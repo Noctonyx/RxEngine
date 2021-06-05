@@ -35,8 +35,11 @@ namespace RxEngine
     void EngineMain::bootModules()
     {
         auto modId = world->createModule<Renderer>();
-        modules.push_back(std::make_shared<Renderer>(device_->VkDevice(), world.get(),
-                                                     swapChain_->imageFormat(), this, modId));
+        modules.push_back(
+            std::make_shared<Renderer>(
+                device_->VkDevice(), world.get(),
+                swapChain_->imageFormat(), this, modId
+            ));
 
         addModule<MaterialsModule>();
         addModule<RmlUiModule>();
@@ -74,75 +77,80 @@ namespace RxEngine
         world->createSystem("Engine:OnResize")
              .withStream<WindowResize>()
              .inGroup("Pipeline:PostUpdate")
-             .execute<WindowResize>([this](ecs::World *, const WindowResize * rs)
-             {
-                 setUint32ConfigValue("window", "width", rs->width);
-                 setUint32ConfigValue("window", "height", rs->height);
-                 return false;
-             });
+             .execute<WindowResize>(
+                 [this](ecs::World *, const WindowResize *rs) {
+                     setUint32ConfigValue("window", "width", rs->width);
+                     setUint32ConfigValue("window", "height", rs->height);
+                     return false;
+                 }
+             );
 
         world->createSystem("Engine:CheckSwapchain")
              .inGroup("Pipeline:PreFrame")
-             .execute([this](ecs::World *)
-             {
-                 OPTICK_EVENT("Check SwapChain")
-                 if (swapChain_->swapChainOutOfDate()) {
-                     replaceSwapChain();
+             .execute(
+                 [this](ecs::World *) {
+                     OPTICK_EVENT("Check SwapChain")
+                     if (swapChain_->swapChainOutOfDate()) {
+                         replaceSwapChain();
+                     }
                  }
-             });
+             );
 
         world->createSystem("Engine:AcquireImage")
              .inGroup("Pipeline:PostRender")
              .label<AcquireImage>()
              .withWrite<MainRenderImageInput>()
-             .execute([this](ecs::World * w)
-             {
-                 OPTICK_EVENT("AcquireImage")
-                 const auto current_extent = swapChain_->GetExtent();
+             .execute(
+                 [this](ecs::World *w) {
+                     OPTICK_EVENT("AcquireImage")
+                     const auto current_extent = swapChain_->GetExtent();
 
-                 auto [next_swap_image_view, next_image_available, next_image_index] =
+                     auto[next_swap_image_view, next_image_available, next_image_index] =
                      swapChain_->AcquireNextImage();
 
-                 w->getStream<MainRenderImageInput>()->add<MainRenderImageInput>(
-                     {
-                         next_swap_image_view, next_image_available, next_image_index,
-                         current_extent, submitCompleteSemaphores_[next_image_index]
-                     }
-                 );
-             });
+                     w->getStream<MainRenderImageInput>()->add<MainRenderImageInput>(
+                         {
+                             next_swap_image_view, next_image_available, next_image_index,
+                             current_extent, submitCompleteSemaphores_[next_image_index]
+                         }
+                     );
+                 }
+             );
 
         world->createSystem("Engine:PresentImage")
              .inGroup("Pipeline:PostRender")
              .label<PresentImage>()
              .withStream<MainRenderImageOutput>()
              .execute<MainRenderImageOutput>(
-                 [this](ecs::World *, const MainRenderImageOutput * mri)
-                 {
+                 [this](ecs::World *, const MainRenderImageOutput *mri) {
                      OPTICK_GPU_FLIP(nullptr)
                      OPTICK_CATEGORY("Present", Optick::Category::Rendering)
 
                      swapChain_->PresentImage(mri->imageView, mri->finishRenderSemaphore);
                      return true;
-                 });
+                 }
+             );
 
         world->createSystem("Engine:Clean")
              .inGroup("Pipeline:PostFrame")
-             .execute([](ecs::World *)
-             {
-                 RxCore::JobManager::instance().clean();
-                 RxCore::threadResources.freeAllResources();
-             });
+             .execute(
+                 [](ecs::World *) {
+                     RxCore::JobManager::instance().clean();
+                     RxCore::threadResources.freeAllResources();
+                 }
+             );
 
         world->createSystem("Engine:ECSMain")
              .inGroup("Pipeline:UpdateUi")
-             .execute([this](ecs::World *)
-             {
-                 OPTICK_EVENT("Engine GUI")
-                 updateEntityGui();
-             });
+             .execute(
+                 [this](ecs::World *) {
+                     OPTICK_EVENT("Engine GUI")
+                     updateEntityGui();
+                 }
+             );
     }
 
-    void setupWorld(ecs::World * world, RxCore::Window * window)
+    void setupWorld(ecs::World *world, RxCore::Window *window)
     {
         world->newEntity("Pipeline:PreFrame").set<ecs::SystemGroup>({1, false, 0.0f, 0.0f});
         world->newEntity("Pipeline:Early").set<ecs::SystemGroup>({2, false, 0.0f, 0.0f});
@@ -155,13 +163,15 @@ namespace RxEngine
         world->newEntity("Pipeline:PostRender").set<ecs::SystemGroup>({9, false, 0.0f, 0.0f});
         world->newEntity("Pipeline:PostFrame").set<ecs::SystemGroup>({10, false, 0.0f, 0.0f});
 
-        world->setSingleton<WindowDetails>({
-            window, window->getWidth(), window->getHeight()
-        });
+        world->setSingleton<WindowDetails>(
+            {
+                window, window->getWidth(), window->getHeight()
+            }
+        );
         //window_->setWorld(world.get());
     }
 
-    bool EngineMain::startup(const char * windowTitle)
+    bool EngineMain::startup(const char *windowTitle)
     {
         loadConfig();
 
@@ -186,13 +196,11 @@ namespace RxEngine
 
         auto surface = RxCore::Device::Context()->surface;
 
-        RxCore::JobManager::instance().freeAllResourcesFunction = []()
-        {
+        RxCore::JobManager::instance().freeAllResourcesFunction = []() {
             RxCore::threadResources.freeAllResources();
         };
 
-        RxCore::JobManager::instance().freeResourcesFunction = []()
-        {
+        RxCore::JobManager::instance().freeResourcesFunction = []() {
             RxCore::threadResources.freeUnused();
         };
 
@@ -210,20 +218,28 @@ namespace RxEngine
         bootModules();
         createSystems();
 
-        world->set<ComponentGui>(world->getComponentId<ecs::Name>(), { .editor = ecsNameGui });
-        world->set<ComponentGui>(world->getComponentId<ecs::SystemGroup>(),
-            { .editor = ecsSystemGroupGui });
-        world->set<ComponentGui>(world->getComponentId<WindowDetails>(),
-            { .editor = ecsWindowDetailsGui });
-        world->set<ComponentGui>(world->getComponentId<EngineTime>(), { .editor = ecsEngineTimeGui });
-        world->set<ComponentGui>(world->getComponentId<ecs::StreamComponent>(),
-            { .editor = ecsStreamComponentGui });
-        world->set<ComponentGui>(world->getComponentId<ecs::System>(), { .editor = ecsSystemGui });
-        world->set<ComponentGui>(world->getComponentId<ecs::Component>(),
-            { .editor = ecsComponentGui });
-        world->set<ComponentGui>(world->getComponentId<FrameStats>(), { .editor = frameStatsGui });
+        world->set<ComponentGui>(world->getComponentId<ecs::Name>(), {.editor = ecsNameGui});
+        world->set<ComponentGui>(
+            world->getComponentId<ecs::SystemGroup>(),
+            {.editor = ecsSystemGroupGui}
+        );
+        world->set<ComponentGui>(
+            world->getComponentId<WindowDetails>(),
+            {.editor = ecsWindowDetailsGui}
+        );
+        world->set<ComponentGui>(world->getComponentId<EngineTime>(), {.editor = ecsEngineTimeGui});
+        world->set<ComponentGui>(
+            world->getComponentId<ecs::StreamComponent>(),
+            {.editor = ecsStreamComponentGui}
+        );
+        world->set<ComponentGui>(world->getComponentId<ecs::System>(), {.editor = ecsSystemGui});
+        world->set<ComponentGui>(
+            world->getComponentId<ecs::Component>(),
+            {.editor = ecsComponentGui}
+        );
+        world->set<ComponentGui>(world->getComponentId<FrameStats>(), {.editor = frameStatsGui});
 
-        for (auto& m : modules) {
+        for (auto & m : modules) {
             m->enable();
         }
 
@@ -439,34 +455,35 @@ namespace RxEngine
 
     void EngineMain::handleEvents()
     {
-        RxCore::Events::pollEvents([this](SDL_Event * ev)
-        {
-            switch (ev->type) {
-            case SDL_QUIT:
-                shouldQuit = true;
-                break;
+        RxCore::Events::pollEvents(
+            [this](SDL_Event *ev) {
+                switch (ev->type) {
+                case SDL_QUIT:
+                    shouldQuit = true;
+                    break;
 
-            case SDL_KEYUP:
-            case SDL_KEYDOWN:
-                {
+                case SDL_KEYUP:
+                case SDL_KEYDOWN: {
                     auto k = mapSDLToEKey(ev->key.keysym.sym);
-                    world->getStream<KeyboardKey>()->add(KeyboardKey
-                        {
-                            k,
-                            ev->key.state == SDL_PRESSED
+                    world->getStream<KeyboardKey>()->add(
+                        KeyboardKey
+                            {
+                                k,
+                                ev->key.state == SDL_PRESSED
                                 ? EInputAction::Press
                                 : EInputAction::Release,
-                            getKeyMod()
-                        });
+                                getKeyMod()
+                            }
+                    );
                 }
-                if (ev->key.state == SDL_PRESSED) {
-                    world->getStream<KeyboardChar>()->add<KeyboardChar>(
-                        {
-                            static_cast<char>(ev->key.keysym.sym)
-                        });
-                }
-            case SDL_MOUSEMOTION:
-                {
+                    if (ev->key.state == SDL_PRESSED) {
+                        world->getStream<KeyboardChar>()->add<KeyboardChar>(
+                            {
+                                static_cast<char>(ev->key.keysym.sym)
+                            }
+                        );
+                    }
+                case SDL_MOUSEMOTION: {
                     MousePosition pos{
                         static_cast<float>(ev->motion.x),
                         static_cast<float>(ev->motion.y),
@@ -477,28 +494,30 @@ namespace RxEngine
                     };
                     world->getStream<MousePosition>()->add(pos);
                 }
-                break;
-            case SDL_MOUSEBUTTONDOWN:
-            case SDL_MOUSEBUTTONUP:
-                {
-                    world->getStream<MouseButton>()->add(MouseButton
-                        {
-                            ev->button.button - 1, ev->button.state == SDL_PRESSED,
-                            getKeyMod()
-                        });
+                    break;
+                case SDL_MOUSEBUTTONDOWN:
+                case SDL_MOUSEBUTTONUP: {
+                    world->getStream<MouseButton>()->add(
+                        MouseButton
+                            {
+                                ev->button.button - 1,
+                                ev->button.state == SDL_PRESSED,
+                                getKeyMod()
+                            }
+                    );
                 }
-                break;
-            case SDL_MOUSEWHEEL:
-                {
-                    world->getStream<MouseScroll>()->add(MouseScroll
-                        {
-                            static_cast<float>(ev->wheel.y),
-                            getKeyMod()
-                        });
+                    break;
+                case SDL_MOUSEWHEEL: {
+                    world->getStream<MouseScroll>()->add(
+                        MouseScroll
+                            {
+                                static_cast<float>(ev->wheel.y),
+                                getKeyMod()
+                            }
+                    );
                 }
-                break;
-            case SDL_WINDOWEVENT:
-                {
+                    break;
+                case SDL_WINDOWEVENT: {
                     switch (ev->window.event) {
                     case SDL_WINDOWEVENT_RESIZED:
                         WindowResize res{
@@ -512,9 +531,10 @@ namespace RxEngine
                         break;
                     }
                 }
-                break;
+                    break;
+                }
             }
-        });
+        );
     }
 
     void EngineMain::update()
@@ -564,15 +584,16 @@ namespace RxEngine
     {
         return device_->createBuffer(
             vk::BufferUsageFlagBits::eUniformBuffer,
-            VMA_MEMORY_USAGE_CPU_TO_GPU, size);
+            VMA_MEMORY_USAGE_CPU_TO_GPU, size
+        );
     }
 
     std::shared_ptr<RxCore::Buffer> EngineMain::createStorageBuffer(size_t size) const
     {
         return device_->createBuffer(
-            vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress
-            ,
-            VMA_MEMORY_USAGE_CPU_TO_GPU, size);
+            vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+            VMA_MEMORY_USAGE_CPU_TO_GPU, size
+        );
     }
 
     void EngineMain::captureMouse(bool enable)
@@ -590,7 +611,7 @@ namespace RxEngine
 
         loadDataFile(loaderState, path);
 
-        for (auto& m : modules) {
+        for (auto & m : modules) {
             world->pushModuleScope(m->getModuleId());
             m->loadData(loaderState.get<sol::table>("data").get<sol::table>("raw"));
             world->popModuleScope();
@@ -666,12 +687,14 @@ namespace RxEngine
         }
         return v;
     }
+
 #if 0
     void EngineMain::addInitConfigFile(const std::string & config)
     {
         configFiles.push_back(config);
     }
 #endif
+
     void EngineMain::setUint32ConfigValue(const std::string & section,
                                           const std::string & entry,
                                           const uint32_t value)

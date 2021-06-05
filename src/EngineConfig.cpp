@@ -10,7 +10,7 @@ static const auto & script_key_world = "GlobalResource.World";
 static const auto & script_key_engine = "GlobalResource.Engine";
 //static const auto& script_key = "GlobalResource.MySpecialIdentifier123";
 
-template <typename Handler>
+template<typename Handler>
 bool sol_lua_check(sol::types<ecs::World *>,
                    lua_State * L,
                    int /*index*/,
@@ -25,8 +25,10 @@ bool sol_lua_check(sol::types<ecs::World *>,
     sol::type t = static_cast<sol::type>(lua_type(L, -1));
     lua_pop(L, 1);
     if (t != sol::type::lightuserdata) {
-        handler(L, 0, sol::type::lightuserdata, t,
-                "global resource is not present as a light userdata");
+        handler(
+            L, 0, sol::type::lightuserdata, t,
+            "global resource is not present as a light userdata"
+        );
         return false;
     }
     return true;
@@ -55,8 +57,7 @@ int sol_lua_push(sol::types<ecs::World *>, lua_State * L, ecs::World * ls)
     return sol::stack::push(L, static_cast<void *>(ls));
 }
 
-
-template <typename Handler>
+template<typename Handler>
 bool sol_lua_check(sol::types<RxEngine::EngineMain *>,
                    lua_State * L,
                    int /*index*/,
@@ -71,8 +72,10 @@ bool sol_lua_check(sol::types<RxEngine::EngineMain *>,
     sol::type t = static_cast<sol::type>(lua_type(L, -1));
     lua_pop(L, 1);
     if (t != sol::type::lightuserdata) {
-        handler(L, 0, sol::type::lightuserdata, t,
-                "global resource is not present as a light userdata");
+        handler(
+            L, 0, sol::type::lightuserdata, t,
+            "global resource is not present as a light userdata"
+        );
         return false;
     }
     return true;
@@ -101,7 +104,6 @@ int sol_lua_push(sol::types<RxEngine::EngineMain *>, lua_State * L, RxEngine::En
     return sol::stack::push(L, static_cast<void *>(engine));
 }
 
-
 namespace RxEngine
 {
     int dofile(lua_State * L)
@@ -109,7 +111,7 @@ namespace RxEngine
         std::string path = sol::stack::get<std::string>(L, 1);
         const std::string script = RxAssets::vfs()->getAssetAsString(path);
         int stack_size = lua_gettop(L);
-        if(luaL_loadbuffer(L, script.data(), script.size(), path.c_str()) != LUA_OK) {
+        if (luaL_loadbuffer(L, script.data(), script.size(), path.c_str()) != LUA_OK) {
             spdlog::critical("Lua error - {0}", lua_tostring(L, -1));
             throw std::runtime_error(lua_tostring(L, -1));
         }
@@ -137,13 +139,12 @@ namespace RxEngine
 
         sol::table t = lua->create_table();
         t[1] = f;
-        t[2] = [](lua_State * L)
-        {
+        t[2] = [](lua_State * L) {
             std::string mod = sol::stack::get<std::string>(L, 1);
             std::string path = "/lua/" + mod + ".lua";
             //spdlog::info("Trying to load {0}", path);
 
-            if(!RxAssets::vfs()->assetExists(path)) {
+            if (!RxAssets::vfs()->assetExists(path)) {
                 spdlog::critical("Lua error - cannot find module {0}", mod);
                 lua_pushboolean(L, 0);
                 return 1;
@@ -156,10 +157,11 @@ namespace RxEngine
 
         package.set("searchers", t);
 
-        lua->set("quitgame", [this]()
-        {
-            shouldQuit = true;
-        });
+        lua->set(
+            "quitgame", [this]() {
+                shouldQuit = true;
+            }
+        );
     }
 
     void EngineMain::createDataLoaderEnvironment(sol::state & state)
@@ -175,8 +177,7 @@ namespace RxEngine
 
         sol::table t = state.create_table();
         t[1] = f;
-        t[2] = [](lua_State* L)
-        {
+        t[2] = [](lua_State * L) {
             std::string mod = sol::stack::get<std::string>(L, 1);
             std::string path = "/lua/" + mod + ".lua";
             //spdlog::info("Trying to load {0}", path);

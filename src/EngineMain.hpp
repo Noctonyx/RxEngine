@@ -9,6 +9,7 @@
 #include <memory>
 #include <chrono>
 #include "Modules/Renderer/Renderer.hpp"
+
 #pragma warning(disable: 4706)
 #include "ini.h"
 #include "RxECS.h"
@@ -237,7 +238,6 @@ namespace RxEngine
         Centered
     };
 
-
     struct MousePosition
     {
         float x;
@@ -332,19 +332,20 @@ namespace RxEngine
 #if 0
         void addInitConfigFile(const std::string & config);
 #endif
+
         [[nodiscard]] ecs::World * getWorld() const
         {
             return world.get();
         }
 
-        template <class T, typename ...Args>
+        template<class T, typename ...Args>
         void addModule(Args && ... args);
 
         [[nodiscard]] size_t getUniformBufferAlignment(size_t size) const;
         [[nodiscard]] std::shared_ptr<RxCore::Buffer> createUniformBuffer(size_t size) const;
         [[nodiscard]] std::shared_ptr<RxCore::Buffer> createStorageBuffer(size_t size) const;
 
-        template <class T, class ... Args>
+        template<class T, class ... Args>
         void addUserModule(Args && ... args);
 
         void captureMouse(bool enable);
@@ -418,7 +419,7 @@ namespace RxEngine
         bool capturedMouse = false;
     };
 
-    template <class T, typename ... Args>
+    template<class T, typename ... Args>
     void EngineMain::addModule(Args && ... args)
     {
         auto modId = world->createModule<T>();
@@ -426,7 +427,7 @@ namespace RxEngine
             std::make_shared<T>(world.get(), this, modId, std::forward<Args>(args)...));
     }
 
-    template <class T, class ...Args>
+    template<class T, class ...Args>
     void EngineMain::addUserModule(Args && ... args)
     {
         auto modId = world->createModule<T>();
