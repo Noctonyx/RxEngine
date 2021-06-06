@@ -1,3 +1,28 @@
+////////////////////////////////////////////////////////////////////////////////
+// MIT License
+//
+// Copyright (c) 2021.  Shane Hyde
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//
+////////////////////////////////////////////////////////////////////////////////
+
 #include <memory>
 #include <algorithm>
 #include <tuple>
@@ -559,7 +584,7 @@ namespace RxEngine
         const vk::Extent2D & extent) const
     {
         OPTICK_EVENT("Create Framebuffer")
-        std::vector<vk::ImageView> attachments = {imageView, depthBufferView_->handle};
+        std::vector<vk::ImageView> attachments = {imageView, depthBufferView_->handle_};
 
         auto frame_buffer = std::make_shared<RxCore::FrameBuffer>(
             device_,
@@ -604,7 +629,8 @@ namespace RxEngine
                 vk::ImageUsageFlagBits::eDepthStencilAttachment
             );
 
-            depthBufferView_ = depthBuffer_->createImageView(
+            depthBufferView_ = device_->createImageView(
+                depthBuffer_,
                 vk::ImageViewType::e2D,
                 vk::ImageAspectFlagBits::eDepth,
                 0,
@@ -651,20 +677,22 @@ namespace RxEngine
             numCascades,
             vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled);
 
-        wholeShadowMapView_ = shadowMap_->createImageView(
+        wholeShadowMapView_ = device->createImageView(
+            shadowMap_,
             vk::ImageViewType::e2DArray, vk::ImageAspectFlagBits::eDepth, 0, numCascades);
 
         cascadeViews_.resize(numCascades);
         cascadeFrameBuffers_.resize(numCascades);
 
         for (uint32_t i = 0; i < numCascades; ++i) {
-            cascadeViews_[i] = shadowMap_->
+            cascadeViews_[i] = device->
                 createImageView(
+                    shadowMap_,
                     vk::ImageViewType::e2DArray,
                     vk::ImageAspectFlagBits::eDepth, i,
                     1);
 
-            std::vector<vk::ImageView> attachments = {cascadeViews_[i]->handle};
+            std::vector<vk::ImageView> attachments = {cascadeViews_[i]->handle_};
 
             cascadeFrameBuffers_[i] =
                 std::make_shared<RxCore::FrameBuffer>(
