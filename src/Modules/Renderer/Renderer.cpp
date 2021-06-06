@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // MIT License
 //
-// Copyright (c) 2021.  Shane Hyde
+// Copyright (c) 2021-2021.  Shane Hyde (shane@noctonyx.com)
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -48,8 +48,8 @@ namespace RxEngine
                        vk::Format imageFormat,
                        EngineMain * engine,
                        const ecs::entity_t moduleId)
-        : device_(device)
-          , Module(world, engine, moduleId)
+        : Module(world, engine, moduleId)
+          , device_(device)
           , imageFormat_(imageFormat)
           , shadowImagesChanged(true)
     //, world_(world)
