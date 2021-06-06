@@ -1,3 +1,28 @@
+////////////////////////////////////////////////////////////////////////////////
+// MIT License
+//
+// Copyright (c) 2021.  Shane Hyde (shane@noctonyx.com)
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//
+////////////////////////////////////////////////////////////////////////////////
+
 #pragma once
 #include "Modules/Module.h"
 #include "DirectXCollision.h"
@@ -12,16 +37,23 @@ namespace RxEngine
         ecs::entity_t currentBundle = 0;
     };
 
+#pragma warning(push)
+#pragma warning(disable: 4324)
     struct DynamicMeshVertex
     {
-        DirectX::XMFLOAT3 point;
-        float pad1;
-        DirectX::XMFLOAT3 normal;
-        float pad2;
-        DirectX::XMFLOAT2 uv;
-        float pad3;
-        float pad4;
+        alignas(16) DirectX::XMFLOAT3 point;
+        alignas(16) DirectX::XMFLOAT3 normal;
+        alignas(16) DirectX::XMFLOAT2 uv;
+
+        DynamicMeshVertex(const DirectX::XMFLOAT3 & pos,
+                          const DirectX::XMFLOAT3 & normal,
+                          const DirectX::XMFLOAT2 & uv)
+            : point(pos)
+              , normal(normal)
+              , uv(uv)
+        {}
     };
+#pragma warning(pop)
 
     struct DynamicInstance
     {
@@ -49,7 +81,8 @@ namespace RxEngine
     {
     public:
         DynamicMeshModule(ecs::World * world, EngineMain * engine, const ecs::entity_t moduleId)
-            : Module(world, engine, moduleId) {}
+            : Module(world, engine, moduleId)
+        {}
 
         void startup() override;
         void shutdown() override;

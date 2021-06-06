@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // MIT License
 //
-// Copyright (c) 2021.  Shane Hyde
+// Copyright (c) 2021-2021.  Shane Hyde (shane@noctonyx.com)
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -541,7 +541,7 @@ namespace RxEngine
 //                        if (bund->useDescriptor) {
                             OPTICK_EVENT("Bind Ds")
                             //buf->BindDescriptorSet(1, bund->descriptorSet);
-                            buf->pushConstant(vk::ShaderStageFlagBits::eVertex, 0, sizeof(vk::DeviceAddress), &bund->address);
+                            buf->pushConstant(vk::ShaderStageFlagBits::eVertex, 0, sizeof(bund->address), &bund->address);
 //                        } else {
   //                          OPTICK_EVENT("Bind VB")
     //                        buf->bindVertexBuffer(bund->vertexBuffer);
