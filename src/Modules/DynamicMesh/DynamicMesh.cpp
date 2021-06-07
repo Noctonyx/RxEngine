@@ -149,4 +149,53 @@ namespace RxEngine
         cb->submitAndWait();
     }
 
+    ecs::entity_t DynamicMeshModule::createDynamicMeshObject(ecs::World * world,
+                                          RxCore::Device * device,
+                                          const std::vector<DynamicMeshVertex> & vertices,
+                                          const std::vector<uint32_t> & indices,
+                                          const std::vector<DynamicSubMeshEntry> & submeshes
+    )
+    {
+        auto mb = getActiveDynamicMeshBundle(device, world);
+
+        {
+            auto smb = world->get<MeshBundle>(mb);
+
+            if (vertices.size() + smb->vertexCount > smb->maxVertexCount ||
+                indices.size() + smb->indexCount > smb->maxIndexCount) {
+                mb = createDynamicMeshBundle(device, world);
+                world->getSingletonUpdate<DynamicMeshActiveBundle>()->currentBundle = mb;
+            }
+        }
+        auto smb = world->getUpdate<MeshBundle>(mb);
+
+        auto dynamic_mesh_entity = world->newEntity()
+                                        .set<Mesh>(
+                                            {
+                                                .vertexOffset = smb->vertexCount,
+                                                .indexOffset = smb->indexCount,
+                                                .indexCount = static_cast<uint32_t>(indices.size())
+                                            }
+                                        )
+                                        .set<InBundle>({{mb}});
+
+        copyToBuffers(device, vertices, indices, smb);
+        smb->entries.push_back(dynamic_mesh_entity);
+
+        auto smu = dynamic_mesh_entity.getUpdate<Mesh>();
+        std::vector<ecs::entity_t> mEntities;
+
+        uint32_t ix = 0;
+        for (auto & submesh : submeshes) {
+            //sm->subMeshes.push_back(
+            smu->subMeshes.push_back(
+                world->newEntity()
+                     .set<SubMesh>({submesh.firstIndex, submesh.indexCount, ix++})
+                     .set<SubMeshOf>({{dynamic_mesh_entity.id}})
+                     .set<UsesMaterial>({{submesh.materialId}}).id
+            );
+        }
+
+        return dynamic_mesh_entity;
+    }
 }

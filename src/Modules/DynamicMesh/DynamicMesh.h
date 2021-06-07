@@ -67,6 +67,12 @@ namespace RxEngine
         //DirectX::XMFLOAT4X4 mat;
     };
 
+    struct DynamicSubMeshEntry {
+        uint32_t firstIndex;
+        uint32_t indexCount;
+        ecs::entity_t materialId;
+    };
+
     struct DynamicInstanceBuffers
     {
         uint32_t count;
@@ -87,6 +93,12 @@ namespace RxEngine
         void startup() override;
         void shutdown() override;
 
+        ecs::entity_t createDynamicMeshObject(ecs::World * world,
+                                              RxCore::Device * device,
+                                              const std::vector<DynamicMeshVertex> & vertices,
+                                              const std::vector<uint32_t> & indices,
+                                              const std::vector<DynamicSubMeshEntry> & submeshes
+                                              );
     protected:
         void createOpaqueRenderCommands();
         void renderIndirectDraws(IndirectDrawSet ids,
