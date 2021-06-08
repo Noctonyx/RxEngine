@@ -42,11 +42,8 @@ struct InstanceData {
 
 struct Material {
     uint colorMapIndex;
+    float roughness;
 };
-
-//layout(set=1, binding =0) readonly buffer V {
-    //Vertex vertices[];
-//} ;
 
 layout(buffer_reference, std430, buffer_reference_align = 16) readonly buffer ReadVertex
 {
@@ -63,10 +60,6 @@ layout(std430, set=0, binding =3) readonly buffer M {
 };
 
 layout(set=0, binding =4) uniform sampler2D textures[];
-
-//layout(set=2, binding=0) readonly buffer I {
-//    InstanceData instance[];
-//};
 
 layout(push_constant) uniform uPushConstant {
     //mat4 local; 

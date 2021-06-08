@@ -60,6 +60,7 @@ namespace RxEngine
     {
         vk::PipelineLayout layout;
         std::vector<vk::DescriptorSetLayout> dsls;
+        std::vector<uint32_t> counts;
     };
 
     struct UsesFragmentShader : ecs::Relation {};

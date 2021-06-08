@@ -140,26 +140,6 @@ data:extend(
                     },
                 }
             },
-            {
-                bindings = {
-                    {
-                        binding = 0,
-                        stage = "vert",
-                        count = 1,
-                        type = "storage-buffer"
-                    },
-                }
-            },
-            {
-                bindings = {
-                    {
-                        binding = 0,
-                        stage = "both",
-                        count = 1,
-                        type = "storage-buffer"
-                    },
-                }
-            }
         },
         push_constants = {
             {

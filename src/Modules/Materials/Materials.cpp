@@ -45,14 +45,40 @@ namespace RxEngine
         if (material) {
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
+            ImGui::Text("Tex1");
+            ImGui::TableNextColumn();
+            ImGui::Text("%lld", material->materialTextures[0]);
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Tex1");
+            ImGui::TableNextColumn();
+            ImGui::Text("%lld", material->materialTextures[1]);
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Tex1");
+            ImGui::TableNextColumn();
+            ImGui::Text("%lld", material->materialTextures[2]);
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Tex1");
+            ImGui::TableNextColumn();
+            ImGui::Text("%lld", material->materialTextures[3]);
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
             ImGui::Text("Roughness");
             ImGui::TableNextColumn();
             ImGui::Text("%.3f", material->roughness);
+
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
             ImGui::Text("Metallic");
             ImGui::TableNextColumn();
             ImGui::Text("%.3f", material->metallic);
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Sequence");
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", material->sequence);
         }
     }
 
@@ -168,12 +194,12 @@ namespace RxEngine
         std::vector<vk::DescriptorSetLayout> dsls{};
         std::vector<vk::PushConstantRange> pcr{};
 
-        PipelineLayout pll;
+        PipelineLayout pll{};
 
         sol::table dsLayouts = layout.get<sol::table>("ds_layouts");
         for (auto &[dsLayoutKey, dsLayoutValue]: dsLayouts) {
             sol::table dsLayoutData = dsLayoutValue;
-
+            pll.counts.clear();
             std::vector<vk::DescriptorSetLayoutBinding> binding = {};
             std::vector<vk::DescriptorBindingFlags> binding_flags = {};
 
@@ -185,6 +211,10 @@ namespace RxEngine
 
                 b.binding = bindingData.get<uint32_t>("binding");
                 b.descriptorCount = bindingData.get_or<uint32_t>("count", 1);
+
+                if(b.descriptorCount != 1) {
+                    pll.counts.push_back(b.descriptorCount);
+                }
 
                 std::string stage = bindingData.get_or("stage", std::string{"both"});
                 std::string type = bindingData.get_or("type", std::string{"combined-sampler"});
@@ -1157,7 +1187,7 @@ namespace RxEngine
         );
 
         buffer->map();
-        buffer->update(mv.data(), mv.size());
+        buffer->update(mv.data(), mv.size() * sizeof(MaterialShaderEntry));
         buffer->unmap();
 
         ds->ds->updateDescriptor(3, vk::DescriptorType::eStorageBuffer, buffer);

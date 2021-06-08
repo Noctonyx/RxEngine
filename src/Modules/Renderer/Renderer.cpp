@@ -172,7 +172,7 @@ namespace RxEngine
               .executeIfNone(
                   [this](ecs::World * world) {
                       auto pl = world_->lookup("layout/general").get<PipelineLayout>();
-                      auto ds0x_ = descriptorPool->allocateDescriptorSet(pl->dsls[0], {1});
+                      auto ds0x_ = descriptorPool->allocateDescriptorSet(pl->dsls[0], pl->counts);
 //                  auto ds0_ = //RxCore::threadResources.getDescriptorSet(
                       //                    poolTemplate,
                       //                  pl->dsls[0], {1});
