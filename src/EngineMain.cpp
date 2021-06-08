@@ -683,6 +683,17 @@ namespace RxEngine
         setConfigValue(section, entry, value ? "1" : "0");
     }
 
+    void EngineMain::startRuntime()
+    {
+        lua->do_string("serpent = require('util/serpent');");
+        for(auto & m: modules) {
+            m->registerRuntime(*lua);
+        }
+        for(auto & m: userModules) {
+            m->registerRuntime(*lua);
+        }
+    }
+
     ecs::JobInterface::JobHandle RxJobAdaptor::create(std::function<void()> f)
     {
         return RxCore::CreateJob<void>(f);
