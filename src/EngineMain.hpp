@@ -381,6 +381,9 @@ namespace RxEngine
 
         //sol::state & getMainLuaRuntime();
         void startRuntime();
+        void registerEngineTypes(sol::state &);
+
+        void setShouldQuit() { shouldQuit = true; }
 
     protected:
 

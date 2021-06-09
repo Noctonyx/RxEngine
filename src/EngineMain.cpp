@@ -55,6 +55,7 @@
 #include "Vulkan/Device.h"
 #include "Window.hpp"
 #include "Modules/SwapChain/SwapChain.h"
+#include "FSM.h"
 
 namespace RxEngine
 {
@@ -686,12 +687,20 @@ namespace RxEngine
     void EngineMain::startRuntime()
     {
         lua->do_string("serpent = require('util/serpent');");
+
+        registerEngineTypes(*lua);
+
         for(auto & m: modules) {
             m->registerRuntime(*lua);
         }
         for(auto & m: userModules) {
             m->registerRuntime(*lua);
         }
+    }
+
+    void EngineMain::registerEngineTypes(sol::state &)
+    {
+        lua->new_usertype<FSM>("FSM", "getCurrentState", &FSM::getCurrentState);
     }
 
     ecs::JobInterface::JobHandle RxJobAdaptor::create(std::function<void()> f)

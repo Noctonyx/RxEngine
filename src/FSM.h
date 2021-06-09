@@ -29,7 +29,7 @@
 
 namespace RxEngine
 {
-    struct FSM;
+    class FSM;
     class EngineMain;
 
     struct BaseFSMState
@@ -52,7 +52,7 @@ namespace RxEngine
                                   ecs::World * world,
                                   EngineMain * engine) {}
 #endif
-        virtual std::string getName() = 0;
+        virtual std::string getName() const = 0;
     };
 
 #if 0
@@ -68,15 +68,19 @@ namespace RxEngine
         onTransition{};
     };
 #endif
-    struct FSM
+    class FSM
     {
+    private:
         BaseFSMState * currentState = nullptr;
         std::string nextStateName;
 
         std::unordered_map<std::string, std::unique_ptr<BaseFSMState>> states;
-
+    public:
         void step(ecs::World *, EngineMain *);
         void addState(std::unique_ptr<BaseFSMState> && state);
+
+        bool setNextState(const std::string & newState);
+        [[nodiscard]] std::string getCurrentState() const;
 
         void start(const std::string & name, ecs::World * w, EngineMain * e);
     };
