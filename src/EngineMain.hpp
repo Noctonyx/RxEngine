@@ -42,6 +42,7 @@
 #include "Window.hpp"
 #include "Log.h"
 #include "Modules/Module.h"
+#include "Reflection.h"
 
 namespace RxAssets
 {
@@ -354,13 +355,12 @@ namespace RxEngine
                                       const std::string & entry,
                                       uint32_t defaultValue);
 
-
         [[nodiscard]] size_t getUniformBufferAlignment(size_t size) const;
         [[nodiscard]] std::shared_ptr<RxCore::Buffer> createUniformBuffer(size_t size) const;
         [[nodiscard]] std::shared_ptr<RxCore::Buffer> createStorageBuffer(size_t size) const;
 
         template<class T, typename ...Args>
-            void addModule(Args && ... args);
+        void addModule(Args && ... args);
 
         template<class T, class ... Args>
         void addUserModule(Args && ... args);
@@ -384,13 +384,14 @@ namespace RxEngine
         void startRuntime();
         void registerEngineTypes(sol::state &);
 
-        void setShouldQuit() { shouldQuit = true; }
+        void setShouldQuit()
+        { shouldQuit = true; }
 
         static void createDataLoaderEnvironment(sol::state & state);
         static sol::protected_function_result loadDataFile(sol::state & state,
                                                            const std::filesystem::path & file);
         static void createLuaEnvironment(sol::state & state);
-        [[nodiscard]] sol::protected_function_result loadLuaFile(const std::filesystem::path& file) const;
+        [[nodiscard]] sol::protected_function_result loadLuaFile(const std::filesystem::path & file) const;
 
     protected:
 
@@ -408,7 +409,6 @@ namespace RxEngine
         void ecsSingletonsWindow(bool & show_singletons_window);
         void showSystemsGui(bool & showWindow);
         void updateEntityGui();
-
 
     private:
         std::unique_ptr<RxCore::Window> window_;
@@ -481,5 +481,24 @@ namespace RxEngine
     void ecsSystemGui(ecs::World * world, void * ptr);
     void ecsStreamComponentGui(ecs::World * world, void * ptr);
     void frameStatsGui(ecs::World * world, void * ptr);
+
+    void guiDisplay(const char * name, uint32_t & value);
+    void guiDisplay(const char * name, int32_t & value);
+    void guiDisplay(const char * name, float & value);
+
+    template<typename T>
+    void autoComponentGui(ecs::World *, void * ptr)
+    {
+        auto sc = static_cast<T *>(ptr);
+        if (sc) {
+            tuple_for_each(
+                Reflection<T>::layout(), [&](auto && x) {
+                    auto[name, ptr] = x;
+                    auto & zz = sc->*ptr;
+                    guiDisplay(name, zz);
+                }
+            );
+        }
+    }
 }
 #endif //RX_ENGINEMAIN_HPP
