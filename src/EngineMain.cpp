@@ -88,7 +88,8 @@ namespace RxEngine
         addModule<SceneCameraModule>();
         addModule<LightingModule>();
 
-        auto r = loadLuaFile("/lua/engine");
+        lua->do_string("serpent = require('util/serpent'); data = require('util/data')");
+        auto r = loadLuaFile("/lua/engine-data");
         if (!r.valid()) {
             return;
         }
@@ -605,9 +606,14 @@ namespace RxEngine
 
         loadDataFile(loaderState, path);
 
+        sol::table t = loaderState.get<sol::table>("data").get<sol::table>("raw");
+        loadDataToModules(t);
+    }
+
+    void EngineMain::loadDataToModules(sol::table & dataTable) {
         for (auto & m : modules) {
             world->pushModuleScope(m->getModuleId());
-            m->loadData(loaderState.get<sol::table>("data").get<sol::table>("raw"));
+            m->loadData(dataTable);
             world->popModuleScope();
         }
     }

@@ -163,7 +163,8 @@ namespace RxEngine
               {
                   OPTICK_EVENT()
 
-                  if (key->key == EKey::F1 && (key->mods & EInputMod_Control) && key->action ==
+                  if (key->key == EKey::F1 /* && (key->mods & EInputMod_Control) */ && key->action
+                      ==
                       EInputAction::Press) {
                       enabled = !enabled;
                   }
@@ -434,6 +435,9 @@ namespace RxEngine
         io.DisplaySize = ImVec2(static_cast<float>(wd->width), static_cast<float>(wd->height));
         ImGui::Render();
 
+        if (!pipeline_.isAlive()) {
+            pipeline_ = world_->lookup("pipeline/imgui");
+        }
         auto pipeline = pipeline_.get<GraphicsPipeline>();
 
         if (!pipeline) {

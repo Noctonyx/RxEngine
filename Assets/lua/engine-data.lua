@@ -1,6 +1,3 @@
-serpent = require('util/serpent')
-data = require('util/data')
-
 data:extend(
   {
     {
@@ -209,3 +206,5 @@ data:extend(
     }
   }
 )
+
+--print(serpent.block(data.raw))

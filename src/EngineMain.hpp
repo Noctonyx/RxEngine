@@ -378,6 +378,7 @@ namespace RxEngine
         }
 
         void loadDataFile(const std::filesystem::path & path);
+        void loadDataToModules(sol::table & dataTable);
 
         //sol::state & getMainLuaRuntime();
         void startRuntime();
@@ -385,9 +386,14 @@ namespace RxEngine
 
         void setShouldQuit() { shouldQuit = true; }
 
+        static void createDataLoaderEnvironment(sol::state & state);
+        static sol::protected_function_result loadDataFile(sol::state & state,
+                                                           const std::filesystem::path & file);
+        static void createLuaEnvironment(sol::state & state);
+        [[nodiscard]] sol::protected_function_result loadLuaFile(const std::filesystem::path& file) const;
+
     protected:
 
-        sol::protected_function_result loadLuaFile(const std::filesystem::path & file) const;
         void setupLuaEnvironment();
 
         void ecsMainMenu(bool & show_entity_window,
@@ -403,9 +409,6 @@ namespace RxEngine
         void showSystemsGui(bool & showWindow);
         void updateEntityGui();
 
-        static void createDataLoaderEnvironment(sol::state & state);
-        static sol::protected_function_result loadDataFile(sol::state & state,
-                                                           const std::filesystem::path & file);
 
     private:
         std::unique_ptr<RxCore::Window> window_;
@@ -446,7 +449,6 @@ namespace RxEngine
         auto mod = std::make_shared<T>(world.get(), this, modId, std::forward<Args>(args)...);
         userModules.push_back(mod);
         world->pushModuleScope(modId);
-        //mod->registerModule();
         mod->startup();
         world->popModuleScope();
     }

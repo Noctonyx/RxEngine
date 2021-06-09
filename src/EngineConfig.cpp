@@ -128,6 +128,8 @@ namespace RxEngine
 
     void EngineMain::setupLuaEnvironment()
     {
+        createLuaEnvironment(*lua);
+#if 0
         lua->open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::package, sol::lib::math);
         lua->set("dofile", &dofile);
         lua->set("loadfile", nullptr);
@@ -156,7 +158,7 @@ namespace RxEngine
         };
 
         package.set("searchers", t);
-
+#endif
         lua->set(
             "quitgame", [this]() {
                 shouldQuit = true;
@@ -165,6 +167,13 @@ namespace RxEngine
     }
 
     void EngineMain::createDataLoaderEnvironment(sol::state & state)
+    {
+        createLuaEnvironment(state);
+
+        state.do_string("serpent = require('util/serpent'); data = require('util/data')");
+    }
+
+    void EngineMain::createLuaEnvironment(sol::state & state)
     {
         state.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::package, sol::lib::math);
         state.set("dofile", &dofile);
@@ -194,8 +203,6 @@ namespace RxEngine
         };
 
         package.set("searchers", t);
-
-        state.do_string("serpent = require('util/serpent'); data = require('util/data')");
     }
 
     sol::protected_function_result EngineMain::loadDataFile(sol::state & state, const std::filesystem::path & file)

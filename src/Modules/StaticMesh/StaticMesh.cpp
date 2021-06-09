@@ -299,6 +299,9 @@ namespace RxEngine
     {
         OPTICK_CATEGORY("Render Static", ::Optick::Category::Rendering)
 
+        if(!pipeline_.isAlive()) {
+            pipeline_ = world_->lookup("pipeline/staticmesh_opaque");
+        }
         auto pipeline = pipeline_.get<GraphicsPipeline>();
 
         if (!pipeline) {

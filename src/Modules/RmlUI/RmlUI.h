@@ -182,10 +182,13 @@ namespace RxEngine
     {
     public:
         RmlUiModule(ecs::World * world, EngineMain * engine, const ecs::entity_t moduleId)
-            : Module(world, engine, moduleId) {}
+            : Module(world, engine, moduleId)
+        {}
 
         void startup() override;
         void shutdown() override;
+
+        void addLuaEnvironment(sol::state & state);
 
     protected:
         std::unique_ptr<RmlSystemInterface> rmlSystem;

@@ -629,31 +629,8 @@ namespace RxEngine
         Rml::LoadFontFace("/ui/LatoLatin-Regular.ttf");
         Rml::LoadFontFace("/ui/fonts/Roboto-Regular.ttf");
         Rml::LoadFontFace("/ui/fonts/Roboto-Bold.ttf");
+
         Rml::Lua::Initialise(engine_->getLua()->lua_state());
-
-
-#if 0
-        world_->createSystem("RmlUI:NewContext")
-              .inGroup("Pipeline:PreFrame")
-              .withQuery<UiContext>()
-              .without<UiContextCreated>()
-              .with<ecs::Name>()
-              .withSingleton<WindowDetails>()
-              .each<UiContext, ecs::Name, WindowDetails>(
-                  [](ecs::EntityHandle e,
-                     UiContext * ctx,
-                     const ecs::Name * name,
-                     const WindowDetails * wd)
-                  {
-                      ctx->context = Rml::CreateContext(
-                          name->name.c_str(),
-                          Rml::Vector2i(static_cast<int>(wd->width), static_cast<int>(wd->height)));
-                      e.addDeferred<UiContextCreated>();
-                      if (ctx->debugger) {
-                          Rml::Debugger::Initialise(ctx->context);
-                      }
-                  });
-#endif
 
         world_->createSystem("RmlUI:Resize")
               .inGroup("Pipeline:Update")
@@ -670,16 +647,6 @@ namespace RxEngine
                       return false;
                   }
               );
-#if 0
-        world_->createSystem("Rml::MousePosition")
-              .withStream<MousePosition>()
-              .execute<MousePosition>([this](ecs::World *, const MousePosition * mp)
-              {
-                  return !mainUI->ProcessMouseMove(static_cast<int>(mp->x),
-                                                   static_cast<int>(mp->y),
-                                                   convertModState(mp->mods));
-              });
-#endif
 #if 0
         world_->createSystem("RmlUI:ResizeContexts")
               .withQuery<UiContext, UiContextCreated>()
@@ -868,19 +835,17 @@ namespace RxEngine
         world_->deleteSystem(world_->lookup("RmlUI:MouseButton"));
         world_->deleteSystem(world_->lookup("RmlUI:MouseScroll"));
         //world_->deleteSystem(world_->lookup("RmlUI:NewContext"));
-#if 0
-        auto q = world_->createQuery().with<UiContext, UiContextCreated, ecs::Name>();
 
-        world_->getResults(q.id).each<ecs::Name>([](ecs::EntityHandle e, ecs::Name * name)
-        {
-            Rml::RemoveContext(name->name);
-        });
-#endif
         Rml::RemoveContext("MainUI");
         Rml::Shutdown();
 
         rmlRender.reset();
         rmlSystem.reset();
         rmlFile.reset();
+    }
+
+    void RmlUiModule::addLuaEnvironment(sol::state & state)
+    {
+        Rml::Lua::Initialise(state.lua_state());
     }
 }

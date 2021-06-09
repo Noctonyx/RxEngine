@@ -158,6 +158,7 @@ namespace RxEngine
 
         for (auto &[key, value]: shaders) {
             auto name = key.as<std::string>();
+            spdlog::debug("Loading shader {0} to world", name);
             sol::table data = value;
             auto stage = data.get<std::string>("stage");
             auto spv = data.get<std::string>("shader");
@@ -189,6 +190,7 @@ namespace RxEngine
                     sol::table & layout)
     {
         //Render::PipelineLayoutDetails pld;
+        spdlog::debug("Loading layout {0} to world", name);
 
         vk::PipelineLayoutCreateInfo plci{};
         std::vector<vk::DescriptorSetLayout> dsls{};
@@ -519,6 +521,8 @@ namespace RxEngine
         const std::string vs_name = pipeline["vertexShader"];
         const std::string fs_name = pipeline["fragmentShader"];
         const std::string layout_name = pipeline["layout"];
+
+        spdlog::debug("Loading pipeline {0} to world", name);
 
         MaterialPipelineDetails mpd;
 
