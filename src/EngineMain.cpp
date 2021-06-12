@@ -141,16 +141,47 @@ namespace RxEngine
 
     void setupWorld(ecs::World * world, RxCore::Window * window)
     {
-        world->newEntity("Pipeline:PreFrame").set<ecs::SystemGroup>({1, false, 0.0f, 0.0f});
-        world->newEntity("Pipeline:Early").set<ecs::SystemGroup>({2, false, 0.0f, 0.0f});
-        world->newEntity("Pipeline:FixedUpdate").set<ecs::SystemGroup>({3, true, 0.0f, 0.02f});
-        world->newEntity("Pipeline:Update").set<ecs::SystemGroup>({4, false, 0.0f, 0.0f});
-        world->newEntity("Pipeline:UpdateUi").set<ecs::SystemGroup>({5, false, 0.0f, 0.0f});
-        world->newEntity("Pipeline:PostUpdate").set<ecs::SystemGroup>({6, false, 0.0f, 0.0f});
-        world->newEntity("Pipeline:PreRender").set<ecs::SystemGroup>({7, false, 0.0f, 0.0f});
-        world->newEntity("Pipeline:Render").set<ecs::SystemGroup>({8, false, 0.0f, 0.0f});
-        world->newEntity("Pipeline:PostRender").set<ecs::SystemGroup>({9, false, 0.0f, 0.0f});
-        world->newEntity("Pipeline:PostFrame").set<ecs::SystemGroup>({10, false, 0.0f, 0.0f});
+        auto g1 = world->newEntity("Pipeline:PreFrame").set<ecs::SystemGroup>({1, false, 0.0f, 0.0f});
+        auto g2 = world->newEntity("Pipeline:Early").set<ecs::SystemGroup>({2, false, 0.0f, 0.0f});
+        auto g3 = world->newEntity("Pipeline:FixedUpdate").set<ecs::SystemGroup>({3, true, 0.0f, 0.02f});
+        auto g4 = world->newEntity("Pipeline:Update").set<ecs::SystemGroup>({4, false, 0.0f, 0.0f});
+        auto g5 = world->newEntity("Pipeline:UpdateUi").set<ecs::SystemGroup>({5, false, 0.0f, 0.0f});
+        auto g6 = world->newEntity("Pipeline:PostUpdate").set<ecs::SystemGroup>({6, false, 0.0f, 0.0f});
+        auto g7 = world->newEntity("Pipeline:PreRender").set<ecs::SystemGroup>({7, false, 0.0f, 0.0f});
+        auto g8 = world->newEntity("Pipeline:Render").set<ecs::SystemGroup>({8, false, 0.0f, 0.0f});
+        auto g9 = world->newEntity("Pipeline:PostRender").set<ecs::SystemGroup>({9, false, 0.0f, 0.0f});
+        auto g10 = world->newEntity("Pipeline:PostFrame").set<ecs::SystemGroup>({10, false, 0.0f, 0.0f});
+
+        auto sg1 = g1.getUpdate<ecs::SystemGroup>();
+        sg1->onBegin = [](){OPTICK_PUSH("Pipeline:PreFrame")};
+        sg1->onEnd = [](){OPTICK_POP()};
+        auto sg2 = g2.getUpdate<ecs::SystemGroup>();
+        sg2->onBegin = [](){OPTICK_PUSH("Pipeline:Early")};
+        sg2->onEnd = [](){OPTICK_POP()};
+        auto sg3 = g3.getUpdate<ecs::SystemGroup>();
+        sg3->onBegin = [](){OPTICK_PUSH("Pipeline:FixedUpdate")};
+        sg3->onEnd = [](){OPTICK_POP()};
+        auto sg4 = g4.getUpdate<ecs::SystemGroup>();
+        sg4->onBegin = [](){OPTICK_PUSH("Pipeline:Update")};
+        sg4->onEnd = [](){OPTICK_POP()};
+        auto sg5 = g5.getUpdate<ecs::SystemGroup>();
+        sg5->onBegin = [](){OPTICK_PUSH("Pipeline:UpdateUi")};
+        sg5->onEnd = [](){OPTICK_POP()};
+        auto sg6 = g6.getUpdate<ecs::SystemGroup>();
+        sg6->onBegin = [](){OPTICK_PUSH("Pipeline:PostUpdate")};
+        sg6->onEnd = [](){OPTICK_POP()};
+        auto sg7 = g7.getUpdate<ecs::SystemGroup>();
+        sg7->onBegin = [](){OPTICK_PUSH("Pipeline:PreRender")};
+        sg7->onEnd = [](){OPTICK_POP()};
+        auto sg8 = g8.getUpdate<ecs::SystemGroup>();
+        sg8->onBegin = [](){OPTICK_PUSH("Pipeline:Render")};
+        sg8->onEnd = [](){OPTICK_POP()};
+        auto sg9 = g9.getUpdate<ecs::SystemGroup>();
+        sg9->onBegin = [](){OPTICK_PUSH("Pipeline:PostRender")};
+        sg9->onEnd = [](){OPTICK_POP()};
+        auto sg10 = g10.getUpdate<ecs::SystemGroup>();
+        sg10->onBegin = [](){OPTICK_PUSH("Pipeline:PostFrame")};
+        sg10->onEnd = [](){OPTICK_POP()};
 
         world->setSingleton<WindowDetails>(
             {

@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // MIT License
 //
-// Copyright (c) 2021.  Shane Hyde
+// Copyright (c) 2021-2021.  Shane Hyde (shane@noctonyx.com)
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -44,7 +44,7 @@ namespace RxEngine
 {
     IMGuiRender::IMGuiRender(ecs::World * world, EngineMain * engine, const ecs::entity_t moduleId)
         : Module(world, engine, moduleId)
-        , window_(engine->getWindow())
+          , window_(engine->getWindow())
     {
         ImGui::CreateContext();
         ImGui::StyleColorsDark();
@@ -70,173 +70,184 @@ namespace RxEngine
             static_cast<float>(wd->height));
 
         world_->createSystem("ImGui:UpdateGui")
-              //.after<UiContextUpdate>()
+                  //.after<UiContextUpdate>()
               .inGroup("Pipeline:Early")
-              .execute([&, this](ecs::World * world)
-              {
-                  OPTICK_EVENT("ImGui:UpdateGui")
-                  if (!enabled) {
-                      return;
+              .execute(
+                  [&, this](ecs::World * world) {
+                      OPTICK_EVENT("ImGui:UpdateGui")
+                      if (!enabled) {
+                          return;
+                      }
+                      this->updateGui();
                   }
-                  this->updateGui();
-              });
+              );
 
         world_->createSystem("ImGui:WindowResize")
               .withStream<WindowResize>()
               .inGroup("Pipeline:PreFrame")
-              //.label<UiContextUpdate>()
-              .execute<WindowResize>([this](ecs::World * world, const WindowResize * resize)
-              {
-                  OPTICK_EVENT("ImGui:WindowResize")
-                  if (!enabled) {
+                  //.label<UiContextUpdate>()
+              .execute<WindowResize>(
+                  [this](ecs::World * world, const WindowResize * resize) {
+                      OPTICK_EVENT("ImGui:WindowResize")
+                      if (!enabled) {
+                          return false;
+                      }
+
+                      ImGuiIO & io = ImGui::GetIO();
+                      io.DisplaySize = ImVec2(
+                          static_cast<float>(resize->width),
+                          static_cast<float>(resize->height));
                       return false;
                   }
-
-                  ImGuiIO & io = ImGui::GetIO();
-                  io.DisplaySize = ImVec2(
-                      static_cast<float>(resize->width),
-                      static_cast<float>(resize->height));
-                  return false;
-              });
+              );
 
         world_->createSystem("ImGui:MousePos")
               .withStream<MousePosition>()
               .inGroup("Pipeline:PreFrame")
-              .execute<MousePosition>([this](ecs::World * world, const MousePosition * pos)
-              {
-                  OPTICK_EVENT("ImGui:MousePos")
-                  if (!enabled) {
-                      return false;
-                  }
-                  if (pos->captured) {
-                      return false;
-                  }
+              .execute<MousePosition>(
+                  [this](ecs::World * world, const MousePosition * pos) {
+                      OPTICK_EVENT("ImGui:MousePos")
+                      if (!enabled) {
+                          return false;
+                      }
+                      if (pos->captured) {
+                          return false;
+                      }
 
-                  auto & io = ImGui::GetIO();
-                  io.MousePos = ImVec2(pos->x, pos->y);
-                  if (io.WantCaptureMouse) {
-                      return true;
+                      auto & io = ImGui::GetIO();
+                      io.MousePos = ImVec2(pos->x, pos->y);
+                      if (io.WantCaptureMouse) {
+                          return true;
+                      }
+                      return false;
                   }
-                  return false;
-              });
+              );
 
         world_->createSystem("ImGui:MouseButton")
               .withStream<MouseButton>()
               .inGroup("Pipeline:PreFrame")
-              .execute<MouseButton>([this](ecs::World * world, const MouseButton * button)
-              {
-                  OPTICK_EVENT()
-                  if (!enabled) {
+              .execute<MouseButton>(
+                  [this](ecs::World * world, const MouseButton * button) {
+                      OPTICK_EVENT()
+                      if (!enabled) {
+                          return false;
+                      }
+
+                      auto & io = ImGui::GetIO();
+                      if (io.WantCaptureMouse) {
+                          io.MouseDown[static_cast<int>(button->button)] = button->pressed;
+                          return true;
+                      }
                       return false;
                   }
-
-                  auto & io = ImGui::GetIO();
-                  if (io.WantCaptureMouse) {
-                      io.MouseDown[static_cast<int>(button->button)] = button->pressed;
-                      return true;
-                  }
-                  return false;
-              });
+              );
 
         world_->createSystem("ImGui:MouseScroll")
               .withStream<MouseScroll>()
               .inGroup("Pipeline:PreFrame")
-              .execute<MouseScroll>([this](ecs::World * world, const MouseScroll * s)
-              {
-                  OPTICK_EVENT()
-                  if (!enabled) {
+              .execute<MouseScroll>(
+                  [this](ecs::World * world, const MouseScroll * s) {
+                      OPTICK_EVENT()
+                      if (!enabled) {
+                          return false;
+                      }
+
+                      auto & io = ImGui::GetIO();
+                      if (io.WantCaptureMouse) {
+                          io.MouseWheel += s->y_offset;
+                          return true;
+                      }
                       return false;
                   }
-
-                  auto & io = ImGui::GetIO();
-                  if (io.WantCaptureMouse) {
-                      io.MouseWheel += s->y_offset;
-                      return true;
-                  }
-                  return false;
-              });
+              );
 
         world_->createSystem("ImGui:Key")
               .withStream<KeyboardKey>()
               .inGroup("Pipeline:PreFrame")
-              .execute<KeyboardKey>([this](ecs::World * world, const KeyboardKey * key)
-              {
-                  OPTICK_EVENT()
+              .execute<KeyboardKey>(
+                  [this](ecs::World * world, const KeyboardKey * key) {
+                      OPTICK_EVENT()
 
-                  if (key->key == EKey::F1 /* && (key->mods & EInputMod_Control) */ && key->action
-                      ==
-                      EInputAction::Press) {
-                      enabled = !enabled;
-                  }
+                      if (key->key == EKey::F1 /* && (key->mods & EInputMod_Control) */ && key->action
+                                                                                           ==
+                                                                                           EInputAction::Press) {
+                          enabled = !enabled;
+                      }
 
-                  if (!enabled) {
-                      return false;
-                  }
+                      if (!enabled) {
+                          return false;
+                      }
 
-                  auto & io = ImGui::GetIO();
+                      auto & io = ImGui::GetIO();
 
-                  if (key->action == EInputAction::Press) {
-                      io.KeysDown[static_cast<int>(key->key)] = true;
+                      if (key->action == EInputAction::Press) {
+                          io.KeysDown[static_cast<int>(key->key)] = true;
+                      }
+                      if (key->action == EInputAction::Release) {
+                          io.KeysDown[static_cast<int>(key->key)] = false;
+                      }
+                      io.KeyCtrl = io.KeysDown[static_cast<int>(EKey::ControlLeft)] ||
+                                   io.KeysDown[static_cast<int>(EKey::ControlRight)];
+                      io.KeyShift = io.KeysDown[static_cast<int>(EKey::ShiftLeft)] ||
+                                    io.KeysDown[static_cast<int>(EKey::ShiftRight)];
+                      io.KeyAlt = io.KeysDown[static_cast<int>(EKey::AltLeft)] ||
+                                  io.KeysDown[static_cast<int>(EKey::AltRight)];
+                      io.KeySuper = io.KeysDown[static_cast<int>(EKey::SuperLeft)] ||
+                                    io.KeysDown[static_cast<int>(EKey::SuperRight)];
+                      if (!io.WantCaptureKeyboard) {
+                          return false;
+                      }
+                      return true;
                   }
-                  if (key->action == EInputAction::Release) {
-                      io.KeysDown[static_cast<int>(key->key)] = false;
-                  }
-                  io.KeyCtrl = io.KeysDown[static_cast<int>(EKey::ControlLeft)] ||
-                      io.KeysDown[static_cast<int>(EKey::ControlRight)];
-                  io.KeyShift = io.KeysDown[static_cast<int>(EKey::ShiftLeft)] ||
-                      io.KeysDown[static_cast<int>(EKey::ShiftRight)];
-                  io.KeyAlt = io.KeysDown[static_cast<int>(EKey::AltLeft)] ||
-                      io.KeysDown[static_cast<int>(EKey::AltRight)];
-                  io.KeySuper = io.KeysDown[static_cast<int>(EKey::SuperLeft)] ||
-                      io.KeysDown[static_cast<int>(EKey::SuperRight)];
-                  if (!io.WantCaptureKeyboard) {
-                      return false;
-                  }
-                  return true;
-              });
+              );
 
         world_->createSystem("ImGui:Char")
               .withStream<KeyboardChar>()
               .inGroup("Pipeline:PreFrame")
-              .execute<KeyboardChar>([this](ecs::World * world, const KeyboardChar * c)
-              {
-                  OPTICK_EVENT("ImGui:Char")
-                  if (!enabled) {
-                      return false;
-                  }
+              .execute<KeyboardChar>(
+                  [this](ecs::World * world, const KeyboardChar * c) {
+                      OPTICK_EVENT("ImGui:Char")
+                      if (!enabled) {
+                          return false;
+                      }
 
-                  auto & io = ImGui::GetIO();
-                  if (!io.WantCaptureKeyboard) {
-                      return false;
+                      auto & io = ImGui::GetIO();
+                      if (!io.WantCaptureKeyboard) {
+                          return false;
+                      }
+                      io.AddInputCharacter(c->c);
+                      return true;
                   }
-                  io.AddInputCharacter(c->c);
-                  return true;
-              });
+              );
 
         world_->createSystem("ImGui:NewFrame")
-              //.after<UiContextUpdate>()
+                  //.after<UiContextUpdate>()
               .inGroup("Pipeline:PreFrame")
-              .execute([this](ecs::World * world)
-              {
-                  OPTICK_EVENT("ImGui:NewFrame")
-                  if (!enabled) {
-                      return;
-                  }
+              .execute(
+                  [this](ecs::World * world) {
+                      OPTICK_EVENT("ImGui:NewFrame")
+                      if (!enabled) {
+                          return;
+                      }
 
-                  update(world->deltaTime());
-              });
+                      update(world->deltaTime());
+                  }
+              );
 
         world_->createSystem("Imgui:Render")
               .inGroup("Pipeline:PreRender")
-              .execute([this](ecs::World *)
-              {
-                  OPTICK_EVENT("Imgui:Render")
-                  if (!enabled) {
-                      return;
-                  }
+              .withStreamWrite<Render::EngineUiRenderCommand>()
+              .withJob()
+              .execute(
+                  [this](ecs::World *) {
+                      OPTICK_EVENT("Imgui:Render")
+                      if (!enabled) {
+                          return;
+                      }
 
-                  createRenderCommands();
-              });
+                      createRenderCommands();
+                  }
+              );
 
         if (!fontImage_) {
             createFontImage(io);
@@ -247,7 +258,8 @@ namespace RxEngine
         createDescriptorSet();
     }
 
-    void IMGuiRender::shutdown() { }
+    void IMGuiRender::shutdown()
+    {}
 
     void IMGuiRender::setupInputs(ImGuiIO & io)
     {
@@ -287,8 +299,9 @@ namespace RxEngine
 
         auto size = vfs->getFilesize("/fonts/NotoSans-Regular.ttf");
         if (size == 0) {
-            throw RxAssets::AssetException("Error loading font /fonts/NotoSans-Regular.ttf",
-                                           std::string(""));
+            throw RxAssets::AssetException(
+                "Error loading font /fonts/NotoSans-Regular.ttf",
+                std::string(""));
         }
 
         std::vector<std::byte> data(size);
@@ -306,14 +319,16 @@ namespace RxEngine
         fontImage_ = device->createImage(
             vk::Format::eR8G8B8A8Unorm,
             {static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1}, 1, 1,
-            vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst);
+            vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst
+        );
 
         auto b = device->createStagingBuffer(upload_size, pixels);
 
         device->transferBufferToImage(
             b, fontImage_, vk::Extent3D(width, height, 1), vk::ImageLayout::eShaderReadOnlyOptimal,
             1,
-            0);
+            0
+        );
     }
 
     void IMGuiRender::createDescriptorSet()
@@ -322,7 +337,8 @@ namespace RxEngine
         auto device = engine_->getDevice();
 
         auto dp = device->CreateDescriptorPool(
-            {{vk::DescriptorType::eCombinedImageSampler, 1}}, 1);
+            {{vk::DescriptorType::eCombinedImageSampler, 1}}, 1
+        );
 
         set0_ = dp->allocateDescriptorSet(layout->dsls[0]);
 
@@ -396,7 +412,8 @@ namespace RxEngine
 
         auto ib = device->createIndexBuffer(
             VMA_MEMORY_USAGE_CPU_TO_GPU,
-            dd->TotalIdxCount, true);
+            dd->TotalIdxCount, true
+        );
 
         vb->map();
         ib->map();
@@ -456,7 +473,7 @@ namespace RxEngine
         }
 
         // Create Vertex/Index Buffers
-        auto [vb, ib] = createBuffers(engine_->getDevice());
+        auto[vb, ib] = createBuffers(engine_->getDevice());
 
         buf->begin(pipeline->renderPass, pipeline->subPass);
         {
@@ -474,8 +491,10 @@ namespace RxEngine
 
             auto scale = DirectX::XMFLOAT2(2.0f / dd->DisplaySize.x, 2.0f / dd->DisplaySize.y);
             auto translate =
-                DirectX::XMFLOAT2(-1.0f - dd->DisplayPos.x * scale.x,
-                                  -1.0f - dd->DisplayPos.y * scale.y);
+                DirectX::XMFLOAT2(
+                    -1.0f - dd->DisplayPos.x * scale.x,
+                    -1.0f - dd->DisplayPos.y * scale.y
+                );
 
             pd.translate = translate;
             pd.scale = scale;
@@ -506,10 +525,12 @@ namespace RxEngine
                                 static_cast<uint32_t>(draw_cmd->ClipRect.z - draw_cmd->ClipRect.x),
                                 static_cast<uint32_t>(draw_cmd->ClipRect.w - draw_cmd->ClipRect.y)
                             }
-                        });
+                        }
+                    );
                     buf->DrawIndexed(
                         draw_cmd->ElemCount, 1, draw_cmd->IdxOffset + idx_offset,
-                        draw_cmd->VtxOffset + vb_offset, 0);
+                        draw_cmd->VtxOffset + vb_offset, 0
+                    );
                 }
 
                 vb_offset += cmd_list->VtxBuffer.Size;
@@ -518,14 +539,15 @@ namespace RxEngine
         }
         buf->end();
 
-        world_->getStream<Render::UiRenderCommand>()
-              ->add<Render::UiRenderCommand>({buf});
+        world_->getStream<Render::EngineUiRenderCommand>()
+              ->add<Render::EngineUiRenderCommand>({buf});
     }
 
     void IMGuiRender::updateGui()
     {
         ImGui::DockSpaceOverViewport(
-            0, ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingInCentralNode);
+            0, ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingInCentralNode
+        );
 #if 0
         if (showDemoWindow_) {
             ImGui::ShowDemoWindow(&showDemoWindow_);

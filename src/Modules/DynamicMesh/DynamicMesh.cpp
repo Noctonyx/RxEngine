@@ -53,7 +53,7 @@ namespace RxEngine
 
         world_->createSystem("DynamicMesh:Render")
               .inGroup("Pipeline:Render")
-              .withWrite<Render::OpaqueRenderCommand>()
+              .withStreamWrite<Render::OpaqueRenderCommand>()
               .withRead<CurrentMainDescriptorSet>()
               .withRead<DescriptorSet>()
               .withRead<PipelineLayout>()

@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // MIT License
 //
-// Copyright (c) 2021.  Shane Hyde
+// Copyright (c) 2021-2021.  Shane Hyde (shane@noctonyx.com)
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -431,8 +431,8 @@ namespace RxEngine
         vertices_.clear();
         indices_.clear();
 
-        world->getStream<Render::UiRenderCommand>()
-             ->add<Render::UiRenderCommand>({buf});
+        world->getStream<Render::GameUiRenderCommand>()
+             ->add<Render::GameUiRenderCommand>({buf});
     }
 
     RmlRenderInterface::~RmlRenderInterface()
@@ -808,6 +808,8 @@ namespace RxEngine
         world_->createSystem("Rml:Render")
               .inGroup("Pipeline:PreRender")
               //.withRead<UiContextProcessed>()
+              .withStreamWrite<Render::GameUiRenderCommand>()
+              .withJob()
               .execute([this](ecs::World *)
               {
                   OPTICK_EVENT("Rml:Render")

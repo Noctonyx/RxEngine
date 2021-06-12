@@ -511,13 +511,20 @@ namespace RxEngine
                                   }
                               );
 
-                        world_->getStream<Render::UiRenderCommand>()
-                              ->each<Render::UiRenderCommand>(
-                                  [&](ecs::World * w, const Render::UiRenderCommand * b) {
+                        world_->getStream<Render::GameUiRenderCommand>()
+                              ->each<Render::GameUiRenderCommand>(
+                                  [&](ecs::World * w, const Render::GameUiRenderCommand * b) {
                                       buf->executeSecondary(b->buf);
                                       return true;
                                   }
                               );
+                        world_->getStream<Render::EngineUiRenderCommand>()
+                        ->each<Render::EngineUiRenderCommand>(
+                            [&](ecs::World * w, const Render::EngineUiRenderCommand * b) {
+                                buf->executeSecondary(b->buf);
+                                return true;
+                            }
+                            );
                     }
                     buf->EndRenderPass();
                 }
