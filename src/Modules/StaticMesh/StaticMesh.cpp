@@ -47,10 +47,10 @@ namespace RxEngine
     {
         //world_->addSingleton<StaticMeshActiveBundle>();
         worldObjects_ = world_->createQuery()
-                .with<WorldObject, WorldTransform, HasVisiblePrototype>()
-                .withJob()
-                //.withRelation<HasVisiblePrototype, VisiblePrototype>()
-                .withInheritance(true).id;
+                              .with<WorldObject, WorldTransform, HasVisiblePrototype>()
+                              .withJob()
+                                  //.withRelation<HasVisiblePrototype, VisiblePrototype>()
+                              .withInheritance(true).id;
 
         world_->addSingleton<StaticInstanceBuffers>();
 
@@ -69,12 +69,12 @@ namespace RxEngine
                 }
             }, 10);
 #endif
-       // auto pl = world_->lookup("layout/general").get<PipelineLayout>();
+        // auto pl = world_->lookup("layout/general").get<PipelineLayout>();
 
         for (uint32_t i = 0; i < sib->count; i++) {
 
-         //   sib->descriptorSets[i] = RxCore::threadResources.getDescriptorSet(
-          //      pool_template, pl->dsls[2]);
+            //   sib->descriptorSets[i] = RxCore::threadResources.getDescriptorSet(
+            //      pool_template, pl->dsls[2]);
         }
 
         world_->createSystem("StaticMesh:Render")
@@ -84,22 +84,25 @@ namespace RxEngine
               .withRead<DescriptorSet>()
               .withRead<PipelineLayout>()
               .withRead<VisiblePrototype>()
-              .execute([this](ecs::World *)
-              {
-                  OPTICK_EVENT("StaticMesh:Render")
-                  createOpaqueRenderCommands();
-              });
+              .withJob()
+              .execute(
+                  [this](ecs::World *) {
+                      OPTICK_EVENT("StaticMesh:Render")
+                      createOpaqueRenderCommands();
+                  }
+              );
 
 
         //        world_->createSystem("StaticMesh:Render")
         //      .inGroup("Pipeline:PreRender")
         //     .withQuery<Sta>()
 
-        
+
         pipeline_ = world_->lookup("pipeline/staticmesh_opaque");
     }
 
-    void StaticMeshModule::shutdown() { }
+    void StaticMeshModule::shutdown()
+    {}
 
     ecs::entity_t createStaticMeshBundle(RxCore::Device * device, ecs::World * world)
     {
@@ -117,11 +120,13 @@ namespace RxEngine
         mb->vertexBuffer = device->createBuffer(
             vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eVertexBuffer |
             vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eShaderDeviceAddress,
-            VMA_MEMORY_USAGE_GPU_ONLY, mb->maxVertexCount * mb->vertexSize);
+            VMA_MEMORY_USAGE_GPU_ONLY, mb->maxVertexCount * mb->vertexSize
+        );
 
         mb->indexBuffer = device->createIndexBuffer(
             VMA_MEMORY_USAGE_GPU_ONLY, static_cast<uint32_t>(mb->maxVertexCount * sizeof(uint32_t)),
-            false);
+            false
+        );
 #if 0
         const RxCore::DescriptorPoolTemplate pool_template(
             {
@@ -149,7 +154,7 @@ namespace RxEngine
     ecs::entity_t getActiveMeshBundle(RxCore::Device * device, ecs::World * world)
     {
         auto smab = world->getSingleton<StaticMeshActiveBundle>();
-        if(!smab) {
+        if (!smab) {
             world->addSingleton<StaticMeshActiveBundle>();
             smab = world->getSingleton<StaticMeshActiveBundle>();
         }
@@ -158,10 +163,10 @@ namespace RxEngine
             return smab->currentBundle;
         }
 
-        return createStaticMeshBundle(device,world);
+        return createStaticMeshBundle(device, world);
     }
 
-    void copyToBuffers(RxCore::Device * device,  const std::vector<StaticMeshVertex> & meshVertices,
+    void copyToBuffers(RxCore::Device * device, const std::vector<StaticMeshVertex> & meshVertices,
                        const std::vector<uint32_t> & meshIndices,
                        MeshBundle * smb)
     {
@@ -205,21 +210,21 @@ namespace RxEngine
         std::copy(msd.indices.begin(), msd.indices.end(), mesh_indices.begin());
         std::transform(
             msd.vertices.begin(), msd.vertices.end(), mesh_vertices.begin(),
-            [](RxAssets::MeshSaveVertex & m)
-            {
+            [](RxAssets::MeshSaveVertex & m) {
                 return StaticMeshVertex{
                     {m.x, m.y, m.z}, 0.f, {m.nx, m.ny, m.nz}, 0.f, {m.uvx, m.uvy}, 0.f,
                     0.f
                 };
-            });
+            }
+        );
 
         auto mb = getActiveMeshBundle(device, world);
         {
             auto smb = world->get<MeshBundle>(mb);
 
             if (mesh_vertices.size() + smb->vertexCount > smb->maxVertexCount || mesh_indices.size()
-                +
-                smb->indexCount > smb->maxIndexCount) {
+                                                                                 +
+                                                                                 smb->indexCount > smb->maxIndexCount) {
                 mb = createStaticMeshBundle(device, world);
                 world->getSingletonUpdate<StaticMeshActiveBundle>()->currentBundle = mb;
             }
@@ -227,13 +232,14 @@ namespace RxEngine
 
         auto smb = world->getUpdate<MeshBundle>(mb);
 
-
         auto static_mesh_entity = world->newEntity(meshName.c_str())
-                                       .set<Mesh>({
-                                           .vertexOffset = smb->vertexCount,
-                                           .indexOffset = smb->indexCount,
-                                           .indexCount = static_cast<uint32_t>(mesh_indices.size())
-                                       })
+                                       .set<Mesh>(
+                                           {
+                                               .vertexOffset = smb->vertexCount,
+                                               .indexOffset = smb->indexCount,
+                                               .indexCount = static_cast<uint32_t>(mesh_indices.size())
+                                           }
+                                       )
                                        .set<InBundle>({{mb}});
 
         copyToBuffers(device, mesh_vertices, mesh_indices, smb);
@@ -247,7 +253,7 @@ namespace RxEngine
 
         std::vector<ecs::entity_t> mEntities;
 
-        for (auto & [k, v]: mtab) {
+        for (auto &[k, v]: mtab) {
             std::string mn = v.as<std::string>();
 
             auto mat_entity = world->lookup(mn.c_str());
@@ -259,7 +265,7 @@ namespace RxEngine
         auto smu = static_mesh_entity.getUpdate<Mesh>();
 
         uint32_t ix = 0;
-        for (auto & [k, v]: smtab) {
+        for (auto &[k, v]: smtab) {
             sol::table subMeshValue = v;
 
             uint32_t first_index = subMeshValue.get<uint32_t>("first_index");
@@ -269,7 +275,7 @@ namespace RxEngine
             //sm->subMeshes.push_back(
             smu->subMeshes.push_back(
                 world->newEntity()
-                     //.set<ecs::InstanceOf>({{me.id}})
+                         //.set<ecs::InstanceOf>({{me.id}})
                      .set<SubMesh>({first_index, index_count, ix++})
                      .set<SubMeshOf>({{static_mesh_entity.id}})
                      .set<UsesMaterial>({{mEntities[material]}}).id
@@ -279,15 +285,15 @@ namespace RxEngine
 
     void loadMeshes(ecs::World * world, RxCore::Device * device, sol::table & meshes)
     {
-        for (auto & [key, value]: meshes) {
+        for (auto &[key, value]: meshes) {
             const std::string name = key.as<std::string>();
             const sol::table details = value;
             loadMesh(world, device, name, details);
         }
     }
-    
+
     void StaticMeshModule::loadData(sol::table data)
-    {       
+    {
         sol::optional<sol::table> meshes = data["mesh"];
 
         if (meshes.has_value()) {
@@ -299,7 +305,7 @@ namespace RxEngine
     {
         OPTICK_CATEGORY("Render Static", ::Optick::Category::Rendering)
 
-        if(!pipeline_.isAlive()) {
+        if (!pipeline_.isAlive()) {
             pipeline_ = world_->lookup("pipeline/staticmesh_opaque");
         }
         auto pipeline = pipeline_.get<GraphicsPipeline>();
@@ -316,8 +322,10 @@ namespace RxEngine
         auto frustum = world_->get<CameraFrustum>(scene_camera->camera);
 
         DirectX::XMVECTOR planes[6];
-        frustum->frustum.GetPlanes(&planes[0], &planes[1], &planes[2], &planes[3], &planes[4],
-                                   &planes[5]);
+        frustum->frustum.GetPlanes(
+            &planes[0], &planes[1], &planes[2], &planes[3], &planes[4],
+            &planes[5]
+        );
 
         std::mutex g;
         std::atomic<size_t> ix = 0;
@@ -335,8 +343,7 @@ namespace RxEngine
             res.each<WorldTransform, HasVisiblePrototype>(
                 [&](ecs::EntityHandle e,
                     const WorldTransform * wt,
-                    const HasVisiblePrototype * vpp)
-                {
+                    const HasVisiblePrototype * vpp) {
                     auto vp = world_->get<VisiblePrototype>(vpp->entity);
                     //OPTICK_EVENT("Process Entity")
                     if (!vp) {
@@ -372,15 +379,15 @@ namespace RxEngine
                             };
                         }
                     }
-                });
+                }
+            );
         }
         {
             OPTICK_EVENT("Sort Instances")
             std::sort(
                 instances.begin(),
                 instances.begin() + ix,
-                [](const auto & a, const auto & b)
-                {
+                [](const auto & a, const auto & b) {
                     if (a.pipeline < b.pipeline) {
                         return true;
                     }
@@ -416,12 +423,14 @@ namespace RxEngine
 
                     headerIndex = static_cast<uint32_t>(ids.headers.size());
                     ids.headers
-                       .push_back(IndirectDrawCommandHeader{
-                           instance.pipeline,
-                           instance.bundle,
-                           static_cast<uint32_t>(ids.commands.size()),
-                           0
-                       });
+                       .push_back(
+                           IndirectDrawCommandHeader{
+                               instance.pipeline,
+                               instance.bundle,
+                               static_cast<uint32_t>(ids.commands.size()),
+                               0
+                           }
+                       );
 
                     prevPL = instance.pipeline;
                     prevBundle = instance.bundle;
@@ -431,7 +440,8 @@ namespace RxEngine
                 if (instance.vertexOffset != prevVertexOffset) {
                     commandIndex = static_cast<uint32_t>(ids.commands.size());
                     //auto mesh = bundle->getEntry(mix);
-                    ids.commands.push_back({
+                    ids.commands.push_back(
+                        {
                             instance.indexCount,
                             instance.vertexOffset,
                             instance.indexOffset, 0, static_cast<uint32_t>(ids.instances.size())
@@ -443,7 +453,6 @@ namespace RxEngine
                 //auto& e = (*entities)[eix];
 
                 auto mm = world_->get<Material>(instance.material);
-
 
                 ids.instances.push_back({mats[instance.matrixIndex], mm->sequence, 0, 0, 0});
                 ids.commands[commandIndex].instanceCount++;
@@ -472,9 +481,9 @@ namespace RxEngine
 //                updateDescriptor(0, vk::DescriptorType::eStorageBuffer, b);
         }
 
-
-        sib->buffers[sib->ix]->update(ids.instances.data(),
-                                      ids.instances.size() * sizeof(IndirectDrawInstance));
+        sib->buffers[sib->ix]->update(
+            ids.instances.data(),
+            ids.instances.size() * sizeof(IndirectDrawInstance));
 
         auto cmds = world_->getSingleton<CurrentMainDescriptorSet>();
         auto ds0 = world_->get<DescriptorSet>(cmds->descriptorSet);
@@ -492,16 +501,18 @@ namespace RxEngine
 
             buf->setScissor(
                 {
-                    {0, 0},
+                    {0,                    0},
                     {windowDetails->width, windowDetails->height}
-                });
+                }
+            );
             buf->setViewport(
                 .0f, flipY ? static_cast<float>(windowDetails->height) : 0.0f,
                 static_cast<float>(windowDetails->width),
                 flipY
-                    ? -static_cast<float>(windowDetails->height)
-                    : static_cast<float>(windowDetails->height), 0.0f,
-                1.0f);
+                ? -static_cast<float>(windowDetails->height)
+                : static_cast<float>(windowDetails->height), 0.0f,
+                1.0f
+            );
 
             //buf->BindDescriptorSet(2, sib->descriptorSets[sib->ix]);
             auto da = sib->buffers[sib->ix]->getDeviceAddress();
@@ -542,13 +553,13 @@ namespace RxEngine
                     auto bund = world_->get<MeshBundle>(h.bundle);
                     {
 //                        if (bund->useDescriptor) {
-                            OPTICK_EVENT("Bind Ds")
-                            //buf->BindDescriptorSet(1, bund->descriptorSet);
-                            buf->pushConstant(vk::ShaderStageFlagBits::eVertex, 0, sizeof(bund->address), &bund->address);
+                        OPTICK_EVENT("Bind Ds")
+                        //buf->BindDescriptorSet(1, bund->descriptorSet);
+                        buf->pushConstant(vk::ShaderStageFlagBits::eVertex, 0, sizeof(bund->address), &bund->address);
 //                        } else {
-  //                          OPTICK_EVENT("Bind VB")
-    //                        buf->bindVertexBuffer(bund->vertexBuffer);
-      //                  }
+                        //                          OPTICK_EVENT("Bind VB")
+                        //                        buf->bindVertexBuffer(bund->vertexBuffer);
+                        //                  }
                     }
                     {
                         OPTICK_EVENT("Bind IB")
@@ -564,7 +575,8 @@ namespace RxEngine
                     auto & c = ids.commands[i + h.commandStart];
                     buf->DrawIndexed(
                         c.indexCount, c.instanceCount, c.indexOffset, c.vertexOffset,
-                        c.instanceOffset);
+                        c.instanceOffset
+                    );
                 }
             }
         }

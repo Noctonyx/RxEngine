@@ -24,6 +24,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
+#include <Modules/StaticMesh/StaticMesh.h>
 #include "Modules/Module.h"
 #include "DirectXCollision.h"
 #include "Modules/Renderer/Renderer.hpp"
@@ -49,9 +50,8 @@ namespace RxEngine
                           const DirectX::XMFLOAT3 & normal,
                           const DirectX::XMFLOAT2 & uv)
             : point(pos)
-              , normal(normal)
-              , uv(uv)
-        {}
+            , normal(normal)
+            , uv(uv) {}
     };
 #pragma warning(pop)
 
@@ -67,11 +67,14 @@ namespace RxEngine
         //DirectX::XMFLOAT4X4 mat;
     };
 
-    struct DynamicSubMeshEntry {
+    struct DynamicSubMeshEntry
+    {
         uint32_t firstIndex;
         uint32_t indexCount;
         ecs::entity_t materialId;
     };
+
+    struct DynamicMesh {};
 
     struct DynamicInstanceBuffers
     {
@@ -87,25 +90,27 @@ namespace RxEngine
     {
     public:
         DynamicMeshModule(ecs::World * world, EngineMain * engine, const ecs::entity_t moduleId)
-            : Module(world, engine, moduleId)
-        {}
+            : Module(world, engine, moduleId) {}
 
         void startup() override;
         void shutdown() override;
 
-        ecs::entity_t createDynamicMeshObject(ecs::World * world,
-                                              RxCore::Device * device,
-                                              const std::vector<DynamicMeshVertex> & vertices,
-                                              const std::vector<uint32_t> & indices,
-                                              const std::vector<DynamicSubMeshEntry> & submeshes
-                                              );
+        ecs::EntityHandle createDynamicMeshObject(ecs::World * world,
+                                                  RxCore::Device * device,
+                                                  const std::vector<DynamicMeshVertex> & vertices,
+                                                  const std::vector<uint32_t> & indices,
+                                                  const std::vector<DynamicSubMeshEntry> & submeshes
+        );
     protected:
         void createOpaqueRenderCommands();
         void renderIndirectDraws(IndirectDrawSet ids,
                                  const std::shared_ptr<RxCore::SecondaryCommandBuffer> & buf) const;
 
     private:
-        ecs::EntityHandle pipeline_;
-        ecs::queryid_t worldObjects;
+        ecs::EntityHandle pipeline_{};
+        ecs::queryid_t worldObjects_{};
+
+        std::vector<StaticInstance> instances{};
+        std::vector<DirectX::XMFLOAT4X4> mats{};
     };
 }
