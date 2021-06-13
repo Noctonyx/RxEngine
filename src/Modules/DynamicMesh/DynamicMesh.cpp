@@ -218,6 +218,8 @@ namespace RxEngine
             &planes[5]
         );
 
+        std::vector<std::tuple<const RenderDetailCache *,  ecs::entity_t, uint32_t>> instances;
+
         std::atomic<size_t> ix = 0;
         {
             OPTICK_EVENT("Collect instances")
@@ -259,10 +261,13 @@ namespace RxEngine
                             //size_t ix = mats.size();
                             mats[ix2] = wt->transform;
 
-                            instances[ix2] = {
+                            instances[ix2] = {rdc, rdc->opaquePipeline,
+                                              /*
                                 rdc->opaquePipeline, rdc->bundle, rdc->vertexOffset,
                                 rdc->indexOffset,
-                                rdc->indexCount, rdc->material, static_cast<uint32_t>(ix2)
+                                rdc->indexCount, rdc->material,
+                                               */
+                                static_cast<uint32_t>(ix2)
                             };
                         }
                     }
@@ -275,13 +280,15 @@ namespace RxEngine
                 instances.begin(),
                 instances.begin() + ix,
                 [](const auto & a, const auto & b) {
-                    if (a.pipeline < b.pipeline) {
+                    auto & [ar, apipeline, am] = a;
+                    auto & [br, bpipeline, bm] = b;
+                    if (apipeline < bpipeline) {
                         return true;
                     }
-                    if (a.pipeline > b.pipeline) {
+                    if (apipeline > bpipeline) {
                         return false;
                     }
-                    return (a.bundle < b.bundle);
+                    return (ar->bundle < br->bundle);
                 }
             );
         }
@@ -298,38 +305,39 @@ namespace RxEngine
 
             for (size_t i = 0; i < ix; i++) {
                 auto & instance = instances[i];
+                auto & [rdc, rpipeline, m] = instance;
 
-                if (prevPL != instance.pipeline || instance.bundle != prevBundle) {
+                if (prevPL != rpipeline || rdc->bundle != prevBundle) {
 
                     headerIndex = static_cast<uint32_t>(ids.headers.size());
                     ids.headers
                        .push_back(
                            IndirectDrawCommandHeader{
-                               instance.pipeline,
-                               instance.bundle,
+                               rpipeline,
+                               rdc->bundle,
                                static_cast<uint32_t>(ids.commands.size()),
                                0
                            }
                        );
 
-                    prevPL = instance.pipeline;
-                    prevBundle = instance.bundle;
+                    prevPL = rpipeline;
+                    prevBundle = rdc->bundle;
                     //prevVertexOffset = instance.vertexOffset;
                 }
 
                 commandIndex = static_cast<uint32_t>(ids.commands.size());
                 ids.commands.push_back(
                     {
-                        instance.indexCount,
-                        instance.vertexOffset,
-                        instance.indexOffset, 0, static_cast<uint32_t>(ids.instances.size())
+                        rdc->indexCount,
+                        rdc->vertexOffset,
+                        rdc->indexOffset, 0, static_cast<uint32_t>(ids.instances.size())
                     }
                 );
                 ids.headers[headerIndex].commandCount++;
 
-                auto mm = world_->get<Material>(instance.material);
+                auto mm = world_->get<Material>(rdc->material);
 
-                ids.instances.push_back({mats[instance.matrixIndex], mm->sequence, 0, 0, 0});
+                ids.instances.push_back({mats[m], mm->sequence, 0, 0, 0});
                 ids.commands[commandIndex].instanceCount++;
             }
         }
