@@ -94,7 +94,7 @@ namespace RxEngine
             ImGui::PushID(static_cast<int>(e.id));
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
-            ImGui::Text("%lld", e.id);
+            ImGui::Text("%d:%d", ecs::index(e.id), ecs::version(e.id));
             ImGui::TableNextColumn();
             //ImGui::Text("%s", e.path().c_str());
             if (ImGui::Selectable(
@@ -706,6 +706,12 @@ namespace RxEngine
             ImGui::Text("Time");
             ImGui::TableNextColumn();
             ImGui::Text("%.3f ms", system->executionTime * 1000.0f);
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Run Sequence");
+            ImGui::TableNextColumn();
+            ImGui::Text("%lld", system->lastRunSequence);
         }
     }
 
