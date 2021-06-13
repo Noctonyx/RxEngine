@@ -103,8 +103,6 @@ namespace RxEngine
         );
     protected:
         void createOpaqueRenderCommands();
-        void renderIndirectDraws(IndirectDrawSet ids,
-                                 const std::shared_ptr<RxCore::SecondaryCommandBuffer> & buf) const;
 
     private:
         ecs::EntityHandle pipeline_{};

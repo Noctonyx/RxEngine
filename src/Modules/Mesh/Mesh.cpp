@@ -54,18 +54,20 @@ namespace RxEngine
             ImGui::TableNextColumn();
             ImGui::Text("SphereBounds");
             ImGui::TableNextColumn();
-            ImGui::Text("(%.2f,%.2f,%.2f) %.2f",
-                        mesh->boundSphere.Center.x,
-                        mesh->boundSphere.Center.y,
-                        mesh->boundSphere.Center.z,
-                        mesh->boundSphere.Radius);
+            ImGui::Text(
+                "(%.2f,%.2f,%.2f) %.2f",
+                mesh->boundSphere.Center.x,
+                mesh->boundSphere.Center.y,
+                mesh->boundSphere.Center.z,
+                mesh->boundSphere.Radius
+            );
 
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
             ImGui::Text("SubMeshes");
             ImGui::TableNextColumn();
 
-            for(auto & sm : mesh->subMeshes) {
+            for (auto & sm : mesh->subMeshes) {
                 ImGui::Text("%lld ", sm);
             }
         }
@@ -131,7 +133,7 @@ namespace RxEngine
         rdc.vertexOffset = mesh->vertexOffset;
         rdc.indexCount = mesh->indexCount;
         rdc.indexOffset = mesh->indexOffset;
-        rdc.boundSphere = mesh->boundSphere;
+        //rdc.boundSphere = mesh->boundSphere;
 
         const auto bundle_entity = mesh_entity.getRelatedEntity<InBundle>();
         if (!bundle_entity) {
@@ -155,12 +157,18 @@ namespace RxEngine
 
     void MeshModule::startup()
     {
-        world_->set<ComponentGui>(world_->getComponentId<MeshBundle>(),
-                                  ComponentGui{.editor = meshBundleGui});
-        world_->set<ComponentGui>(world_->getComponentId<Mesh>(),
-                                  ComponentGui{.editor = meshPrimitiveGui});
-        world_->set<ComponentGui>(world_->getComponentId<SubMesh>(),
-                                  ComponentGui{.editor = subMeshGui});
+        world_->set<ComponentGui>(
+            world_->getComponentId<MeshBundle>(),
+            ComponentGui{.editor = meshBundleGui}
+        );
+        world_->set<ComponentGui>(
+            world_->getComponentId<Mesh>(),
+            ComponentGui{.editor = meshPrimitiveGui}
+        );
+        world_->set<ComponentGui>(
+            world_->getComponentId<SubMesh>(),
+            ComponentGui{.editor = subMeshGui}
+        );
 
         world_->createSystem("Mesh:CacheSubmeshData")
               .inGroup("Pipeline:PreFrame")
@@ -169,11 +177,61 @@ namespace RxEngine
               .each(cacheMeshRenderDetails);
     }
 
-    void MeshModule::shutdown() {
+    void MeshModule::shutdown()
+    {
         world_->remove<ComponentGui>(world_->getComponentId<MeshBundle>());
         world_->remove<ComponentGui>(world_->getComponentId<Mesh>());
         world_->remove<ComponentGui>(world_->getComponentId<SubMesh>());
 
         world_->lookup("Mesh:CacheSubmeshData").destroy();
+    }
+
+    void MeshModule::renderIndirectDraws(ecs::World * world,
+        IndirectDrawSet ids,
+        const std::shared_ptr<RxCore::SecondaryCommandBuffer> & buf)
+    {
+        OPTICK_EVENT()
+        ecs::entity_t current_pipeline{};
+        ecs::entity_t prevBundle = 0;
+
+        for (auto & h: ids.headers) {
+            OPTICK_EVENT("IDS Header")
+            if (h.commandCount == 0) {
+                continue;
+            }
+            {
+                OPTICK_EVENT("Set Pipeline and buffers")
+                if (h.pipelineId != current_pipeline) {
+
+                    auto pl = world->get<GraphicsPipeline>(h.pipelineId);
+                    buf->bindPipeline(pl->pipeline->Handle());
+                    current_pipeline = h.pipelineId;
+                }
+                if (h.bundle != prevBundle) {
+
+                    OPTICK_EVENT("Bind Bundle")
+                    auto bund = world->get<MeshBundle>(h.bundle);
+                    buf->pushConstant(
+                        vk::ShaderStageFlagBits::eVertex, 0,
+                        sizeof(bund->address), &bund->address
+                    );
+                    {
+                        OPTICK_EVENT("Bind IB")
+                        buf->bindIndexBuffer(bund->indexBuffer);
+                    }
+                    prevBundle = h.bundle;
+                }
+            }
+            {
+                OPTICK_EVENT("Draw Indexed")
+                for (uint32_t i = 0; i < h.commandCount; i++) {
+                    auto & c = ids.commands[i + h.commandStart];
+                    buf->DrawIndexed(
+                        c.indexCount, c.instanceCount, c.indexOffset, c.vertexOffset,
+                        c.instanceOffset
+                    );
+                }
+            }
+        }
     }
 }

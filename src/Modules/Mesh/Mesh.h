@@ -79,7 +79,7 @@ namespace RxEngine
     struct RenderDetailCache
     {
         ecs::entity_t bundle;
-        uint32_t bundleEntry;
+        //uint32_t bundleEntry;
         ecs::entity_t shadowPipeline;
         ecs::entity_t opaquePipeline;
         ecs::entity_t transparentPipeline;
@@ -87,7 +87,7 @@ namespace RxEngine
         uint32_t indexOffset;
         uint32_t indexCount;
         ecs::entity_t material;
-        DirectX::BoundingSphere boundSphere;
+        //DirectX::BoundingSphere boundSphere;
     };
 
     class MeshModule final : public Module
@@ -98,5 +98,9 @@ namespace RxEngine
 
         void startup() override;
         void shutdown() override;
+
+        static void renderIndirectDraws(ecs::World * world,
+            IndirectDrawSet ids,
+            const std::shared_ptr<RxCore::SecondaryCommandBuffer> & buf);
     };
 }

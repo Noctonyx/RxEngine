@@ -517,68 +517,12 @@ namespace RxEngine
             //buf->BindDescriptorSet(2, sib->descriptorSets[sib->ix]);
             auto da = sib->buffers[sib->ix]->getDeviceAddress();
             buf->pushConstant(vk::ShaderStageFlagBits::eVertex, 8, sizeof(da), &da);
-            renderIndirectDraws(ids, buf);
+            MeshModule::renderIndirectDraws(world_,ids, buf);
             //buf->BindPipeline(pipeline->pipeline->Handle());
         }
         buf->end();
 
         world_->getStream<Render::OpaqueRenderCommand>()
               ->add<Render::OpaqueRenderCommand>({buf});
-    }
-
-    void StaticMeshModule::renderIndirectDraws(
-        IndirectDrawSet ids,
-        const std::shared_ptr<RxCore::SecondaryCommandBuffer> & buf) const
-    {
-        OPTICK_EVENT()
-        ecs::entity_t current_pipeline{};
-        ecs::entity_t prevBundle = 0;
-
-        for (auto & h: ids.headers) {
-            OPTICK_EVENT("IDS Header")
-            if (h.commandCount == 0) {
-                continue;
-            }
-            {
-                OPTICK_EVENT("Set Pipeline and buffers")
-                if (h.pipelineId != current_pipeline) {
-
-                    auto pl = world_->get<GraphicsPipeline>(h.pipelineId);
-                    buf->bindPipeline(pl->pipeline->Handle());
-                    current_pipeline = h.pipelineId;
-                }
-                if (h.bundle != prevBundle) {
-
-                    OPTICK_EVENT("Bind Bundle")
-                    auto bund = world_->get<MeshBundle>(h.bundle);
-                    {
-//                        if (bund->useDescriptor) {
-                        OPTICK_EVENT("Bind Ds")
-                        //buf->BindDescriptorSet(1, bund->descriptorSet);
-                        buf->pushConstant(vk::ShaderStageFlagBits::eVertex, 0, sizeof(bund->address), &bund->address);
-//                        } else {
-                        //                          OPTICK_EVENT("Bind VB")
-                        //                        buf->bindVertexBuffer(bund->vertexBuffer);
-                        //                  }
-                    }
-                    {
-                        OPTICK_EVENT("Bind IB")
-                        buf->bindIndexBuffer(bund->indexBuffer);
-                    }
-                    // bind bundle descriptorSet
-                    prevBundle = h.bundle;
-                }
-            }
-            {
-                OPTICK_EVENT("Draw Indexed")
-                for (uint32_t i = 0; i < h.commandCount; i++) {
-                    auto & c = ids.commands[i + h.commandStart];
-                    buf->DrawIndexed(
-                        c.indexCount, c.instanceCount, c.indexOffset, c.vertexOffset,
-                        c.instanceOffset
-                    );
-                }
-            }
-        }
     }
 }
