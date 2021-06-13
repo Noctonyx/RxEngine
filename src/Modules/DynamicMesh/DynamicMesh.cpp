@@ -43,7 +43,7 @@ namespace RxEngine
 
         worldObjects_ = world_->createQuery()
                               .with<WorldObject, WorldTransform, DynamicMesh,
-                                  Transforms::LocalBoundingSphere>()
+                                    Transforms::LocalBoundingSphere>()
                               .withJob()
                               .withInheritance(true).id;
 
@@ -56,15 +56,35 @@ namespace RxEngine
               .withRead<DynamicMesh>()
               .withJob()
               .execute(
-                  [this](ecs::World *) {
+                  [this](ecs::World *)
+                  {
                       OPTICK_EVENT("DynamicMesh:Render")
                       createOpaqueRenderCommands();
                   }
               );
+
+        world_->createSystem("DynamicMesh:Cleanup")
+              .inGroup("Pipeline:PostFrame")
+              .withInterval(2.0f)
+              .withQuery<MeshBundle, ecs::Component>()
+              .each<MeshBundle>(
+                  [](ecs::EntityHandle e, const MeshBundle * mb)
+                  {
+                      ecs::World * w = e.getWorld();
+
+                      auto q = w->createQuery({e.id});
+                      auto res = w->getResults(q.id);
+                      if (res.count() != 0) {
+                          w->deleteQuery(q.id);
+                          return;
+                      }
+                      w->deleteQuery(q.id);
+
+                      e.destroyDeferred();
+                  });
     }
 
-    void DynamicMeshModule::shutdown()
-    {}
+    void DynamicMeshModule::shutdown() {}
 
     ecs::entity_t createDynamicMeshBundle(RxCore::Device * device, ecs::World * world)
     {
@@ -75,7 +95,7 @@ namespace RxEngine
         mb->vertexCount = 0;
         mb->indexCount = 0;
         mb->vertexSize = sizeof(DynamicMeshVertex);
-        mb->maxVertexCount = (64 * 1024 * 1024 / mb->vertexSize);
+        mb->maxVertexCount = (32 * 1024 * 1024 / mb->vertexSize);
         mb->maxIndexCount = mb->maxVertexCount * 3 / 2;
 
         mb->vertexBuffer = device->createBuffer(
@@ -92,6 +112,7 @@ namespace RxEngine
         mb->address = mb->vertexBuffer->getDeviceAddress();
 
         world->getSingletonUpdate<DynamicMeshActiveBundle>()->currentBundle = mbe.id;
+        //world->createDynamicComponent(mbe);
         return mbe.id;
     }
 
@@ -154,6 +175,9 @@ namespace RxEngine
                 world->getSingletonUpdate<DynamicMeshActiveBundle>()->currentBundle = mb;
             }
         }
+        if (!world->has<ecs::Component>(mb)) {
+            world->createDynamicComponent(mb);
+        }
         auto smb = world->getUpdate<MeshBundle>(mb);
 
         auto dynamic_mesh_entity = world->newEntity()
@@ -165,6 +189,7 @@ namespace RxEngine
                                             }
                                         )
                                         .add<DynamicMesh>()
+                                        .addDynamic(mb)
                                         .set<InBundle>({{mb}});
 
         copyToBuffers(device, vertices, indices, smb);
@@ -214,7 +239,7 @@ namespace RxEngine
             &planes[5]
         );
 
-        std::vector<std::tuple<const RenderDetailCache *,  ecs::entity_t, uint32_t>> instances;
+        std::vector<std::tuple<const RenderDetailCache *, ecs::entity_t, uint32_t>> instances;
         std::atomic<size_t> ix = 0;
         {
             OPTICK_EVENT("Collect instances")
@@ -232,7 +257,8 @@ namespace RxEngine
                     const WorldTransform * wt,
                     const Transforms::LocalBoundingSphere * lbs,
                     const Mesh * mesh
-                ) {
+            )
+                {
                     DirectX::BoundingSphere bs;
                     auto tx = XMLoadFloat4x4(&wt->transform);
                     lbs->boundSphere.Transform(bs, tx);
@@ -256,12 +282,13 @@ namespace RxEngine
                             //size_t ix = mats.size();
                             mats[ix2] = wt->transform;
 
-                            instances[ix2] = {rdc, rdc->opaquePipeline,
-                                              /*
-                                rdc->opaquePipeline, rdc->bundle, rdc->vertexOffset,
-                                rdc->indexOffset,
-                                rdc->indexCount, rdc->material,
-                                               */
+                            instances[ix2] = {
+                                rdc, rdc->opaquePipeline,
+                                /*
+                  rdc->opaquePipeline, rdc->bundle, rdc->vertexOffset,
+                  rdc->indexOffset,
+                  rdc->indexCount, rdc->material,
+                                 */
                                 static_cast<uint32_t>(ix2)
                             };
                         }
@@ -274,7 +301,8 @@ namespace RxEngine
             std::sort(
                 instances.begin(),
                 instances.begin() + ix,
-                [](const auto & a, const auto & b) {
+                [](const auto & a, const auto & b)
+                {
                     auto & [ar, apipeline, am] = a;
                     auto & [br, bpipeline, bm] = b;
                     if (apipeline < bpipeline) {
@@ -338,7 +366,8 @@ namespace RxEngine
         }
 
         createInstanceBuffer(ids);
-        MeshModule::drawInstances(instanceBuffers.buffers[instanceBuffers.ix], world_, pipeline, layout, ids);
+        MeshModule::drawInstances(instanceBuffers.buffers[instanceBuffers.ix], world_, pipeline,
+                                  layout, ids);
     }
 
     void DynamicMeshModule::createInstanceBuffer(IndirectDrawSet & ids)
