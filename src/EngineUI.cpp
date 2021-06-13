@@ -74,7 +74,7 @@ namespace RxEngine
                                                   ecs::Table * table) const
     {
         OPTICK_EVENT()
-        if (table->entities.size() == 0) {
+        if (!table || table->entities.size() == 0) {
             return;
         }
 #if 0
@@ -229,10 +229,11 @@ namespace RxEngine
 
         if (ImGui::Begin("Entities", &is_open)) {
 
+            ecs::Table* tab = world->getTableForArchetype(selectedArchetype);
+
             if (ImGui::BeginCombo(
                 "Archetype",
-                world->getTableForArchetype(selectedArchetype)->description().
-                    c_str())) {
+                tab ? tab->description().c_str() : "Unknown")) {
                 for (auto it: *world) {
                     auto table = world->getTableForArchetype(it.id);
                     if (table && table->entities.size() > 0) {
