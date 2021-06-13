@@ -37,13 +37,9 @@ namespace RxEngine
 {
     void DynamicMeshModule::startup()
     {
-        world_->addSingleton<DynamicInstanceBuffers>();
-
-        auto sib = world_->getSingletonUpdate<DynamicInstanceBuffers>();
-
-        sib->count = 5;
-        sib->sizes.resize(5);
-        sib->buffers.resize(5);
+        instanceBuffers.count = 5;
+        instanceBuffers.sizes.resize(5);
+        instanceBuffers.buffers.resize(5);
 
         worldObjects_ = world_->createQuery()
                               .with<WorldObject, WorldTransform, DynamicMesh,
@@ -219,7 +215,6 @@ namespace RxEngine
         );
 
         std::vector<std::tuple<const RenderDetailCache *,  ecs::entity_t, uint32_t>> instances;
-
         std::atomic<size_t> ix = 0;
         {
             OPTICK_EVENT("Collect instances")
@@ -297,8 +292,6 @@ namespace RxEngine
             OPTICK_EVENT("Build Draw Commands")
             ecs::entity_t prevPL = 0;
             ecs::entity_t prevBundle = 0;
-            //uint32_t prevMix = RX_INVALID_ID;
-            //uint32_t prevVertexOffset = std::numeric_limits<uint32_t>::max();
 
             uint32_t headerIndex = 0;
             uint32_t commandIndex = 0;
@@ -322,7 +315,6 @@ namespace RxEngine
 
                     prevPL = rpipeline;
                     prevBundle = rdc->bundle;
-                    //prevVertexOffset = instance.vertexOffset;
                 }
 
                 commandIndex = static_cast<uint32_t>(ids.commands.size());
@@ -345,21 +337,9 @@ namespace RxEngine
             return;
         }
 
-        auto sib = world_->getSingletonUpdate<DynamicInstanceBuffers>();
-        sib->ix = (sib->ix + 1) % sib->count;
-        if (sib->sizes[sib->ix] < ids.instances.size()) {
-            auto n = ids.instances.size() * 2;
-            auto b = engine_->createStorageBuffer(n * sizeof(IndirectDrawInstance));
-
-            sib->buffers[sib->ix] = b;
-            b->map();
-            sib->sizes[sib->ix] = static_cast<uint32_t>(n);
-        }
-
-        sib->buffers[sib->ix]->update(
-            ids.instances.data(),
-            ids.instances.size() * sizeof(IndirectDrawInstance));
-
+        createInstanceBuffer(ids);
+        MeshModule::drawInstances(instanceBuffers.buffers[instanceBuffers.ix], world_, pipeline, layout, ids);
+#if 0
         auto cmds = world_->getSingleton<CurrentMainDescriptorSet>();
         auto ds0 = world_->get<DescriptorSet>(cmds->descriptorSet);
         auto windowDetails = world_->getSingleton<WindowDetails>();
@@ -389,15 +369,31 @@ namespace RxEngine
                 1.0f
             );
 
-            //buf->BindDescriptorSet(2, sib->descriptorSets[sib->ix]);
-            auto da = sib->buffers[sib->ix]->getDeviceAddress();
+            auto da = instanceBuffers.buffers[instanceBuffers.ix]->getDeviceAddress();
             buf->pushConstant(vk::ShaderStageFlagBits::eVertex, 8, sizeof(da), &da);
             MeshModule::renderIndirectDraws(world_, ids, buf);
-            //buf->BindPipeline(pipeline->pipeline->Handle());
         }
         buf->end();
 
         world_->getStream<Render::OpaqueRenderCommand>()
               ->add<Render::OpaqueRenderCommand>({buf});
+#endif
+    }
+
+    void DynamicMeshModule::createInstanceBuffer(IndirectDrawSet & ids)
+    {
+        instanceBuffers.ix = (instanceBuffers.ix + 1) % instanceBuffers.count;
+        if (instanceBuffers.sizes[instanceBuffers.ix] < ids.instances.size()) {
+            auto n = ids.instances.size() * 2;
+            auto b = engine_->createStorageBuffer(n * sizeof(IndirectDrawInstance));
+
+            instanceBuffers.buffers[instanceBuffers.ix] = b;
+            b->map();
+            instanceBuffers.sizes[instanceBuffers.ix] = static_cast<uint32_t>(n);
+        }
+
+        instanceBuffers.buffers[instanceBuffers.ix]->update(
+            ids.instances.data(),
+            ids.instances.size() * sizeof(IndirectDrawInstance));
     }
 }

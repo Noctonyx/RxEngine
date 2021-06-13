@@ -24,6 +24,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
+#include <Modules/Mesh/Mesh.h>
 #include "Modules/Module.h"
 #include "DirectXCollision.h"
 #include "Modules/Renderer/Renderer.hpp"
@@ -101,7 +102,7 @@ namespace RxEngine
 
 //    struct StaticMeshBundle
     //{
-        //std::shared_ptr<MeshBundle> bundle;
+    //std::shared_ptr<MeshBundle> bundle;
 //    };
 
     struct StaticMeshVertex
@@ -140,16 +141,6 @@ namespace RxEngine
         //DirectX::XMFLOAT4X4 mat;
     };
 
-    struct StaticInstanceBuffers
-    {
-        uint32_t count;
-        std::vector<std::shared_ptr<RxCore::Buffer>> buffers;
-        //std::vector<std::shared_ptr<RxCore::DescriptorSet>> descriptorSets;
-        std::vector<uint32_t> sizes;
-
-        uint32_t ix;
-    };
-
 #if 0
     struct LodEntry
     {
@@ -170,7 +161,8 @@ namespace RxEngine
     {
     public:
         StaticMeshModule(ecs::World * world, EngineMain * engine, const ecs::entity_t moduleId)
-            : Module(world, engine, moduleId) {}
+            : Module(world, engine, moduleId)
+        {}
 
         void startup() override;
         void shutdown() override;
@@ -187,7 +179,14 @@ namespace RxEngine
         ecs::EntityHandle pipeline_{};
         ecs::queryid_t worldObjects_{};
 
-        std::vector<StaticInstance> instances;
+        // std::vector<StaticInstance> instances;
         std::vector<DirectX::XMFLOAT4X4> mats;
+        InstanceBuffers instanceBuffers{};
+        static void drawInstances(std::shared_ptr<RxCore::Buffer> instanceBuffer,
+                                  ecs::World * world,
+                                  const GraphicsPipeline * pipeline,
+                                  const PipelineLayout * const layout,
+                                  IndirectDrawSet & ids);
+        void createInstanceBuffer(IndirectDrawSet & ids);
     };
 }

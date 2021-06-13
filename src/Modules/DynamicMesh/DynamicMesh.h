@@ -25,6 +25,7 @@
 
 #pragma once
 #include <Modules/StaticMesh/StaticMesh.h>
+#include <Modules/Mesh/Mesh.h>
 #include "Modules/Module.h"
 #include "DirectXCollision.h"
 #include "Modules/Renderer/Renderer.hpp"
@@ -76,16 +77,6 @@ namespace RxEngine
 
     struct DynamicMesh {};
 
-    struct DynamicInstanceBuffers
-    {
-        uint32_t count;
-        std::vector<std::shared_ptr<RxCore::Buffer>> buffers;
-        //std::vector<std::shared_ptr<RxCore::DescriptorSet>> descriptorSets;
-        std::vector<uint32_t> sizes;
-
-        uint32_t ix;
-    };
-
     class DynamicMeshModule : public Module
     {
     public:
@@ -110,5 +101,7 @@ namespace RxEngine
 
         //std::vector<StaticInstance> instances{};
         std::vector<DirectX::XMFLOAT4X4> mats{};
+        InstanceBuffers instanceBuffers{};
+        void createInstanceBuffer(IndirectDrawSet & ids);
     };
 }

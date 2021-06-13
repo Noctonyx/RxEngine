@@ -23,6 +23,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <Modules/Render.h>
+#include <Vulkan/ThreadResources.h>
 #include "Mesh.h"
 
 #include "EngineMain.hpp"
@@ -186,9 +188,55 @@ namespace RxEngine
         world_->lookup("Mesh:CacheSubmeshData").destroy();
     }
 
+    void MeshModule::drawInstances(std::shared_ptr<RxCore::Buffer> instanceBuffer,
+                                         ecs::World * world,
+                                         const GraphicsPipeline * pipeline,
+                                         const PipelineLayout * const layout,
+                                         IndirectDrawSet & ids)
+    {
+        auto cmds = world->getSingleton<CurrentMainDescriptorSet>();
+        auto ds0 = world->get<DescriptorSet>(cmds->descriptorSet);
+
+        auto buf = RxCore::threadResources.getCommandBuffer();
+
+        bool flipY = true;
+
+        buf->begin(pipeline->renderPass, pipeline->subPass);
+        {
+            buf->useLayout(layout->layout);
+            OPTICK_GPU_CONTEXT(buf->Handle())
+            OPTICK_GPU_EVENT("Draw Instances")
+            buf->BindDescriptorSet(0, ds0->ds);
+
+            auto windowDetails = world->getSingleton<WindowDetails>();
+            buf->setScissor(
+                {
+                    {0,                    0},
+                    {windowDetails->width, windowDetails->height}
+                }
+            );
+            buf->setViewport(
+                .0f, flipY ? static_cast<float>(windowDetails->height) : 0.0f,
+                static_cast<float>(windowDetails->width),
+                flipY
+                ? -static_cast<float>(windowDetails->height)
+                : static_cast<float>(windowDetails->height), 0.0f,
+                1.0f
+            );
+
+            auto da = instanceBuffer->getDeviceAddress();
+            buf->pushConstant(vk::ShaderStageFlagBits::eVertex, 8, sizeof(da), &da);
+            MeshModule::renderIndirectDraws(world, ids, buf);
+        }
+        buf->end();
+
+        world->getStream<Render::OpaqueRenderCommand>()
+             ->add<Render::OpaqueRenderCommand>({buf});
+    }
+
     void MeshModule::renderIndirectDraws(ecs::World * world,
-        IndirectDrawSet ids,
-        const std::shared_ptr<RxCore::SecondaryCommandBuffer> & buf)
+                                         IndirectDrawSet ids,
+                                         const std::shared_ptr<RxCore::SecondaryCommandBuffer> & buf)
     {
         OPTICK_EVENT()
         ecs::entity_t current_pipeline{};

@@ -70,11 +70,17 @@ namespace RxEngine
         uint32_t subMeshIndex;
     };
 
-    struct InBundle : ecs::Relation { };
+    struct InBundle : ecs::Relation
+    {
+    };
 
-    struct SubMeshOf : ecs::Relation { };
+    struct SubMeshOf : ecs::Relation
+    {
+    };
 
-    struct UsesMaterial : ecs::Relation { };
+    struct UsesMaterial : ecs::Relation
+    {
+    };
 
     struct RenderDetailCache
     {
@@ -90,17 +96,31 @@ namespace RxEngine
         //DirectX::BoundingSphere boundSphere;
     };
 
+    struct InstanceBuffers
+    {
+        uint32_t count;
+        std::vector<std::shared_ptr<RxCore::Buffer>> buffers;
+        std::vector<uint32_t> sizes;
+        uint32_t ix;
+    };
+
     class MeshModule final : public Module
     {
     public:
         MeshModule(ecs::World * world, EngineMain * engine, const ecs::entity_t moduleId)
-            : Module(world, engine, moduleId) {}
+            : Module(world, engine, moduleId)
+        {}
 
         void startup() override;
         void shutdown() override;
 
         static void renderIndirectDraws(ecs::World * world,
-            IndirectDrawSet ids,
-            const std::shared_ptr<RxCore::SecondaryCommandBuffer> & buf);
+                                        IndirectDrawSet ids,
+                                        const std::shared_ptr<RxCore::SecondaryCommandBuffer> & buf);
+        static void drawInstances(std::shared_ptr<RxCore::Buffer> instanceBuffer,
+                                  ecs::World * world,
+                                  const GraphicsPipeline * pipeline,
+                                  const PipelineLayout * const layout,
+                                  IndirectDrawSet & ids);
     };
 }
