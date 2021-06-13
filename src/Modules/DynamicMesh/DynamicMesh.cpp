@@ -339,45 +339,6 @@ namespace RxEngine
 
         createInstanceBuffer(ids);
         MeshModule::drawInstances(instanceBuffers.buffers[instanceBuffers.ix], world_, pipeline, layout, ids);
-#if 0
-        auto cmds = world_->getSingleton<CurrentMainDescriptorSet>();
-        auto ds0 = world_->get<DescriptorSet>(cmds->descriptorSet);
-        auto windowDetails = world_->getSingleton<WindowDetails>();
-        auto buf = RxCore::threadResources.getCommandBuffer();
-
-        bool flipY = true;
-
-        buf->begin(pipeline->renderPass, pipeline->subPass);
-        {
-            buf->useLayout(layout->layout);
-            OPTICK_GPU_CONTEXT(buf->Handle())
-            OPTICK_GPU_EVENT("Draw DynamicMesh")
-            buf->BindDescriptorSet(0, ds0->ds);
-
-            buf->setScissor(
-                {
-                    {0,                    0},
-                    {windowDetails->width, windowDetails->height}
-                }
-            );
-            buf->setViewport(
-                .0f, flipY ? static_cast<float>(windowDetails->height) : 0.0f,
-                static_cast<float>(windowDetails->width),
-                flipY
-                ? -static_cast<float>(windowDetails->height)
-                : static_cast<float>(windowDetails->height), 0.0f,
-                1.0f
-            );
-
-            auto da = instanceBuffers.buffers[instanceBuffers.ix]->getDeviceAddress();
-            buf->pushConstant(vk::ShaderStageFlagBits::eVertex, 8, sizeof(da), &da);
-            MeshModule::renderIndirectDraws(world_, ids, buf);
-        }
-        buf->end();
-
-        world_->getStream<Render::OpaqueRenderCommand>()
-              ->add<Render::OpaqueRenderCommand>({buf});
-#endif
     }
 
     void DynamicMeshModule::createInstanceBuffer(IndirectDrawSet & ids)

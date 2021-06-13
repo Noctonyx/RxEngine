@@ -94,14 +94,13 @@ namespace RxEngine
         );
     protected:
         void createOpaqueRenderCommands();
+        void createInstanceBuffer(IndirectDrawSet & ids);
 
     private:
         ecs::EntityHandle pipeline_{};
         ecs::queryid_t worldObjects_{};
 
-        //std::vector<StaticInstance> instances{};
         std::vector<DirectX::XMFLOAT4X4> mats{};
         InstanceBuffers instanceBuffers{};
-        void createInstanceBuffer(IndirectDrawSet & ids);
     };
 }

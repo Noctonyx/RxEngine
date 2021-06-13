@@ -171,22 +171,13 @@ namespace RxEngine
 
     protected:
         void createOpaqueRenderCommands();
+        void createInstanceBuffer(IndirectDrawSet & ids);
 
     private:
-        //std::shared_ptr<RxCore::DescriptorSet> set0_;
-        //std::shared_ptr<RxCore::DescriptorSet> set1;
-        //std::shared_ptr<RxCore::DescriptorSet> set2;
         ecs::EntityHandle pipeline_{};
         ecs::queryid_t worldObjects_{};
 
-        // std::vector<StaticInstance> instances;
-        std::vector<DirectX::XMFLOAT4X4> mats;
+        std::vector<DirectX::XMFLOAT4X4> mats{};
         InstanceBuffers instanceBuffers{};
-        static void drawInstances(std::shared_ptr<RxCore::Buffer> instanceBuffer,
-                                  ecs::World * world,
-                                  const GraphicsPipeline * pipeline,
-                                  const PipelineLayout * const layout,
-                                  IndirectDrawSet & ids);
-        void createInstanceBuffer(IndirectDrawSet & ids);
     };
 }
