@@ -2,8 +2,8 @@
 // Created by shane on 5/06/2021.
 //
 
-#ifndef INDUSTRONAUT_SWAPCHAIN_H
-#define INDUSTRONAUT_SWAPCHAIN_H
+#ifndef RXENGINE_SWAPCHAIN_H
+#define RXENGINE_SWAPCHAIN_H
 
 #include <Modules/Module.h>
 #include <Vulkan/SwapChain.hpp>
@@ -52,4 +52,4 @@ namespace RxEngine
     };
 }
 
-#endif //INDUSTRONAUT_SWAPCHAIN_H
+#endif //RXENGINE_SWAPCHAIN_H

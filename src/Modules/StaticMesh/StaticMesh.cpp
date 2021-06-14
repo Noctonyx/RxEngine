@@ -47,8 +47,7 @@ namespace RxEngine
     void StaticMeshModule::startup()
     {
         //world_->addSingleton<StaticMeshActiveBundle>();
-        worldObjects_ = world_->createQuery()
-                              .with<WorldObject, WorldTransform, HasVisiblePrototype>()
+        worldObjects_ = world_->createQuery<WorldObject, WorldTransform, HasVisiblePrototype>()
                               .withJob()
                                   //.withRelation<HasVisiblePrototype, VisiblePrototype>()
                               .withInheritance(true).id;

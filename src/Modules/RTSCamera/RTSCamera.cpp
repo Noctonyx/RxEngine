@@ -60,7 +60,7 @@ namespace RxEngine
                       frustum.Transform(fru->frustum, XMMatrixInverse(nullptr, view));
                   });
 
-        cameraQuery = world_->createQuery().with<CameraProjection>().id;
+        cameraQuery = world_->createQuery<CameraProjection>().id;
 
         world_->createSystem("RTSCamera:AspectRatio")
               .inGroup("Pipeline:Update")

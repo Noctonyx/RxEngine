@@ -41,9 +41,8 @@ namespace RxEngine
         instanceBuffers.sizes.resize(5);
         instanceBuffers.buffers.resize(5);
 
-        worldObjects_ = world_->createQuery()
-                              .with<WorldObject, WorldTransform, DynamicMesh,
-                                    Transforms::LocalBoundingSphere>()
+        worldObjects_ = world_->createQuery<WorldObject, WorldTransform, DynamicMesh,
+                                  Transforms::LocalBoundingSphere>()
                               .withJob()
                               .withInheritance(true).id;
 
@@ -56,8 +55,7 @@ namespace RxEngine
               .withRead<DynamicMesh>()
               .withJob()
               .execute(
-                  [this](ecs::World *)
-                  {
+                  [this](ecs::World *) {
                       OPTICK_EVENT("DynamicMesh:Render")
                       createOpaqueRenderCommands();
                   }
@@ -68,23 +66,20 @@ namespace RxEngine
               .withInterval(2.0f)
               .withQuery<MeshBundle, ecs::Component>()
               .each<MeshBundle>(
-                  [](ecs::EntityHandle e, const MeshBundle * mb)
-                  {
-                      ecs::World * w = e.getWorld();
-
-                      auto q = w->createQuery({e.id});
-                      auto res = w->getResults(q.id);
-                      if (res.count() != 0) {
-                          w->deleteQuery(q.id);
+                  [](ecs::EntityHandle e, const MeshBundle * mb) {
+                      //ecs::World * w = e.getWorld();
+                      //auto filt = w->createFilter({e.id});
+                      auto filt = e.getChildren();
+                      if (filt.count() != 0) {
                           return;
                       }
-                      w->deleteQuery(q.id);
-
                       e.destroyDeferred();
-                  });
+                  }
+              );
     }
 
-    void DynamicMeshModule::shutdown() {}
+    void DynamicMeshModule::shutdown()
+    {}
 
     ecs::entity_t createDynamicMeshBundle(RxCore::Device * device, ecs::World * world)
     {
@@ -176,7 +171,7 @@ namespace RxEngine
             }
         }
         if (!world->has<ecs::Component>(mb)) {
-            world->createDynamicComponent(mb);
+            world->setAsParent(mb);
         }
         auto smb = world->getUpdate<MeshBundle>(mb);
 
@@ -189,7 +184,7 @@ namespace RxEngine
                                             }
                                         )
                                         .add<DynamicMesh>()
-                                        .addDynamic(mb)
+                                        .addParent(mb)
                                         .set<InBundle>({{mb}});
 
         copyToBuffers(device, vertices, indices, smb);
@@ -257,8 +252,7 @@ namespace RxEngine
                     const WorldTransform * wt,
                     const Transforms::LocalBoundingSphere * lbs,
                     const Mesh * mesh
-            )
-                {
+                ) {
                     DirectX::BoundingSphere bs;
                     auto tx = XMLoadFloat4x4(&wt->transform);
                     lbs->boundSphere.Transform(bs, tx);
@@ -301,10 +295,9 @@ namespace RxEngine
             std::sort(
                 instances.begin(),
                 instances.begin() + ix,
-                [](const auto & a, const auto & b)
-                {
-                    auto & [ar, apipeline, am] = a;
-                    auto & [br, bpipeline, bm] = b;
+                [](const auto & a, const auto & b) {
+                    auto &[ar, apipeline, am] = a;
+                    auto &[br, bpipeline, bm] = b;
                     if (apipeline < bpipeline) {
                         return true;
                     }
@@ -326,7 +319,7 @@ namespace RxEngine
 
             for (size_t i = 0; i < ix; i++) {
                 auto & instance = instances[i];
-                auto & [rdc, rpipeline, m] = instance;
+                auto &[rdc, rpipeline, m] = instance;
 
                 if (prevPL != rpipeline || rdc->bundle != prevBundle) {
 
@@ -366,8 +359,10 @@ namespace RxEngine
         }
 
         createInstanceBuffer(ids);
-        MeshModule::drawInstances(instanceBuffers.buffers[instanceBuffers.ix], world_, pipeline,
-                                  layout, ids);
+        MeshModule::drawInstances(
+            instanceBuffers.buffers[instanceBuffers.ix], world_, pipeline,
+            layout, ids
+        );
     }
 
     void DynamicMeshModule::createInstanceBuffer(IndirectDrawSet & ids)
