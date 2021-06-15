@@ -74,6 +74,13 @@ namespace RxEngine
             uint32_t drawCalls;
         };
 
+        struct ShadowRenderCommand
+        {
+            std::shared_ptr<RxCore::SecondaryCommandBuffer> buf;
+            uint32_t triangles;
+            uint32_t drawCalls;
+        };
+
 #if 0
         struct ShaderModule
         {

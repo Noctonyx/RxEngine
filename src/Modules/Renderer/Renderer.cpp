@@ -36,6 +36,7 @@
 #include "DirectXCollision.h"
 #include "EngineMain.hpp"
 #include "Modules/Render.h"
+#include "Modules/SceneCamera/SceneCamera.h"
 #include "Vulkan/ThreadResources.h"
 #include "Modules/SwapChain/SwapChain.h"
 
@@ -49,9 +50,9 @@ namespace RxEngine
                        EngineMain * engine,
                        const ecs::entity_t moduleId)
         : Module(world, engine, moduleId)
-          , device_(device)
-          , imageFormat_(imageFormat)
-          , shadowImagesChanged(true)
+        , device_(device)
+        , imageFormat_(imageFormat)
+        , shadowImagesChanged(true)
     //, world_(world)
     //, query_(*world, "!RxEngine.Render.Pipeline")
     {
@@ -71,8 +72,8 @@ namespace RxEngine
             {
                 {vk::DescriptorType::eCombinedImageSampler, 15000},
                 {vk::DescriptorType::eUniformBufferDynamic, 600},
-                {vk::DescriptorType::eStorageBuffer,        600},
-                {vk::DescriptorType::eUniformBuffer,        800}
+                {vk::DescriptorType::eStorageBuffer, 600},
+                {vk::DescriptorType::eUniformBuffer, 800}
             },
             400
         );
@@ -129,12 +130,13 @@ namespace RxEngine
 #endif
         world_->createSystem("Renderer:RunCommandBuffers")
               .inGroup("Pipeline:PostRender")
-                  //.after<AcquireImage>()
-                  //.before<PresentImage>()
+              //.after<AcquireImage>()
+              //.before<PresentImage>()
               .withStream<MainRenderImageInput>()
               .withWrite<MainRenderImageOutput>()
               .execute<MainRenderImageInput>(
-                  [this](ecs::World * world, const MainRenderImageInput * mri) {
+                  [this](ecs::World * world, const MainRenderImageInput * mri)
+                  {
                       render(
                           mri->imageView,
                           mri->extent,
@@ -155,7 +157,8 @@ namespace RxEngine
         world_->createSystem("Renderer:CleanLastFrame")
               .inGroup("Pipeline:PreRender")
               .execute(
-                  [this](ecs::World *) {
+                  [this](ecs::World *)
+                  {
                       OPTICK_EVENT("Release Previous Frame Resource")
                       device_->graphicsQueue_->ReleaseCompleted();
                   }
@@ -170,10 +173,11 @@ namespace RxEngine
               .withWrite<DescriptorSet>()
               .withWrite<CurrentMainDescriptorSet>()
               .executeIfNone(
-                  [this](ecs::World * world) {
+                  [this](ecs::World * world)
+                  {
                       auto pl = world_->lookup("layout/general").get<PipelineLayout>();
                       auto ds0x_ = descriptorPool->allocateDescriptorSet(pl->dsls[0], pl->counts);
-//                  auto ds0_ = //RxCore::threadResources.getDescriptorSet(
+                      //                  auto ds0_ = //RxCore::threadResources.getDescriptorSet(
                       //                    poolTemplate,
                       //                  pl->dsls[0], {1});
 
@@ -184,6 +188,7 @@ namespace RxEngine
                       world->setSingleton<CurrentMainDescriptorSet>({e.id});
                   }
               );
+
         //world_->addSingleton<Descriptors>();
     }
 
@@ -509,7 +514,8 @@ namespace RxEngine
 
                         world_->getStream<Render::OpaqueRenderCommand>()
                               ->each<Render::OpaqueRenderCommand>(
-                                  [&](ecs::World * w, const Render::OpaqueRenderCommand * b) {
+                                  [&](ecs::World * w, const Render::OpaqueRenderCommand * b)
+                                  {
                                       total_draws += b->drawCalls;
                                       total_triangles += b->triangles;
                                       buf->executeSecondary(b->buf);
@@ -519,7 +525,8 @@ namespace RxEngine
 
                         world_->getStream<Render::GameUiRenderCommand>()
                               ->each<Render::GameUiRenderCommand>(
-                                  [&](ecs::World * w, const Render::GameUiRenderCommand * b) {
+                                  [&](ecs::World * w, const Render::GameUiRenderCommand * b)
+                                  {
                                       total_draws += b->drawCalls;
                                       total_triangles += b->triangles;
                                       buf->executeSecondary(b->buf);
@@ -528,7 +535,8 @@ namespace RxEngine
                               );
                         world_->getStream<Render::EngineUiRenderCommand>()
                               ->each<Render::EngineUiRenderCommand>(
-                                  [&](ecs::World * w, const Render::EngineUiRenderCommand * b) {
+                                  [&](ecs::World * w, const Render::EngineUiRenderCommand * b)
+                                  {
                                       total_draws += b->drawCalls;
                                       total_triangles += b->triangles;
                                       buf->executeSecondary(b->buf);
@@ -683,162 +691,160 @@ namespace RxEngine
     }
 
     void Renderer::ensureShadowImages(uint32_t
-    shadowMapSize,
-    uint32_t numCascades
+                                      shadowMapSize,
+                                      uint32_t numCascades
     )
-{
-    if (
-    shadowMap_ && shadowMap_
-    ->extent_.width == shadowMapSize)
-{
-    return;
-}
-auto device = engine_->getDevice();
-shadowImagesChanged = true;
-shadowMap_ = device->createImage(
-    device->GetDepthFormat(false),
-    {shadowMapSize, shadowMapSize, 1},
-    1,
-    numCascades,
-    vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled
-);
-
-wholeShadowMapView_ = device->createImageView(
-    shadowMap_,
-    vk::ImageViewType::e2DArray, vk::ImageAspectFlagBits::eDepth, 0, numCascades
-);
-
-cascadeViews_.
-resize(numCascades);
-cascadeFrameBuffers_.
-resize(numCascades);
-
-for (
-uint32_t i = 0;
-i<numCascades;
-++i) {
-cascadeViews_[i] = device->
-createImageView(
-    shadowMap_,
-    vk::ImageViewType::e2DArray,
-    vk::ImageAspectFlagBits::eDepth, i,
-1);
-
-std::vector<vk::ImageView> attachments = {cascadeViews_[i]->handle_};
-
-cascadeFrameBuffers_[i] =
-std::make_shared<RxCore::FrameBuffer>(
-    device_,
-    device_
-->
-getDevice()
-.createFramebuffer(
-{
-{
-},
-depthRenderPass_, attachments, shadowMapSize, shadowMapSize, 1
-}));
-}
-
-if (!shadowSampler_) {
-vk::SamplerCreateInfo sci;
-sci.
-setMagFilter(vk::Filter::eLinear)
-.
-setMinFilter(vk::Filter::eLinear)
-.
-setAddressModeU(vk::SamplerAddressMode::eClampToEdge)
-.
-setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
-.setMaxLod(5.0f)
-.
-setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
-
-shadowSampler_ = device->createSampler(sci);
-}
-}
-
-void Renderer::setScissorAndViewport(
-    vk::Extent2D extent,
-    std::shared_ptr<RxCore::SecondaryCommandBuffer> buf,
-    bool flipY) const
-{
-    buf->setScissor(
-        {
-            {0,            0},
-            {extent.width, extent.height}
+    {
+        if (
+            shadowMap_ && shadowMap_
+                          ->extent_.width == shadowMapSize) {
+            return;
         }
-    );
-    buf->setViewport(
-        .0f, flipY ? static_cast<float>(extent.height) : 0.0f, static_cast<float>(extent.width),
-        flipY ? -static_cast<float>(extent.height) : static_cast<float>(extent.height), 0.0f,
-        1.0f
-    );
-}
+        auto device = engine_->getDevice();
+        shadowImagesChanged = true;
+        shadowMap_ = device->createImage(
+            device->GetDepthFormat(false),
+            {shadowMapSize, shadowMapSize, 1},
+            1,
+            numCascades,
+            vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled
+        );
 
-void Renderer::cullEntitiesProj(
-    const XMMATRIX & proj,
-    const XMMATRIX & view,
-    const std::shared_ptr<const std::vector<RenderEntity>> & entities,
-    std::vector<uint32_t> & selectedEntities)
-{
-    OPTICK_EVENT()
-    BoundingFrustum frustum(proj, true), viewFrustum;
+        wholeShadowMapView_ = device->createImageView(
+            shadowMap_,
+            vk::ImageViewType::e2DArray, vk::ImageAspectFlagBits::eDepth, 0, numCascades
+        );
 
-    frustum.Transform(viewFrustum, XMMatrixInverse(nullptr, view));
+        cascadeViews_.
+            resize(numCascades);
+        cascadeFrameBuffers_.
+            resize(numCascades);
 
-    auto ec = static_cast<uint32_t>(entities->size());
+        for (
+            uint32_t i = 0;
+            i < numCascades;
+            ++i) {
+            cascadeViews_[i] = device->
+                createImageView(
+                    shadowMap_,
+                    vk::ImageViewType::e2DArray,
+                    vk::ImageAspectFlagBits::eDepth, i,
+                    1);
 
-    selectedEntities.reserve(ec);
-    auto & E = *entities;
+            std::vector<vk::ImageView> attachments = {cascadeViews_[i]->handle_};
 
-    for (uint32_t i = 0; i < ec; i++) {
-        if (viewFrustum.Intersects(E[i].boundsSphere)) {
-            //} frustum.isSphereVisible(E[i].boundsSphere)) {
-            selectedEntities.insert(selectedEntities.end(), i);
+            cascadeFrameBuffers_[i] =
+                std::make_shared<RxCore::FrameBuffer>(
+                    device_,
+                    device_
+                    ->
+                    getDevice()
+                    .createFramebuffer(
+                        {
+                            {
+                            },
+                            depthRenderPass_, attachments, shadowMapSize, shadowMapSize, 1
+                        }));
+        }
+
+        if (!shadowSampler_) {
+            vk::SamplerCreateInfo sci;
+            sci.
+                setMagFilter(vk::Filter::eLinear)
+                .
+                setMinFilter(vk::Filter::eLinear)
+                .
+                setAddressModeU(vk::SamplerAddressMode::eClampToEdge)
+                .
+                setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
+                .setMaxLod(5.0f)
+                .
+                setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
+
+            shadowSampler_ = device->createSampler(sci);
         }
     }
-    OPTICK_TAG("Before Cull", entities->size())
-    OPTICK_TAG("Select from Cull", selectedEntities.size())
-}
 
-void Renderer::cullEntitiesOrtho(
-    const BoundingOrientedBox & cullBox,
-    const std::shared_ptr<const std::vector<RenderEntity>> & entities,
-    std::vector<uint32_t> & selectedEntities)
-{
-    OPTICK_EVENT()
-
-    auto ec = static_cast<uint32_t>(entities->size());
-
-    selectedEntities.reserve(ec);
-    auto & E = *entities;
-
-    for (uint32_t i = 0; i < ec; i++) {
-        if (cullBox.Intersects(E[i].boundsSphere)) {
-            //} frustum.isSphereVisible(E[i].boundsSphere)) {
-            selectedEntities.insert(selectedEntities.end(), i);
-        }
+    void Renderer::setScissorAndViewport(
+        vk::Extent2D extent,
+        std::shared_ptr<RxCore::SecondaryCommandBuffer> buf,
+        bool flipY) const
+    {
+        buf->setScissor(
+            {
+                {0, 0},
+                {extent.width, extent.height}
+            }
+        );
+        buf->setViewport(
+            .0f, flipY ? static_cast<float>(extent.height) : 0.0f, static_cast<float>(extent.width),
+            flipY ? -static_cast<float>(extent.height) : static_cast<float>(extent.height), 0.0f,
+            1.0f
+        );
     }
-    OPTICK_TAG("Before Cull", entities->size())
-    OPTICK_TAG("Select from Cull", selectedEntities.size())
-}
 
-float Renderer::getSphereSize(
-    const XMMATRIX & projView,
-    const XMVECTOR & viewRight,
-    const BoundingSphere & sphere)
-{
-    auto p1 = XMLoadFloat3(&sphere.Center);
-    auto p2 = XMVectorAdd(
-        p1,
-        XMVectorScale(viewRight, sphere.Radius)
-    );
+    void Renderer::cullEntitiesProj(
+        const XMMATRIX & proj,
+        const XMMATRIX & view,
+        const std::shared_ptr<const std::vector<RenderEntity>> & entities,
+        std::vector<uint32_t> & selectedEntities)
+    {
+        OPTICK_EVENT()
+        BoundingFrustum frustum(proj, true), viewFrustum;
 
-    p1 = XMVector3TransformCoord(p1, projView);
-    p2 = XMVector3TransformCoord(p2, projView);
+        frustum.Transform(viewFrustum, XMMatrixInverse(nullptr, view));
 
-    return XMVectorGetX(XMVectorAbs(XMVectorSubtract(p1, p2))) / 2.0f;
-}
+        auto ec = static_cast<uint32_t>(entities->size());
 
+        selectedEntities.reserve(ec);
+        auto & E = *entities;
+
+        for (uint32_t i = 0; i < ec; i++) {
+            if (viewFrustum.Intersects(E[i].boundsSphere)) {
+                //} frustum.isSphereVisible(E[i].boundsSphere)) {
+                selectedEntities.insert(selectedEntities.end(), i);
+            }
+        }
+        OPTICK_TAG("Before Cull", entities->size())
+        OPTICK_TAG("Select from Cull", selectedEntities.size())
+    }
+
+    void Renderer::cullEntitiesOrtho(
+        const BoundingOrientedBox & cullBox,
+        const std::shared_ptr<const std::vector<RenderEntity>> & entities,
+        std::vector<uint32_t> & selectedEntities)
+    {
+        OPTICK_EVENT()
+
+        auto ec = static_cast<uint32_t>(entities->size());
+
+        selectedEntities.reserve(ec);
+        auto & E = *entities;
+
+        for (uint32_t i = 0; i < ec; i++) {
+            if (cullBox.Intersects(E[i].boundsSphere)) {
+                //} frustum.isSphereVisible(E[i].boundsSphere)) {
+                selectedEntities.insert(selectedEntities.end(), i);
+            }
+        }
+        OPTICK_TAG("Before Cull", entities->size())
+        OPTICK_TAG("Select from Cull", selectedEntities.size())
+    }
+
+    float Renderer::getSphereSize(
+        const XMMATRIX & projView,
+        const XMVECTOR & viewRight,
+        const BoundingSphere & sphere)
+    {
+        auto p1 = XMLoadFloat3(&sphere.Center);
+        auto p2 = XMVectorAdd(
+            p1,
+            XMVectorScale(viewRight, sphere.Radius)
+        );
+
+        p1 = XMVector3TransformCoord(p1, projView);
+        p2 = XMVector3TransformCoord(p2, projView);
+
+        return XMVectorGetX(XMVectorAbs(XMVectorSubtract(p1, p2))) / 2.0f;
+    }
 } // namespace RXCore

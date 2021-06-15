@@ -129,14 +129,6 @@ namespace RxEngine
         std::vector<IndirectDrawCommandHeader> headers;
     };
 
-
-    struct UiCommandBuffer
-    {
-        std::shared_ptr<RxCore::SecondaryCommandBuffer> buf;
-        uint32_t triangles;
-        uint32_t drawCalls;
-    };
-
     struct FrameStatDetail
     {
         float cpuTime;
@@ -281,8 +273,6 @@ namespace RxEngine
         void startup();
 
         void render(
-            //const std::shared_ptr<RenderCamera> & camera,
-            //const std::vector<IRenderable *> & subsystems,
             vk::ImageView imageView,
             vk::Extent2D extent,
             std::vector<vk::Semaphore> waitSemaphores,

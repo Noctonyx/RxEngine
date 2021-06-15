@@ -184,7 +184,7 @@ namespace RxEngine
                         ImGui::TableSetupColumn("Value");
 
                         world->get<ComponentGui>(c)->
-                            editor(world.get(), world->getUpdate(entity.id, c));
+                               editor(world.get(), world->getUpdate(entity.id, c));
 
                         ImGui::EndTable();
                     }
@@ -215,12 +215,11 @@ namespace RxEngine
                             ImGui::TableSetupColumn("Value");
 
                             world->get<ComponentGui>(c)->
-                                editor(world.get(), world->getUpdate(entity.id, c));
+                                   editor(world.get(), world->getUpdate(entity.id, c));
 
                             ImGui::EndTable();
                         }
-                    }
-                    else {
+                    } else {
                         //                    ImGui::TableNextColumn();
                         //                  ImGui::TableNextColumn();
                     }
@@ -244,7 +243,7 @@ namespace RxEngine
 
         if (ImGui::Begin("Entities", &is_open)) {
 
-            ecs::Table* tab = world->getTableForArchetype(selectedArchetype);
+            ecs::Table * tab = world->getTableForArchetype(selectedArchetype);
 
             if (ImGui::BeginCombo(
                 "Archetype",
@@ -361,7 +360,7 @@ namespace RxEngine
                 ImGui::TableSetupScrollFreeze(0, 1);
                 ImGui::TableHeadersRow();
 
-                for (auto &[k, v]: world->allSingletons()) {
+                for (auto & [k, v]: world->allSingletons()) {
                     ImGui::TableNextRow();
                     ImGui::TableNextColumn();
                     if (ImGui::Selectable(
@@ -410,12 +409,13 @@ namespace RxEngine
         if (ImGui::Begin("Systems", &showWindow)) {
 
             auto pgs = world->getPipelineGroupSequence();
+            static ecs::entity_t selectedSystem = 0;
 
             if (ImGui::BeginTable(
                 "Pipeline", 4,
                 ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit |
-                ImGuiTableFlags_ScrollY,// | ImGuiTableFlags_RowBg,
-                ImVec2(0, 0))) {
+                ImGuiTableFlags_ScrollY, // | ImGuiTableFlags_RowBg,
+                ImVec2(0, 400))) {
                 ImGui::TableSetupColumn("Name");
                 ImGui::TableSetupColumn("Active");
                 ImGui::TableSetupColumn("Count");
@@ -431,8 +431,10 @@ namespace RxEngine
                     ImGui::TableNextColumn();
                     //ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
                     //ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f));
-                    ImGui::PushStyleColor(ImGuiCol_Text, static_cast<ImVec4>(ImColor(226, 255, 138)));
-                    bool open = ImGui::TreeNodeEx(world->description(pg).c_str(), ImGuiTreeNodeFlags_SpanFullWidth);
+                    ImGui::PushStyleColor(ImGuiCol_Text,
+                                          static_cast<ImVec4>(ImColor(226, 255, 138)));
+                    bool open = ImGui::TreeNodeEx(world->description(pg).c_str(),
+                                                  ImGuiTreeNodeFlags_SpanFullWidth);
                     ImGui::PopStyleColor(1);
 
                     ImGui::TableNextColumn();
@@ -441,11 +443,16 @@ namespace RxEngine
                     ImGui::TableNextColumn();
                     ImGui::Text("%.3f", sg->lastTime * 1000.f);
                     if (sg && open) {
-                        for (auto e : sg->executionSequence) {
+                        for (auto e: sg->executionSequence) {
                             auto sys = world->get<ecs::System>(e);
                             ImGui::TableNextRow();
-                            ImGui::TableNextColumn();
-                            ImGui::Text("%s", world->description(e).c_str());
+                            ImGui::TableNextColumn();                          
+                            if (ImGui::Selectable(
+                                world->description(e).c_str(),
+                                selectedSystem == e
+                            )) {
+                                selectedSystem = e;
+                            }
                             ImGui::TableNextColumn();
                             ImGui::Text("%s", sys->enabled ? "Active" : "Inactive");
                             ImGui::TableNextColumn();
@@ -457,7 +464,8 @@ namespace RxEngine
                     if (open) {
                         ImGui::TableNextRow();
                         ImGui::TableNextColumn();
-                        ImGui::PushStyleColor(ImGuiCol_Text, static_cast<ImVec4>(ImColor(138, 233, 255)));
+                        ImGui::PushStyleColor(ImGuiCol_Text,
+                                              static_cast<ImVec4>(ImColor(138, 233, 255)));
                         ImGui::Text("Deferred Processing");
                         ImGui::PopStyleColor();
 
@@ -470,6 +478,7 @@ namespace RxEngine
                     }
                     ImGui::PopID();
                 }
+            
 #if 0
                 for (auto x : v) {
                     if (x == 0) {
@@ -500,6 +509,58 @@ namespace RxEngine
             }
             ImGui::EndTable();
 
+            if (ImGui::BeginTable(
+                "FocussedSysatem", 2,
+                ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuterH |
+                ImGuiTableFlags_Resizable | ImGuiWindowFlags_NoBackground |
+                ImGuiTableFlags_NoBordersInBody
+            )) {
+                ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
+                //                ImGui::TableSetupColumn("Role", ImGuiTableColumnFlags_NoHide);
+                //ImGui::TableSetupColumn("Relation", ImGuiTableColumnFlags_NoHide);
+                ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_NoHide);
+                ImGui::TableHeadersRow();
+
+                if (selectedSystem) {
+
+                    auto sys = world->get<ecs::System>(selectedSystem);
+
+                    ImGui::TableNextRow();
+                    ImGui::TableNextColumn();
+                    ImGui::Text("Reads");
+                    ImGui::TableNextColumn();
+                    for (auto r : sys->reads) {
+                        ImGui::Text("%s", world->description(r).c_str());
+                    }
+
+                    ImGui::TableNextRow();
+                    ImGui::TableNextColumn();
+                    ImGui::Text("Writes");
+                    ImGui::TableNextColumn();
+                    for (auto r : sys->writes) {
+                        ImGui::Text("%s", world->description(r).c_str());
+                    }
+
+                    ImGui::TableNextRow();
+                    ImGui::TableNextColumn();
+                    ImGui::Text("StreamReads");
+                    ImGui::TableNextColumn();
+                    for (auto r : sys->streamReads) {
+                        ImGui::Text("%s", world->description(r).c_str());
+                    }
+
+                    ImGui::TableNextRow();
+                    ImGui::TableNextColumn();
+                    ImGui::Text("StreamWrites");
+                    ImGui::TableNextColumn();
+                    for (auto r : sys->streamWrites) {
+                        ImGui::Text("%s", world->description(r).c_str());
+                    }
+
+                }
+
+                ImGui::EndTable();
+            }
         }
         ImGui::End();
     }
@@ -680,8 +741,8 @@ namespace RxEngine
             ImGui::TableNextColumn();
             ImGui::Text(
                 "%s", system->query
-                      ? "Query"
-                      : (system->stream ? "Stream" : "Execute"));
+                          ? "Query"
+                          : (system->stream ? "Stream" : "Execute"));
 
             ImGui::TableNextRow();
             ImGui::TableNextColumn();

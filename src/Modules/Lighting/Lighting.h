@@ -2,6 +2,7 @@
 #include "DirectXCollision.h"
 #include "DirectXMath.h"
 #include "Modules/Module.h"
+#include "Modules/RTSCamera/RTSCamera.h"
 
 #define MAX_SHADOW_CASCADES 4
 
@@ -25,6 +26,12 @@ namespace RxEngine
         DirectX::XMFLOAT4X4 viewMatrix;
         DirectX::BoundingOrientedBox boBox;
         float splitDepth;
+    };
+
+    struct ShadowCascadeData
+    {
+        std::vector<ShadowCascade> cascades;
+        std::vector<float> cascadeSplits;
     };
 
     struct LightingShaderData
@@ -64,5 +71,12 @@ namespace RxEngine
 
         void startup() override;
         void shutdown() override;
+        void calculateCascades(uint32_t numberCascades,
+                               const RTSCamera * camera,
+                               const CameraProjection * proj,
+                               ShadowCascadeData & scd,
+                               DirectX::XMFLOAT3 lightDirection);
+
+        void createShadowCascadeData();
     };
 }
