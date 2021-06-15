@@ -72,11 +72,12 @@ namespace RxEngine
 
     struct RxJobAdaptor : ecs::JobInterface
     {
-        JobHandle create(std::function<void()> f) override;
+        JobHandle create(std::function<uint32_t()> f) override;
 
         void schedule(JobHandle job_handle) override;
         bool isComplete(JobHandle job_handle) const override;
         void awaitCompletion(JobHandle job_handle) override;
+        uint32_t getJobResult(JobHandle job_handle) override;
     };
 
     struct WindowDetails

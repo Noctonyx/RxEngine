@@ -188,6 +188,19 @@ namespace RxEngine
         RxAssets::MeshSaveData msd;
 
         RxAssets::Loader::loadMesh(msd, meshFile);
+        DirectX::BoundingBox bb;
+        DirectX::XMFLOAT3 p1f(msd.minpx, msd.minpy, msd.minpz);
+        DirectX::XMFLOAT3 p2f(msd.maxpx, msd.maxpy, msd.maxpz);
+
+        DirectX::XMVECTOR p1, p2;
+
+        p1 = DirectX::XMLoadFloat3(&p1f);
+        p2 = DirectX::XMLoadFloat3(&p2f);
+        
+        DirectX::BoundingBox::CreateFromPoints(bb, p1, p2);
+
+        DirectX::BoundingSphere bs;
+        DirectX::BoundingSphere::CreateFromBoundingBox(bs, bb);
 
         std::copy(msd.indices.begin(), msd.indices.end(), mesh_indices.begin());
         std::transform(
@@ -219,7 +232,8 @@ namespace RxEngine
                                            {
                                                .vertexOffset = smb->vertexCount,
                                                .indexOffset = smb->indexCount,
-                                               .indexCount = static_cast<uint32_t>(mesh_indices.size())
+                                               .indexCount = static_cast<uint32_t>(mesh_indices.size()),
+                                               .boundSphere = bs
                                            }
                                        )
                                        .set<InBundle>({{mb}});

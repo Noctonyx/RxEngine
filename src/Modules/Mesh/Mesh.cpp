@@ -135,7 +135,7 @@ namespace RxEngine
         rdc.vertexOffset = mesh->vertexOffset;
         rdc.indexCount = mesh->indexCount;
         rdc.indexOffset = mesh->indexOffset;
-        //rdc.boundSphere = mesh->boundSphere;
+        rdc.boundSphere = mesh->boundSphere;
 
         const auto bundle_entity = mesh_entity.getRelatedEntity<InBundle>();
         if (!bundle_entity) {

@@ -182,39 +182,43 @@ namespace RxEngine
                 auto r = reinterpret_cast<const ecs::Relation *>(entity.getWorld()->get(
                     entity.id, c
                 ));
-                auto object = entity.getHandle(r->entity);
+                if (r) {
+                    auto object = entity.getHandle(r->entity);
 
-                ImGui::TableNextRow();
-                ImGui::TableNextColumn();
-                ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-                bool open = ImGui::TreeNodeEx(
-                    object.description().c_str(),
-                    ImGuiTreeNodeFlags_SpanFullWidth,
-                    "%s(%s)", cd->name.c_str(),
-                    object.description().c_str());
-                ImGui::TableNextColumn();
-                if (world->has<ComponentGui>(c)) {
-                    if (ImGui::BeginTable(
-                        "ComponentGui", 2, /*ImGuiTableFlags_Borders | */
-                        ImGuiTableFlags_Resizable |
-                        ImGuiTableFlags_Hideable
-                    )) {
-                        ImGui::TableSetupColumn("Name");
-                        ImGui::TableSetupColumn("Value");
+                    ImGui::TableNextRow();
+                    ImGui::TableNextColumn();
+                    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+                    bool open = ImGui::TreeNodeEx(
+                        object.description().c_str(),
+                        ImGuiTreeNodeFlags_SpanFullWidth,
+                        "%s(%s)", cd->name.c_str(),
+                        object.description().c_str());
+                    ImGui::TableNextColumn();
+                    if (world->has<ComponentGui>(c)) {
+                        if (ImGui::BeginTable(
+                            "ComponentGui", 2, /*ImGuiTableFlags_Borders | */
+                            ImGuiTableFlags_Resizable |
+                            ImGuiTableFlags_Hideable
+                        )) {
+                            ImGui::TableSetupColumn("Name");
+                            ImGui::TableSetupColumn("Value");
 
-                        world->get<ComponentGui>(c)->
-                            editor(world.get(), world->getUpdate(entity.id, c));
+                            world->get<ComponentGui>(c)->
+                                editor(world.get(), world->getUpdate(entity.id, c));
 
-                        ImGui::EndTable();
+                            ImGui::EndTable();
+                        }
                     }
-                } else {
-                    //                    ImGui::TableNextColumn();
-                    //                  ImGui::TableNextColumn();
-                }
-                if (open) {
-                    //ecsInspectorIsAEntity(object, selectedEntity);
-                    ecsInspectorEntityComponents(object, selectedEntity);
-                    ImGui::TreePop();
+                    else {
+                        //                    ImGui::TableNextColumn();
+                        //                  ImGui::TableNextColumn();
+                    }
+
+                    if (open) {
+                        //ecsInspectorIsAEntity(object, selectedEntity);
+                        ecsInspectorEntityComponents(object, selectedEntity);
+                        ImGui::TreePop();
+                    }
                 }
             }
         }

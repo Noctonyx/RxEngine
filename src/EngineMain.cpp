@@ -740,26 +740,32 @@ namespace RxEngine
         lua->new_usertype<FSM>("FSM", "getCurrentState", &FSM::getCurrentState);
     }
 
-    ecs::JobInterface::JobHandle RxJobAdaptor::create(std::function<void()> f)
+    ecs::JobInterface::JobHandle RxJobAdaptor::create(std::function<uint32_t()> f)
     {
-        return RxCore::CreateJob<void>(f);
+        return RxCore::CreateJob<uint32_t>(f);
     }
 
     void RxJobAdaptor::schedule(ecs::JobInterface::JobHandle job_handle)
     {
-        auto x = std::static_pointer_cast<RxCore::Job<void>>(job_handle);
+        auto x = std::static_pointer_cast<RxCore::Job<uint32_t>>(job_handle);
         x->schedule();
     }
 
     bool RxJobAdaptor::isComplete(ecs::JobInterface::JobHandle job_handle) const
     {
-        auto x = std::static_pointer_cast<RxCore::Job<void>>(job_handle);
+        auto x = std::static_pointer_cast<RxCore::Job<uint32_t>>(job_handle);
         return x->isCompleted();
     }
 
     void RxJobAdaptor::awaitCompletion(ecs::JobInterface::JobHandle job_handle)
     {
-        auto x = std::static_pointer_cast<RxCore::Job<void>>(job_handle);
+        auto x = std::static_pointer_cast<RxCore::Job<uint32_t>>(job_handle);
         x->waitComplete();
+    }
+
+    uint32_t RxJobAdaptor::getJobResult(ecs::JobInterface::JobHandle job_handle)
+    {
+        auto x = std::static_pointer_cast<RxCore::Job<uint32_t>>(job_handle);
+        return x->result;
     }
 } // namespace RXEngine
