@@ -45,6 +45,17 @@ namespace RxEngine
             ImGui::Text("Frame Index");
             ImGui::TableNextColumn();
             ImGui::Text("%d", fs->index);
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Draw Calls");
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", fs->frames[fs->index].drawCalls);
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Triangles");
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", fs->frames[fs->index].triangles);
         }
     }
 

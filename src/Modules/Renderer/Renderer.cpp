@@ -466,6 +466,10 @@ namespace RxEngine
             buf->addSecondaryBuffer(res.value(), ERenderSequence::RenderSequenceOpaque);
         }
 #endif
+
+        uint32_t total_triangles = 0;
+        uint32_t total_draws = 0;
+
         std::shared_ptr<RxCore::FrameBuffer> frame_buffer;
         frame_buffer = createRenderFrameBuffer(imageView, extent);
         {
@@ -506,6 +510,8 @@ namespace RxEngine
                         world_->getStream<Render::OpaqueRenderCommand>()
                               ->each<Render::OpaqueRenderCommand>(
                                   [&](ecs::World * w, const Render::OpaqueRenderCommand * b) {
+                                      total_draws += b->drawCalls;
+                                      total_triangles += b->triangles;
                                       buf->executeSecondary(b->buf);
                                       return true;
                                   }
@@ -514,17 +520,21 @@ namespace RxEngine
                         world_->getStream<Render::GameUiRenderCommand>()
                               ->each<Render::GameUiRenderCommand>(
                                   [&](ecs::World * w, const Render::GameUiRenderCommand * b) {
+                                      total_draws += b->drawCalls;
+                                      total_triangles += b->triangles;
                                       buf->executeSecondary(b->buf);
                                       return true;
                                   }
                               );
                         world_->getStream<Render::EngineUiRenderCommand>()
-                        ->each<Render::EngineUiRenderCommand>(
-                            [&](ecs::World * w, const Render::EngineUiRenderCommand * b) {
-                                buf->executeSecondary(b->buf);
-                                return true;
-                            }
-                            );
+                              ->each<Render::EngineUiRenderCommand>(
+                                  [&](ecs::World * w, const Render::EngineUiRenderCommand * b) {
+                                      total_draws += b->drawCalls;
+                                      total_triangles += b->triangles;
+                                      buf->executeSecondary(b->buf);
+                                      return true;
+                                  }
+                              );
                     }
                     buf->EndRenderPass();
                 }
@@ -553,6 +563,8 @@ namespace RxEngine
         fs->frameNo++;
         fs->index = (fs->index + 1) % 10;
         fs->frames[fs->index].cpuTime = static_cast<float>(cpuTime);
+        fs->frames[fs->index].drawCalls = total_draws;
+        fs->frames[fs->index].triangles = total_triangles;
     }
 
 #if 0
@@ -670,142 +682,163 @@ namespace RxEngine
         device_->getDevice().destroyRenderPass(depthRenderPass_);
     }
 
-    void Renderer::ensureShadowImages(uint32_t shadowMapSize, uint32_t numCascades)
-    {
-        if (shadowMap_ && shadowMap_->extent_.width == shadowMapSize) {
-            return;
+    void Renderer::ensureShadowImages(uint32_t
+    shadowMapSize,
+    uint32_t numCascades
+    )
+{
+    if (
+    shadowMap_ && shadowMap_
+    ->extent_.width == shadowMapSize)
+{
+    return;
+}
+auto device = engine_->getDevice();
+shadowImagesChanged = true;
+shadowMap_ = device->createImage(
+    device->GetDepthFormat(false),
+    {shadowMapSize, shadowMapSize, 1},
+    1,
+    numCascades,
+    vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled
+);
+
+wholeShadowMapView_ = device->createImageView(
+    shadowMap_,
+    vk::ImageViewType::e2DArray, vk::ImageAspectFlagBits::eDepth, 0, numCascades
+);
+
+cascadeViews_.
+resize(numCascades);
+cascadeFrameBuffers_.
+resize(numCascades);
+
+for (
+uint32_t i = 0;
+i<numCascades;
+++i) {
+cascadeViews_[i] = device->
+createImageView(
+    shadowMap_,
+    vk::ImageViewType::e2DArray,
+    vk::ImageAspectFlagBits::eDepth, i,
+1);
+
+std::vector<vk::ImageView> attachments = {cascadeViews_[i]->handle_};
+
+cascadeFrameBuffers_[i] =
+std::make_shared<RxCore::FrameBuffer>(
+    device_,
+    device_
+->
+getDevice()
+.createFramebuffer(
+{
+{
+},
+depthRenderPass_, attachments, shadowMapSize, shadowMapSize, 1
+}));
+}
+
+if (!shadowSampler_) {
+vk::SamplerCreateInfo sci;
+sci.
+setMagFilter(vk::Filter::eLinear)
+.
+setMinFilter(vk::Filter::eLinear)
+.
+setAddressModeU(vk::SamplerAddressMode::eClampToEdge)
+.
+setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
+.setMaxLod(5.0f)
+.
+setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
+
+shadowSampler_ = device->createSampler(sci);
+}
+}
+
+void Renderer::setScissorAndViewport(
+    vk::Extent2D extent,
+    std::shared_ptr<RxCore::SecondaryCommandBuffer> buf,
+    bool flipY) const
+{
+    buf->setScissor(
+        {
+            {0,            0},
+            {extent.width, extent.height}
         }
-        auto device = engine_->getDevice();
-        shadowImagesChanged = true;
-        shadowMap_ = device->createImage(
-            device->GetDepthFormat(false),
-            {shadowMapSize, shadowMapSize, 1},
-            1,
-            numCascades,
-            vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled);
+    );
+    buf->setViewport(
+        .0f, flipY ? static_cast<float>(extent.height) : 0.0f, static_cast<float>(extent.width),
+        flipY ? -static_cast<float>(extent.height) : static_cast<float>(extent.height), 0.0f,
+        1.0f
+    );
+}
 
-        wholeShadowMapView_ = device->createImageView(
-            shadowMap_,
-            vk::ImageViewType::e2DArray, vk::ImageAspectFlagBits::eDepth, 0, numCascades);
+void Renderer::cullEntitiesProj(
+    const XMMATRIX & proj,
+    const XMMATRIX & view,
+    const std::shared_ptr<const std::vector<RenderEntity>> & entities,
+    std::vector<uint32_t> & selectedEntities)
+{
+    OPTICK_EVENT()
+    BoundingFrustum frustum(proj, true), viewFrustum;
 
-        cascadeViews_.resize(numCascades);
-        cascadeFrameBuffers_.resize(numCascades);
+    frustum.Transform(viewFrustum, XMMatrixInverse(nullptr, view));
 
-        for (uint32_t i = 0; i < numCascades; ++i) {
-            cascadeViews_[i] = device->
-                createImageView(
-                    shadowMap_,
-                    vk::ImageViewType::e2DArray,
-                    vk::ImageAspectFlagBits::eDepth, i,
-                    1);
+    auto ec = static_cast<uint32_t>(entities->size());
 
-            std::vector<vk::ImageView> attachments = {cascadeViews_[i]->handle_};
+    selectedEntities.reserve(ec);
+    auto & E = *entities;
 
-            cascadeFrameBuffers_[i] =
-                std::make_shared<RxCore::FrameBuffer>(
-                    device_,
-                    device_->getDevice()
-                    .createFramebuffer(
-                        {
-                            {
-                            },
-                            depthRenderPass_, attachments, shadowMapSize, shadowMapSize, 1
-                        }));
-        }
-
-        if (!shadowSampler_) {
-            vk::SamplerCreateInfo sci;
-            sci.setMagFilter(vk::Filter::eLinear)
-               .setMinFilter(vk::Filter::eLinear)
-               .setAddressModeU(vk::SamplerAddressMode::eClampToEdge)
-               .setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
-               .setMaxLod(5.0f)
-               .setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
-
-            shadowSampler_ = device->createSampler(sci);
+    for (uint32_t i = 0; i < ec; i++) {
+        if (viewFrustum.Intersects(E[i].boundsSphere)) {
+            //} frustum.isSphereVisible(E[i].boundsSphere)) {
+            selectedEntities.insert(selectedEntities.end(), i);
         }
     }
+    OPTICK_TAG("Before Cull", entities->size())
+    OPTICK_TAG("Select from Cull", selectedEntities.size())
+}
 
-    void Renderer::setScissorAndViewport(
-        vk::Extent2D extent,
-        std::shared_ptr<RxCore::SecondaryCommandBuffer> buf,
-        bool flipY) const
-    {
-        buf->setScissor(
-            {
-                {0, 0},
-                {extent.width, extent.height}
-            });
-        buf->setViewport(
-            .0f, flipY ? static_cast<float>(extent.height) : 0.0f, static_cast<float>(extent.width),
-            flipY ? -static_cast<float>(extent.height) : static_cast<float>(extent.height), 0.0f,
-            1.0f);
-    }
+void Renderer::cullEntitiesOrtho(
+    const BoundingOrientedBox & cullBox,
+    const std::shared_ptr<const std::vector<RenderEntity>> & entities,
+    std::vector<uint32_t> & selectedEntities)
+{
+    OPTICK_EVENT()
 
+    auto ec = static_cast<uint32_t>(entities->size());
 
-    void Renderer::cullEntitiesProj(
-        const XMMATRIX & proj,
-        const XMMATRIX & view,
-        const std::shared_ptr<const std::vector<RenderEntity>> & entities,
-        std::vector<uint32_t> & selectedEntities)
-    {
-        OPTICK_EVENT()
-        BoundingFrustum frustum(proj, true), viewFrustum;
+    selectedEntities.reserve(ec);
+    auto & E = *entities;
 
-        frustum.Transform(viewFrustum, XMMatrixInverse(nullptr, view));
-
-        auto ec = static_cast<uint32_t>(entities->size());
-
-        selectedEntities.reserve(ec);
-        auto & E = *entities;
-
-        for (uint32_t i = 0; i < ec; i++) {
-            if (viewFrustum.Intersects(E[i].boundsSphere)) {
-                //} frustum.isSphereVisible(E[i].boundsSphere)) {
-                selectedEntities.insert(selectedEntities.end(), i);
-            }
+    for (uint32_t i = 0; i < ec; i++) {
+        if (cullBox.Intersects(E[i].boundsSphere)) {
+            //} frustum.isSphereVisible(E[i].boundsSphere)) {
+            selectedEntities.insert(selectedEntities.end(), i);
         }
-        OPTICK_TAG("Before Cull", entities->size())
-        OPTICK_TAG("Select from Cull", selectedEntities.size())
     }
+    OPTICK_TAG("Before Cull", entities->size())
+    OPTICK_TAG("Select from Cull", selectedEntities.size())
+}
 
+float Renderer::getSphereSize(
+    const XMMATRIX & projView,
+    const XMVECTOR & viewRight,
+    const BoundingSphere & sphere)
+{
+    auto p1 = XMLoadFloat3(&sphere.Center);
+    auto p2 = XMVectorAdd(
+        p1,
+        XMVectorScale(viewRight, sphere.Radius)
+    );
 
-    void Renderer::cullEntitiesOrtho(
-        const BoundingOrientedBox & cullBox,
-        const std::shared_ptr<const std::vector<RenderEntity>> & entities,
-        std::vector<uint32_t> & selectedEntities)
-    {
-        OPTICK_EVENT()
+    p1 = XMVector3TransformCoord(p1, projView);
+    p2 = XMVector3TransformCoord(p2, projView);
 
-        auto ec = static_cast<uint32_t>(entities->size());
+    return XMVectorGetX(XMVectorAbs(XMVectorSubtract(p1, p2))) / 2.0f;
+}
 
-        selectedEntities.reserve(ec);
-        auto & E = *entities;
-
-        for (uint32_t i = 0; i < ec; i++) {
-            if (cullBox.Intersects(E[i].boundsSphere)) {
-                //} frustum.isSphereVisible(E[i].boundsSphere)) {
-                selectedEntities.insert(selectedEntities.end(), i);
-            }
-        }
-        OPTICK_TAG("Before Cull", entities->size())
-        OPTICK_TAG("Select from Cull", selectedEntities.size())
-    }
-
-    float Renderer::getSphereSize(
-        const XMMATRIX & projView,
-        const XMVECTOR & viewRight,
-        const BoundingSphere & sphere)
-    {
-        auto p1 = XMLoadFloat3(&sphere.Center);
-        auto p2 = XMVectorAdd(
-            p1,
-            XMVectorScale(viewRight, sphere.Radius)
-        );
-
-        p1 = XMVector3TransformCoord(p1, projView);
-        p2 = XMVector3TransformCoord(p2, projView);
-
-        return XMVectorGetX(XMVectorAbs(XMVectorSubtract(p1, p2))) / 2.0f;
-    }
 } // namespace RXCore

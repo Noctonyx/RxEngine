@@ -474,6 +474,8 @@ namespace RxEngine
 
         // Create Vertex/Index Buffers
         auto[vb, ib] = createBuffers(engine_->getDevice());
+        uint32_t triangles = 0;
+        uint32_t drawCalls = 0;
 
         buf->begin(pipeline->renderPass, pipeline->subPass);
         {
@@ -527,6 +529,8 @@ namespace RxEngine
                             }
                         }
                     );
+                    drawCalls++;
+                    triangles += draw_cmd->ElemCount / 3;
                     buf->DrawIndexed(
                         draw_cmd->ElemCount, 1, draw_cmd->IdxOffset + idx_offset,
                         draw_cmd->VtxOffset + vb_offset, 0
@@ -540,7 +544,7 @@ namespace RxEngine
         buf->end();
 
         world_->getStream<Render::EngineUiRenderCommand>()
-              ->add<Render::EngineUiRenderCommand>({buf});
+              ->add<Render::EngineUiRenderCommand>({buf, triangles, drawCalls});
     }
 
     void IMGuiRender::updateGui()

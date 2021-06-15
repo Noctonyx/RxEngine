@@ -133,11 +133,15 @@ namespace RxEngine
     struct UiCommandBuffer
     {
         std::shared_ptr<RxCore::SecondaryCommandBuffer> buf;
+        uint32_t triangles;
+        uint32_t drawCalls;
     };
 
     struct FrameStatDetail
     {
         float cpuTime;
+        uint32_t triangles;
+        uint32_t drawCalls;
     };
 
     struct FrameStats

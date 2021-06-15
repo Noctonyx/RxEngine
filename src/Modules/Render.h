@@ -56,16 +56,22 @@ namespace RxEngine
         struct GameUiRenderCommand
         {
             std::shared_ptr<RxCore::SecondaryCommandBuffer> buf;
+            uint32_t triangles;
+            uint32_t drawCalls;
         };
 
         struct EngineUiRenderCommand
         {
             std::shared_ptr<RxCore::SecondaryCommandBuffer> buf;
+            uint32_t triangles;
+            uint32_t drawCalls;
         };
 
         struct OpaqueRenderCommand
         {
             std::shared_ptr<RxCore::SecondaryCommandBuffer> buf;
+            uint32_t triangles;
+            uint32_t drawCalls;
         };
 
 #if 0

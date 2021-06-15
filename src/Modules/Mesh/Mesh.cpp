@@ -200,6 +200,8 @@ namespace RxEngine
         auto buf = RxCore::threadResources.getCommandBuffer();
 
         bool flipY = true;
+        uint32_t triangles = 0;
+        uint32_t drawCalls = 0;
 
         buf->begin(pipeline->renderPass, pipeline->subPass);
         {
@@ -226,17 +228,19 @@ namespace RxEngine
 
             auto da = instanceBuffer->getDeviceAddress();
             buf->pushConstant(vk::ShaderStageFlagBits::eVertex, 8, sizeof(da), &da);
-            MeshModule::renderIndirectDraws(world, ids, buf);
+            MeshModule::renderIndirectDraws(world, ids, buf, triangles, drawCalls);
         }
         buf->end();
 
         world->getStream<Render::OpaqueRenderCommand>()
-             ->add<Render::OpaqueRenderCommand>({buf});
+             ->add<Render::OpaqueRenderCommand>({buf, triangles, drawCalls});
     }
 
     void MeshModule::renderIndirectDraws(ecs::World * world,
                                          IndirectDrawSet ids,
-                                         const std::shared_ptr<RxCore::SecondaryCommandBuffer> & buf)
+                                         const std::shared_ptr<RxCore::SecondaryCommandBuffer> & buf,
+                                         uint32_t & triangles, uint32_t & drawCalls
+                                         )
     {
         OPTICK_EVENT()
         ecs::entity_t current_pipeline{};
@@ -274,6 +278,8 @@ namespace RxEngine
                 OPTICK_EVENT("Draw Indexed")
                 for (uint32_t i = 0; i < h.commandCount; i++) {
                     auto & c = ids.commands[i + h.commandStart];
+                    drawCalls++;
+                    triangles += c.indexCount * c.instanceCount / 3;
                     buf->DrawIndexed(
                         c.indexCount, c.instanceCount, c.indexOffset, c.vertexOffset,
                         c.instanceOffset

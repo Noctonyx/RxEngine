@@ -116,7 +116,8 @@ namespace RxEngine
 
         static void renderIndirectDraws(ecs::World * world,
                                         IndirectDrawSet ids,
-                                        const std::shared_ptr<RxCore::SecondaryCommandBuffer> & buf);
+                                        const std::shared_ptr<RxCore::SecondaryCommandBuffer> & buf,
+                                        uint32_t & triangles, uint32_t & drawCalls);
         static void drawInstances(std::shared_ptr<RxCore::Buffer> instanceBuffer,
                                   ecs::World * world,
                                   const GraphicsPipeline * pipeline,

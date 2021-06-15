@@ -382,6 +382,8 @@ namespace RxEngine
             return;
         }
         auto [vb, ib] = CreateBuffers();
+        uint32_t triangles = 0;
+        uint32_t drawCalls = 0;
 
         buf->begin(pipeline->renderPass, pipeline->subPass);
         OPTICK_GPU_CONTEXT(buf->Handle());
@@ -418,6 +420,8 @@ namespace RxEngine
                     0,
                     sizeof(RmlPushConstantData),
                     &pd);
+                drawCalls++;
+                triangles += static_cast<uint32_t>(rc.indexCount) / 3;
                 buf->DrawIndexed(
                     static_cast<uint32_t>(rc.indexCount),
                     1,
@@ -432,7 +436,7 @@ namespace RxEngine
         indices_.clear();
 
         world->getStream<Render::GameUiRenderCommand>()
-             ->add<Render::GameUiRenderCommand>({buf});
+             ->add<Render::GameUiRenderCommand>({buf, triangles, drawCalls});
     }
 
     RmlRenderInterface::~RmlRenderInterface()
