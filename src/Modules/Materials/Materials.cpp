@@ -281,9 +281,9 @@ namespace RxEngine
             p.offset = pcData.get<uint32_t>("offset");
             p.size = pcData.get<uint32_t>("size");
         }
-        plci.setLayoutCount = dsls.size();
+        plci.setLayoutCount = static_cast<uint32_t>(dsls.size());
         plci.pSetLayouts = dsls.data();
-        plci.pushConstantRangeCount = pcr.size();
+        plci.pushConstantRangeCount = static_cast<uint32_t>(pcr.size());
         plci.pPushConstantRanges = pcr.data();
 
         auto l = device->createPipelineLayout(plci);
@@ -1054,7 +1054,7 @@ namespace RxEngine
         gpci.pVertexInputState = (&pvisci);
         gpci.pDynamicState = (&pdsci);
         gpci.layout = (layout);
-        gpci.stageCount = shaderStages.size();
+        gpci.stageCount = static_cast<uint32_t>(shaderStages.size());
         gpci.pStages = shaderStages.data();
         gpci.renderPass = rp;
         gpci.subpass = subpass;
@@ -1112,16 +1112,16 @@ namespace RxEngine
             }
 
             bindings.push_back({ 0, offset, VK_VERTEX_INPUT_RATE_VERTEX });
-            pvisci.vertexBindingDescriptionCount = bindings.size();
+            pvisci.vertexBindingDescriptionCount = static_cast<uint32_t>(bindings.size());
             pvisci.pVertexBindingDescriptions = bindings.data();
-            pvisci.vertexAttributeDescriptionCount = attributes.size();
+            pvisci.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributes.size());
             pvisci.pVertexAttributeDescriptions = attributes.data();
 
         }
-        pcbsci.attachmentCount = attachments.size();
+        pcbsci.attachmentCount = static_cast<uint32_t>(attachments.size());
         pcbsci.pAttachments = attachments.data();
 
-        pdsci.dynamicStateCount = dynamicStates.size();
+        pdsci.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
         pdsci.pDynamicStates = dynamicStates.data();
 
         auto device = engine_->getDevice();
@@ -1131,6 +1131,9 @@ namespace RxEngine
                                             pipelines.data());
         //auto rv = device->getDevice().createGraphicsPipeline(nullptr, gpci);
         assert(rv == VK_SUCCESS);
+        if(rv != VK_SUCCESS) {
+            spdlog::critical("Unable to create graphics pipeline");
+        }
 
         return pipelines[0];
     }

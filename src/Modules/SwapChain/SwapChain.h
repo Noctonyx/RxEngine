@@ -6,7 +6,6 @@
 #define RXENGINE_SWAPCHAIN_H
 
 #include <Modules/Module.h>
-#include <Vulkan/SwapChain.hpp>
 #include "Vulkan/DescriptorSet.hpp"
 
 namespace RxEngine

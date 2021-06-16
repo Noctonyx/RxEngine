@@ -79,6 +79,7 @@ namespace RxEngine
             std::shared_ptr<RxCore::SecondaryCommandBuffer> buf;
             uint32_t triangles;
             uint32_t drawCalls;
+            uint8_t cascadeIndex;
         };
 
 #if 0

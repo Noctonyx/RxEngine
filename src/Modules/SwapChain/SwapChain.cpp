@@ -2,6 +2,7 @@
 // Created by shane on 5/06/2021.
 //
 
+#include "RXCore.h"
 #include "SwapChain.h"
 #include "EngineMain.hpp"
 #include "RxECS.h"

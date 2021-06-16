@@ -49,9 +49,9 @@ namespace RxEngine
                        EngineMain * engine,
                        const ecs::entity_t moduleId)
         : Module(world, engine, moduleId)
-        , device_(device)
+          , device_(device)
         // , imageFormat_(imageFormat)
-        , shadowImagesChanged(true)
+          , shadowImagesChanged(true)
     //, world_(world)
     //, query_(*world, "!RxEngine.Render.Pipeline")
     {
@@ -71,8 +71,8 @@ namespace RxEngine
             {
                 {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 15000},
                 {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 600},
-                {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 600},
-                {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 800}
+                {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,         600},
+                {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         800}
             },
             400
         );
@@ -131,13 +131,12 @@ namespace RxEngine
 #endif
         world_->createSystem("Renderer:RunCommandBuffers")
               .inGroup("Pipeline:PostRender")
-              //.after<AcquireImage>()
-              //.before<PresentImage>()
+                  //.after<AcquireImage>()
+                  //.before<PresentImage>()
               .withStream<MainRenderImageInput>()
               .withWrite<MainRenderImageOutput>()
               .execute<MainRenderImageInput>(
-                  [this](ecs::World * world, const MainRenderImageInput * mri)
-                  {
+                  [this](ecs::World * world, const MainRenderImageInput * mri) {
                       render(
                           mri->imageView,
                           mri->extent,
@@ -158,8 +157,7 @@ namespace RxEngine
         world_->createSystem("Renderer:CleanLastFrame")
               .inGroup("Pipeline:PreRender")
               .execute(
-                  [this](ecs::World *)
-                  {
+                  [this](ecs::World *) {
                       OPTICK_EVENT("Release Previous Frame Resource")
                       device_->graphicsQueue_->ReleaseCompleted();
                   }
@@ -174,8 +172,7 @@ namespace RxEngine
               .withWrite<DescriptorSet>()
               .withWrite<CurrentMainDescriptorSet>()
               .executeIfNone(
-                  [this](ecs::World * world)
-                  {
+                  [this](ecs::World * world) {
                       auto pl = world_->lookup("layout/general").get<PipelineLayout>();
                       auto ds0x_ = descriptorPool->allocateDescriptorSet(pl->dsls[0], pl->counts);
                       //                  auto ds0_ = //RxCore::threadResources.getDescriptorSet(
@@ -276,6 +273,7 @@ namespace RxEngine
         std::vector<VkAttachmentDescription> ads{
             {
                 {},
+                //VK_FORMAT_R8G8B8A8_UNORM, // imageFormat,
                 imageFormat,
                 VK_SAMPLE_COUNT_1_BIT,
                 VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -505,11 +503,16 @@ namespace RxEngine
             {
                 vkCmdResetQueryPool(buf->Handle(), queryPool_, 0, 128);
                 //buf->Handle().resetQueryPool(queryPool_, 0, 128);
-                vkCmdWriteTimestamp(buf->Handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, queryPool_,
-                                    0);
+                vkCmdWriteTimestamp(
+                    buf->Handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, queryPool_,
+                    0
+                );
                 //                buf->Handle().writeTimestamp(VkPipelineStageFlagBits::eTopOfPipe, queryPool_, 0);
 
-                std::vector<VkClearValue> depth_clear_values = {VkClearValue({{{1.0f, ~0u}}})};
+                VkClearValue clv{};
+                clv.depthStencil = {1.0f, ~0u};
+
+                std::vector<VkClearValue> depth_clear_values = {clv};
 
                 {
                     OPTICK_GPU_EVENT("Shadow RenderPass")
@@ -519,17 +522,31 @@ namespace RxEngine
                             VkExtent2D{4096, 4096}, depth_clear_values
                         );
                         {
-                            OPTICK_EVENT("Execute Secondaries")
+                            OPTICK_EVENT("Execute Shadow Secondaries")
+                            world_->getStream<Render::ShadowRenderCommand>()
+                                  ->each<Render::ShadowRenderCommand>(
+                                      [&](ecs::World * w, const Render::ShadowRenderCommand * b) {
+                                          if(b->cascadeIndex != i){
+                                              return false;
+                                          }
+                                          total_draws += b->drawCalls;
+                                          total_triangles += b->triangles;
+                                          buf->executeSecondary(b->buf);
+                                          return true;
+                                      }
+                                  );
 
                             buf->executeSecondaries(static_cast<uint16_t>(1000 + i));
                         }
                         buf->EndRenderPass();
                     }
                 }
-                std::vector<VkClearValue> clear_values = {
-                    {{{0.0f, 0.0f, 0.0f, 1.0f}}},
-                    {{{1.0f, ~0u}}}
-                };
+                VkClearValue clv1{};
+                clv1.color = {0.0f, 0.0f, 0.0f, 1.0f};
+                VkClearValue clv2{};
+                clv2.depthStencil = {1.0f, ~0u};
+
+                std::vector<VkClearValue> clear_values = {clv1, clv2};
                 {
                     OPTICK_GPU_EVENT("RenderPass")
                     buf->beginRenderPass(renderPass_, frame_buffer, extent, clear_values);
@@ -538,8 +555,7 @@ namespace RxEngine
 
                         world_->getStream<Render::OpaqueRenderCommand>()
                               ->each<Render::OpaqueRenderCommand>(
-                                  [&](ecs::World * w, const Render::OpaqueRenderCommand * b)
-                                  {
+                                  [&](ecs::World * w, const Render::OpaqueRenderCommand * b) {
                                       total_draws += b->drawCalls;
                                       total_triangles += b->triangles;
                                       buf->executeSecondary(b->buf);
@@ -549,8 +565,7 @@ namespace RxEngine
 
                         world_->getStream<Render::GameUiRenderCommand>()
                               ->each<Render::GameUiRenderCommand>(
-                                  [&](ecs::World * w, const Render::GameUiRenderCommand * b)
-                                  {
+                                  [&](ecs::World * w, const Render::GameUiRenderCommand * b) {
                                       total_draws += b->drawCalls;
                                       total_triangles += b->triangles;
                                       buf->executeSecondary(b->buf);
@@ -559,8 +574,7 @@ namespace RxEngine
                               );
                         world_->getStream<Render::EngineUiRenderCommand>()
                               ->each<Render::EngineUiRenderCommand>(
-                                  [&](ecs::World * w, const Render::EngineUiRenderCommand * b)
-                                  {
+                                  [&](ecs::World * w, const Render::EngineUiRenderCommand * b) {
                                       total_draws += b->drawCalls;
                                       total_triangles += b->triangles;
                                       buf->executeSecondary(b->buf);
@@ -570,15 +584,14 @@ namespace RxEngine
                     }
                     buf->EndRenderPass();
                 }
-                vkCmdWriteTimestamp(buf->Handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool_,
-                                    1);
+                vkCmdWriteTimestamp(
+                    buf->Handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool_,
+                    1
+                );
             }
             buf->end();
         }
-#if 0
-        lightingManager_->teardown();
-#endif
-        // frameBufferIndex_ = (frameBufferIndex_ + 1) % imageCount_;
+
         {
             OPTICK_EVENT("GPU Submit", Optick::Category::Rendering)
             device_->graphicsQueue_->Submit(
@@ -722,154 +735,179 @@ namespace RxEngine
     }
 
     void Renderer::ensureShadowImages(uint32_t
-                                      shadowMapSize,
-                                      uint32_t numCascades
+    shadowMapSize,
+    uint32_t numCascades
     )
-    {
-        if (
-            shadowMap_ && shadowMap_
-                          ->extent_.width == shadowMapSize) {
-            return;
+{
+    if (
+    shadowMap_ && shadowMap_
+    ->extent_.width == shadowMapSize)
+{
+    return;
+}
+auto device = engine_->getDevice();
+shadowImagesChanged = true;
+shadowMap_ = device->createImage(
+    device->GetDepthFormat(false),
+    {shadowMapSize, shadowMapSize, 1},
+    1,
+    numCascades,
+    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
+);
+
+wholeShadowMapView_ = device->createImageView(
+    shadowMap_,
+    VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_ASPECT_DEPTH_BIT, 0, numCascades
+);
+
+cascadeViews_.
+resize(numCascades);
+cascadeFrameBuffers_.
+resize(numCascades);
+
+for (
+uint32_t i = 0;
+i<numCascades;
+++i) {
+cascadeViews_[i] = device->
+createImageView(
+    shadowMap_,
+    VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+    VK_IMAGE_ASPECT_DEPTH_BIT, i,
+1);
+
+std::vector<VkImageView> attachments = {cascadeViews_[i]->handle_};
+
+VkFramebufferCreateInfo fbci{};
+fbci.
+sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+fbci.
+renderPass = depthRenderPass_;
+fbci.
+attachmentCount = static_cast<uint32_t>(attachments.size());
+fbci.
+pAttachments = attachments.data();
+fbci.
+width = shadowMapSize;
+fbci.
+height = shadowMapSize;
+fbci.
+layers = 1;
+
+VkFramebuffer fb;
+
+vkCreateFramebuffer(device_
+->
+getDevice(), & fbci,
+nullptr, &fb);
+
+cascadeFrameBuffers_[i] =
+std::make_shared<RxCore::FrameBuffer>(device_, fb
+);
+}
+
+if (!shadowSampler_) {
+VkSamplerCreateInfo sci{};
+sci.
+sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+sci.
+magFilter = VK_FILTER_LINEAR;
+sci.
+minFilter = VK_FILTER_LINEAR;
+sci.
+addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+sci.
+addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+sci.
+maxLod = 0.5f;
+sci.
+borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+
+shadowSampler_ = device->createSampler(sci);
+}
+}
+
+void Renderer::setScissorAndViewport(
+    VkExtent2D extent,
+    std::shared_ptr<RxCore::SecondaryCommandBuffer> buf,
+    bool flipY) const
+{
+    buf->setScissor(
+        {
+            {0,            0},
+            {extent.width, extent.height}
         }
-        auto device = engine_->getDevice();
-        shadowImagesChanged = true;
-        shadowMap_ = device->createImage(
-            device->GetDepthFormat(false),
-            {shadowMapSize, shadowMapSize, 1},
-            1,
-            numCascades,
-            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
-        );
+    );
+    buf->setViewport(
+        .0f, flipY ? static_cast<float>(extent.height) : 0.0f, static_cast<float>(extent.width),
+        flipY ? -static_cast<float>(extent.height) : static_cast<float>(extent.height), 0.0f,
+        1.0f
+    );
+}
 
-        wholeShadowMapView_ = device->createImageView(
-            shadowMap_,
-            VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_ASPECT_DEPTH_BIT, 0, numCascades
-        );
+void Renderer::cullEntitiesProj(
+    const XMMATRIX & proj,
+    const XMMATRIX & view,
+    const std::shared_ptr<const std::vector<RenderEntity>> & entities,
+    std::vector<uint32_t> & selectedEntities)
+{
+    OPTICK_EVENT()
+    BoundingFrustum frustum(proj, true), viewFrustum;
 
-        cascadeViews_.
-            resize(numCascades);
-        cascadeFrameBuffers_.
-            resize(numCascades);
+    frustum.Transform(viewFrustum, XMMatrixInverse(nullptr, view));
 
-        for (uint32_t i = 0; i < numCascades; ++i) {
-            cascadeViews_[i] = device->createImageView(
-                shadowMap_,
-                VK_IMAGE_VIEW_TYPE_2D_ARRAY,
-                VK_IMAGE_ASPECT_DEPTH_BIT, i,
-                1);
+    auto ec = static_cast<uint32_t>(entities->size());
 
-            std::vector<VkImageView> attachments = {cascadeViews_[i]->handle_};
+    selectedEntities.reserve(ec);
+    auto & E = *entities;
 
-            VkFramebufferCreateInfo fbci{};
-            fbci.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-            fbci.renderPass = depthRenderPass_;
-            fbci.attachmentCount = static_cast<uint32_t>(attachments.size());
-            fbci.pAttachments = attachments.data();
-            fbci.width = shadowMapSize;
-            fbci.height = shadowMapSize;
-            fbci.layers = 1;
-
-            VkFramebuffer fb;
-
-            vkCreateFramebuffer(device_->getDevice(), &fbci, nullptr, &fb);
-
-            cascadeFrameBuffers_[i] = std::make_shared<RxCore::FrameBuffer>(device_, fb);
-        }
-
-        if (!shadowSampler_) {
-            VkSamplerCreateInfo sci{};
-            sci.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-            sci.magFilter = VK_FILTER_LINEAR;
-            sci.minFilter = VK_FILTER_LINEAR;
-            sci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-            sci.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-            sci.maxLod = 0.5f;
-            sci.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-
-            shadowSampler_ = device->createSampler(sci);
+    for (uint32_t i = 0; i < ec; i++) {
+        if (viewFrustum.Intersects(E[i].boundsSphere)) {
+            //} frustum.isSphereVisible(E[i].boundsSphere)) {
+            selectedEntities.insert(selectedEntities.end(), i);
         }
     }
+    OPTICK_TAG("Before Cull", entities->size())
+    OPTICK_TAG("Select from Cull", selectedEntities.size())
+}
 
-    void Renderer::setScissorAndViewport(
-        VkExtent2D extent,
-        std::shared_ptr<RxCore::SecondaryCommandBuffer> buf,
-        bool flipY) const
-    {
-        buf->setScissor(
-            {
-                {0, 0},
-                {extent.width, extent.height}
-            }
-        );
-        buf->setViewport(
-            .0f, flipY ? static_cast<float>(extent.height) : 0.0f, static_cast<float>(extent.width),
-            flipY ? -static_cast<float>(extent.height) : static_cast<float>(extent.height), 0.0f,
-            1.0f
-        );
-    }
+void Renderer::cullEntitiesOrtho(
+    const BoundingOrientedBox & cullBox,
+    const std::shared_ptr<const std::vector<RenderEntity>> & entities,
+    std::vector<uint32_t> & selectedEntities)
+{
+    OPTICK_EVENT()
 
-    void Renderer::cullEntitiesProj(
-        const XMMATRIX & proj,
-        const XMMATRIX & view,
-        const std::shared_ptr<const std::vector<RenderEntity>> & entities,
-        std::vector<uint32_t> & selectedEntities)
-    {
-        OPTICK_EVENT()
-        BoundingFrustum frustum(proj, true), viewFrustum;
+    auto ec = static_cast<uint32_t>(entities->size());
 
-        frustum.Transform(viewFrustum, XMMatrixInverse(nullptr, view));
+    selectedEntities.reserve(ec);
+    auto & E = *entities;
 
-        auto ec = static_cast<uint32_t>(entities->size());
-
-        selectedEntities.reserve(ec);
-        auto & E = *entities;
-
-        for (uint32_t i = 0; i < ec; i++) {
-            if (viewFrustum.Intersects(E[i].boundsSphere)) {
-                //} frustum.isSphereVisible(E[i].boundsSphere)) {
-                selectedEntities.insert(selectedEntities.end(), i);
-            }
+    for (uint32_t i = 0; i < ec; i++) {
+        if (cullBox.Intersects(E[i].boundsSphere)) {
+            //} frustum.isSphereVisible(E[i].boundsSphere)) {
+            selectedEntities.insert(selectedEntities.end(), i);
         }
-        OPTICK_TAG("Before Cull", entities->size())
-        OPTICK_TAG("Select from Cull", selectedEntities.size())
     }
+    OPTICK_TAG("Before Cull", entities->size())
+    OPTICK_TAG("Select from Cull", selectedEntities.size())
+}
 
-    void Renderer::cullEntitiesOrtho(
-        const BoundingOrientedBox & cullBox,
-        const std::shared_ptr<const std::vector<RenderEntity>> & entities,
-        std::vector<uint32_t> & selectedEntities)
-    {
-        OPTICK_EVENT()
+float Renderer::getSphereSize(
+    const XMMATRIX & projView,
+    const XMVECTOR & viewRight,
+    const BoundingSphere & sphere)
+{
+    auto p1 = XMLoadFloat3(&sphere.Center);
+    auto p2 = XMVectorAdd(
+        p1,
+        XMVectorScale(viewRight, sphere.Radius)
+    );
 
-        auto ec = static_cast<uint32_t>(entities->size());
+    p1 = XMVector3TransformCoord(p1, projView);
+    p2 = XMVector3TransformCoord(p2, projView);
 
-        selectedEntities.reserve(ec);
-        auto & E = *entities;
+    return XMVectorGetX(XMVectorAbs(XMVectorSubtract(p1, p2))) / 2.0f;
+}
 
-        for (uint32_t i = 0; i < ec; i++) {
-            if (cullBox.Intersects(E[i].boundsSphere)) {
-                //} frustum.isSphereVisible(E[i].boundsSphere)) {
-                selectedEntities.insert(selectedEntities.end(), i);
-            }
-        }
-        OPTICK_TAG("Before Cull", entities->size())
-        OPTICK_TAG("Select from Cull", selectedEntities.size())
-    }
-
-    float Renderer::getSphereSize(
-        const XMMATRIX & projView,
-        const XMVECTOR & viewRight,
-        const BoundingSphere & sphere)
-    {
-        auto p1 = XMLoadFloat3(&sphere.Center);
-        auto p2 = XMVectorAdd(
-            p1,
-            XMVectorScale(viewRight, sphere.Radius)
-        );
-
-        p1 = XMVector3TransformCoord(p1, projView);
-        p2 = XMVector3TransformCoord(p2, projView);
-
-        return XMVectorGetX(XMVectorAbs(XMVectorSubtract(p1, p2))) / 2.0f;
-    }
 } // namespace RXCore
