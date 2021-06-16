@@ -46,12 +46,11 @@ namespace RxEngine
 {
     Renderer::Renderer(RxCore::Device * device,
                        ecs::World * world,
-                       vk::Format imageFormat,
                        EngineMain * engine,
                        const ecs::entity_t moduleId)
         : Module(world, engine, moduleId)
         , device_(device)
-        , imageFormat_(imageFormat)
+        // , imageFormat_(imageFormat)
         , shadowImagesChanged(true)
     //, world_(world)
     //, query_(*world, "!RxEngine.Render.Pipeline")
@@ -70,10 +69,10 @@ namespace RxEngine
 
         descriptorPool = engine_->getDevice()->CreateDescriptorPool(
             {
-                {vk::DescriptorType::eCombinedImageSampler, 15000},
-                {vk::DescriptorType::eUniformBufferDynamic, 600},
-                {vk::DescriptorType::eStorageBuffer, 600},
-                {vk::DescriptorType::eUniformBuffer, 800}
+                {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 15000},
+                {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 600},
+                {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 600},
+                {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 800}
             },
             400
         );
@@ -106,16 +105,18 @@ namespace RxEngine
 
         graphicsCommandPool_ = device_->CreateGraphicsCommandPool();
 
-        vk::QueryPoolCreateInfo qpci;
+        VkQueryPoolCreateInfo qpci{};
 
-        qpci.queryType = vk::QueryType::eTimestamp;
+        qpci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+        qpci.queryType = VK_QUERY_TYPE_TIMESTAMP;
         qpci.queryCount = 128;
 
-        queryPool_ = device_->getDevice().createQueryPool(qpci);
+        vkCreateQueryPool(device_->getDevice(), &qpci, nullptr, &queryPool_);
+        //        queryPool_ = device_->getDevice().createQueryPool(qpci);
 #if 0
         for (uint32_t i = 0; i < 20; i++) {
             auto b = RxCore::iVulkan()->createBuffer(
-                vk::BufferUsageFlagBits::eStorageBuffer,
+                VkBufferUsageFlagBits::eStorageBuffer,
                 VMA_MEMORY_USAGE_CPU_TO_GPU,
                 20000 * sizeof(IndirectDrawInstance)
             );
@@ -123,7 +124,7 @@ namespace RxEngine
             b->getMemory()->map();
             auto ds = RxCore::threadResources.getDescriptorSet(
                 poolTemplate, dsLayouts[2]);
-            ds->updateDescriptor(0, vk::DescriptorType::eStorageBuffer, b);
+            ds->updateDescriptor(0, VkDescriptorType::eStorageBuffer, b);
             instanceBuffers.push_back(b);
             instanceBufferDS.push_back(ds);
         }
@@ -141,7 +142,7 @@ namespace RxEngine
                           mri->imageView,
                           mri->extent,
                           {mri->imageAvailableSempahore},
-                          {vk::PipelineStageFlagBits::eColorAttachmentOutput},
+                          {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT},
                           mri->finishRenderSemaphore
                       );
 
@@ -194,136 +195,156 @@ namespace RxEngine
 
     void Renderer::createDepthRenderPass()
     {
-        std::vector<vk::AttachmentDescription> ad = {
+        std::vector<VkAttachmentDescription> ad = {
             {
                 {},
                 device_->GetDepthFormat(true),
-                vk::SampleCountFlagBits::e1,
-                vk::AttachmentLoadOp::eClear,
-                vk::AttachmentStoreOp::eStore,
-                vk::AttachmentLoadOp::eDontCare,
-                vk::AttachmentStoreOp::eDontCare,
-                vk::ImageLayout::eUndefined,
-                vk::ImageLayout::eDepthStencilReadOnlyOptimal
+
+                VK_SAMPLE_COUNT_1_BIT,
+                VK_ATTACHMENT_LOAD_OP_CLEAR,
+                VK_ATTACHMENT_STORE_OP_STORE,
+                VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
             }
         };
 
-        std::vector<vk::AttachmentReference> input_attachments = {};
-        std::vector<vk::AttachmentReference> color_attachments = {};
-        std::vector<vk::AttachmentReference> resolve_attachments = {};
-        vk::AttachmentReference depth_attachment = {
-            0, vk::ImageLayout::eDepthStencilAttachmentOptimal
+        std::vector<VkAttachmentReference> input_attachments = {};
+        std::vector<VkAttachmentReference> color_attachments = {};
+        std::vector<VkAttachmentReference> resolve_attachments = {};
+        VkAttachmentReference depth_attachment = {
+            0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
         };
         std::vector<uint32_t> preserve_attachments = {};
 
-        std::vector<vk::SubpassDescription> sp = {
+        std::vector<VkSubpassDescription> sp = {
             {
-                {},
-                vk::PipelineBindPoint::eGraphics,
-                input_attachments,
-                color_attachments,
-                resolve_attachments,
+                0,
+                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                static_cast<uint32_t>(input_attachments.size()),
+                input_attachments.data(),
+                static_cast<uint32_t>(color_attachments.size()),
+                color_attachments.data(),
+                resolve_attachments.data(),
                 &depth_attachment,
-                {}
+                0,
+                nullptr
             }
         };
 
-        std::vector<vk::SubpassDependency> spd = {
+        std::vector<VkSubpassDependency> spd = {
             {
                 VK_SUBPASS_EXTERNAL,
                 0,
-                vk::PipelineStageFlagBits::eFragmentShader,
-                vk::PipelineStageFlagBits::eEarlyFragmentTests,
-                vk::AccessFlagBits::eShaderRead,
-                vk::AccessFlagBits::eDepthStencilAttachmentWrite,
-                vk::DependencyFlagBits::eByRegion
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                VK_ACCESS_SHADER_READ_BIT,
+                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                VK_DEPENDENCY_BY_REGION_BIT
             },
             {
                 0,
                 VK_SUBPASS_EXTERNAL,
-                vk::PipelineStageFlagBits::eLateFragmentTests,
-                vk::PipelineStageFlagBits::eFragmentShader,
-                vk::AccessFlagBits::eDepthStencilAttachmentWrite,
-                vk::AccessFlagBits::eShaderRead,
-                vk::DependencyFlagBits::eByRegion
+                VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                VK_ACCESS_SHADER_READ_BIT,
+                VK_DEPENDENCY_BY_REGION_BIT
             }
         };
 
-        vk::RenderPassCreateInfo rpci;
-        rpci.setAttachments(ad).setSubpasses(sp).setDependencies(spd);
+        VkRenderPassCreateInfo rpci{};
+        rpci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        rpci.attachmentCount = static_cast<uint32_t>(ad.size());
+        rpci.pAttachments = ad.data();
+        rpci.subpassCount = static_cast<uint32_t>(sp.size());
+        rpci.pSubpasses = sp.data();
+        rpci.dependencyCount = static_cast<uint32_t>(spd.size());
+        rpci.pDependencies = spd.data();
+        //rpci.setAttachments(ad).setSubpasses(sp).setDependencies(spd);
 
-        auto rph = device_->getDevice().createRenderPass(rpci);
-        depthRenderPass_ = rph;
+        vkCreateRenderPass(device_->getDevice(), &rpci, nullptr, &depthRenderPass_);
+        //auto rph = device_->getDevice().createRenderPass(rpci);
+        //depthRenderPass_ = rph;
     }
 
     void Renderer::createRenderPass()
     {
-        std::vector<vk::AttachmentDescription> ads{
+        auto imageFormat = device_->getSwapChainFormat();
+
+        std::vector<VkAttachmentDescription> ads{
             {
                 {},
-                imageFormat_,
-                vk::SampleCountFlagBits::e1,
-                vk::AttachmentLoadOp::eClear,
-                vk::AttachmentStoreOp::eStore,
-                vk::AttachmentLoadOp::eDontCare,
-                vk::AttachmentStoreOp::eDontCare,
-                vk::ImageLayout::eUndefined,
-                vk::ImageLayout::ePresentSrcKHR // ! important
+                imageFormat,
+                VK_SAMPLE_COUNT_1_BIT,
+                VK_ATTACHMENT_LOAD_OP_CLEAR,
+                VK_ATTACHMENT_STORE_OP_STORE,
+                VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_IMAGE_LAYOUT_PRESENT_SRC_KHR // ! important
             },
             {
                 {},
                 device_->GetDepthFormat(false),
-                vk::SampleCountFlagBits::e1,
-                vk::AttachmentLoadOp::eClear,
-                vk::AttachmentStoreOp::eDontCare,
-                vk::AttachmentLoadOp::eDontCare,
-                vk::AttachmentStoreOp::eDontCare,
-                vk::ImageLayout::eUndefined,
-                vk::ImageLayout::eDepthStencilAttachmentOptimal
+                VK_SAMPLE_COUNT_1_BIT,
+                VK_ATTACHMENT_LOAD_OP_CLEAR,
+                VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
             }
         };
 
-        std::vector<vk::AttachmentReference> input_attachments = {};
-        std::vector<vk::AttachmentReference> color_attachments{
-            {0, vk::ImageLayout::eColorAttachmentOptimal}
+        std::vector<VkAttachmentReference> input_attachments = {};
+        std::vector<VkAttachmentReference> color_attachments{
+            {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}
         };
-        std::vector<vk::AttachmentReference> resolve_attachments = {};
-        vk::AttachmentReference depth_attachment{
+        std::vector<VkAttachmentReference> resolve_attachments = {};
+        VkAttachmentReference depth_attachment{
             1,
-            vk::ImageLayout::eDepthStencilAttachmentOptimal
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
         };
         std::vector<uint32_t> preserve_attachments = {};
 
-        std::vector<vk::SubpassDescription> sp{
+        std::vector<VkSubpassDescription> sp{
             {
                 {},
-                vk::PipelineBindPoint::eGraphics,
-                input_attachments,
-                color_attachments,
-                resolve_attachments,
+                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                static_cast<uint32_t>(input_attachments.size()),
+                input_attachments.data(),
+                static_cast<uint32_t>(color_attachments.size()),
+                color_attachments.data(),
+                resolve_attachments.data(),
                 &depth_attachment,
-                {}
+                0, nullptr
             }
         };
 
-        std::vector<vk::SubpassDependency> spd = {
+        std::vector<VkSubpassDependency> spd = {
             {
                 VK_SUBPASS_EXTERNAL,
                 0,
-                vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                 {},
-                vk::AccessFlagBits::eColorAttachmentRead |
-                vk::AccessFlagBits::eColorAttachmentWrite,
-                vk::DependencyFlagBits::eByRegion
+                VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                VK_DEPENDENCY_BY_REGION_BIT
             }
         };
-        vk::RenderPassCreateInfo rpci;
-        rpci.setAttachments(ads).setSubpasses(sp).setDependencies(spd);
+        VkRenderPassCreateInfo rpci{};
+        rpci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        rpci.attachmentCount = static_cast<uint32_t>(ads.size());
+        rpci.pAttachments = ads.data();
+        rpci.subpassCount = static_cast<uint32_t>(sp.size());
+        rpci.pSubpasses = sp.data();
+        rpci.dependencyCount = static_cast<uint32_t>(spd.size());
+        rpci.pDependencies = spd.data();
 
-        auto rph = device_->getDevice().createRenderPass(rpci);
-
-        renderPass_ = rph;
+        vkCreateRenderPass(device_->getDevice(), &rpci, nullptr, &renderPass_);
     }
 
     std::shared_ptr<const std::vector<RenderEntity>> Renderer::finishUpEntityJobs(
@@ -361,11 +382,11 @@ namespace RxEngine
     void Renderer::render(
         //const std::shared_ptr<RenderCamera> & renderCamera,
         //const std::vector<IRenderable *> & subsystems,
-        vk::ImageView imageView,
-        vk::Extent2D extent,
-        std::vector<vk::Semaphore> waitSemaphores,
-        std::vector<vk::PipelineStageFlags> waitStages,
-        vk::Semaphore completeSemaphore)
+        VkImageView imageView,
+        VkExtent2D extent,
+        std::vector<VkSemaphore> waitSemaphores,
+        std::vector<VkPipelineStageFlags> waitStages,
+        VkSemaphore completeSemaphore)
     {
         OPTICK_EVENT()
 
@@ -482,17 +503,20 @@ namespace RxEngine
             buf->begin();
             OPTICK_GPU_CONTEXT(buf->Handle())
             {
-                buf->Handle().resetQueryPool(queryPool_, 0, 128);
-                buf->Handle().writeTimestamp(vk::PipelineStageFlagBits::eTopOfPipe, queryPool_, 0);
+                vkCmdResetQueryPool(buf->Handle(), queryPool_, 0, 128);
+                //buf->Handle().resetQueryPool(queryPool_, 0, 128);
+                vkCmdWriteTimestamp(buf->Handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, queryPool_,
+                                    0);
+                //                buf->Handle().writeTimestamp(VkPipelineStageFlagBits::eTopOfPipe, queryPool_, 0);
 
-                std::vector<vk::ClearValue> depth_clear_values = {vk::ClearValue({1.0f, ~0u})};
+                std::vector<VkClearValue> depth_clear_values = {VkClearValue({{{1.0f, ~0u}}})};
 
                 {
                     OPTICK_GPU_EVENT("Shadow RenderPass")
                     for (uint32_t i = 0; i < NUM_CASCADES; i++) {
                         buf->beginRenderPass(
                             depthRenderPass_, cascadeFrameBuffers_[i],
-                            vk::Extent2D{4096, 4096}, depth_clear_values
+                            VkExtent2D{4096, 4096}, depth_clear_values
                         );
                         {
                             OPTICK_EVENT("Execute Secondaries")
@@ -502,9 +526,9 @@ namespace RxEngine
                         buf->EndRenderPass();
                     }
                 }
-                std::vector<vk::ClearValue> clear_values = {
-                    vk::ClearValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}),
-                    vk::ClearValue({1.0f, ~0u})
+                std::vector<VkClearValue> clear_values = {
+                    {{{0.0f, 0.0f, 0.0f, 1.0f}}},
+                    {{{1.0f, ~0u}}}
                 };
                 {
                     OPTICK_GPU_EVENT("RenderPass")
@@ -546,11 +570,8 @@ namespace RxEngine
                     }
                     buf->EndRenderPass();
                 }
-
-                buf->Handle().writeTimestamp(
-                    vk::PipelineStageFlagBits::eBottomOfPipe, queryPool_,
-                    1
-                );
+                vkCmdWriteTimestamp(buf->Handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool_,
+                                    1);
             }
             buf->end();
         }
@@ -589,9 +610,9 @@ namespace RxEngine
             lightingManager_->updateDescriptor(ds0_, 1);
             ds0_->updateDescriptor(
                 2,
-                vk::DescriptorType::eCombinedImageSampler,
+                VkDescriptorType::eCombinedImageSampler,
                 wholeShadowMapView_,
-                vk::ImageLayout::eDepthStencilReadOnlyOptimal,
+                VkImageLayout::eDepthStencilReadOnlyOptimal,
                 shadowSampler_);
             materialManager_->updateMaterialBufferDescriptor(ds0_, 3);
             materialManager_->updateTextureDescriptor(ds0_, 4);
@@ -607,33 +628,42 @@ namespace RxEngine
 #endif
 
     std::shared_ptr<RxCore::FrameBuffer> Renderer::createRenderFrameBuffer(
-        const vk::ImageView & imageView,
-        const vk::Extent2D & extent) const
+        const VkImageView & imageView,
+        const VkExtent2D & extent) const
     {
         OPTICK_EVENT("Create Framebuffer")
-        std::vector<vk::ImageView> attachments = {imageView, depthBufferView_->handle_};
+        std::vector<VkImageView> attachments = {imageView, depthBufferView_->handle_};
 
-        auto frame_buffer = std::make_shared<RxCore::FrameBuffer>(
-            device_,
-            device_->getDevice().createFramebuffer(
-                {{}, renderPass_, attachments, extent.width, extent.height, 1}
-            ));
+        VkFramebufferCreateInfo fbci{};
+        fbci.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        fbci.renderPass = renderPass_;
+        fbci.attachmentCount = static_cast<uint32_t>(attachments.size());
+        fbci.pAttachments = attachments.data();
+        fbci.width = extent.width;
+        fbci.height = extent.height;
+        fbci.layers = 1;
+
+        VkFramebuffer fb;
+
+        vkCreateFramebuffer(device_->getDevice(), &fbci, nullptr, &fb);
+
+        auto frame_buffer = std::make_shared<RxCore::FrameBuffer>(device_, fb);
 
         return frame_buffer;
     }
 
 #if 0
-    void Renderer::ensureFrameBufferSize(const vk::ImageView & imageView, const vk::Extent2D & extent)
+    void Renderer::ensureFrameBufferSize(const VkImageView & imageView, const VkExtent2D & extent)
     {
         if (frameBuffers_[frameBufferIndex_].extent != extent) {
 
-            std::vector<vk::ImageView> attachments = {
+            std::vector<VkImageView> attachments = {
                 imageView,
                 depthBufferView_->handle
             };
             //auto fbh = renderPass->CreateFrameBuffer(attachments, extent.width, extent.height);
 
-            vk::FramebufferCreateInfo fbci{
+            VkFramebufferCreateInfo fbci{
                 {},
                 *renderPass_,
                 attachments, extent.width, extent.height, 1
@@ -646,20 +676,20 @@ namespace RxEngine
     }
 #endif
 
-    void Renderer::ensureDepthBufferExists(vk::Extent2D & extent)
+    void Renderer::ensureDepthBufferExists(VkExtent2D & extent)
     {
-        if (extent != bufferExtent_) {
+        if (extent.height != bufferExtent_.height || extent.width != bufferExtent_.width) {
             depthBuffer_ = device_->createImage(
                 device_->GetDepthFormat(false),
                 {extent.width, extent.height, 1},
                 1, 1,
-                vk::ImageUsageFlagBits::eDepthStencilAttachment
+                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
             );
 
             depthBufferView_ = device_->createImageView(
                 depthBuffer_,
-                vk::ImageViewType::e2D,
-                vk::ImageAspectFlagBits::eDepth,
+                VK_IMAGE_VIEW_TYPE_2D,
+                VK_IMAGE_ASPECT_DEPTH_BIT,
                 0,
                 1
             );
@@ -672,7 +702,8 @@ namespace RxEngine
         world_->deleteSystem(world_->lookup("Renderer:Render").id);
 
         engine_->getDevice()->WaitIdle();
-        device_->getDevice().destroyQueryPool(queryPool_);
+        vkDestroyQueryPool(device_->getDevice(), queryPool_, nullptr);
+        //device_->getDevice().destroyQueryPool(queryPool_);
         // frameBuffers_.clear();
         depthBufferView_.reset();
         depthBuffer_.reset();
@@ -686,8 +717,8 @@ namespace RxEngine
 
         ds0_.reset();
 
-        device_->getDevice().destroyRenderPass(renderPass_);
-        device_->getDevice().destroyRenderPass(depthRenderPass_);
+        vkDestroyRenderPass(device_->getDevice(), renderPass_, nullptr);
+        vkDestroyRenderPass(device_->getDevice(), depthRenderPass_, nullptr);
     }
 
     void Renderer::ensureShadowImages(uint32_t
@@ -707,12 +738,12 @@ namespace RxEngine
             {shadowMapSize, shadowMapSize, 1},
             1,
             numCascades,
-            vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled
+            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
         );
 
         wholeShadowMapView_ = device->createImageView(
             shadowMap_,
-            vk::ImageViewType::e2DArray, vk::ImageAspectFlagBits::eDepth, 0, numCascades
+            VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_ASPECT_DEPTH_BIT, 0, numCascades
         );
 
         cascadeViews_.
@@ -720,53 +751,47 @@ namespace RxEngine
         cascadeFrameBuffers_.
             resize(numCascades);
 
-        for (
-            uint32_t i = 0;
-            i < numCascades;
-            ++i) {
-            cascadeViews_[i] = device->
-                createImageView(
-                    shadowMap_,
-                    vk::ImageViewType::e2DArray,
-                    vk::ImageAspectFlagBits::eDepth, i,
-                    1);
+        for (uint32_t i = 0; i < numCascades; ++i) {
+            cascadeViews_[i] = device->createImageView(
+                shadowMap_,
+                VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+                VK_IMAGE_ASPECT_DEPTH_BIT, i,
+                1);
 
-            std::vector<vk::ImageView> attachments = {cascadeViews_[i]->handle_};
+            std::vector<VkImageView> attachments = {cascadeViews_[i]->handle_};
 
-            cascadeFrameBuffers_[i] =
-                std::make_shared<RxCore::FrameBuffer>(
-                    device_,
-                    device_
-                    ->
-                    getDevice()
-                    .createFramebuffer(
-                        {
-                            {
-                            },
-                            depthRenderPass_, attachments, shadowMapSize, shadowMapSize, 1
-                        }));
+            VkFramebufferCreateInfo fbci{};
+            fbci.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+            fbci.renderPass = depthRenderPass_;
+            fbci.attachmentCount = static_cast<uint32_t>(attachments.size());
+            fbci.pAttachments = attachments.data();
+            fbci.width = shadowMapSize;
+            fbci.height = shadowMapSize;
+            fbci.layers = 1;
+
+            VkFramebuffer fb;
+
+            vkCreateFramebuffer(device_->getDevice(), &fbci, nullptr, &fb);
+
+            cascadeFrameBuffers_[i] = std::make_shared<RxCore::FrameBuffer>(device_, fb);
         }
 
         if (!shadowSampler_) {
-            vk::SamplerCreateInfo sci;
-            sci.
-                setMagFilter(vk::Filter::eLinear)
-                .
-                setMinFilter(vk::Filter::eLinear)
-                .
-                setAddressModeU(vk::SamplerAddressMode::eClampToEdge)
-                .
-                setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
-                .setMaxLod(5.0f)
-                .
-                setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
+            VkSamplerCreateInfo sci{};
+            sci.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+            sci.magFilter = VK_FILTER_LINEAR;
+            sci.minFilter = VK_FILTER_LINEAR;
+            sci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+            sci.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+            sci.maxLod = 0.5f;
+            sci.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 
             shadowSampler_ = device->createSampler(sci);
         }
     }
 
     void Renderer::setScissorAndViewport(
-        vk::Extent2D extent,
+        VkExtent2D extent,
         std::shared_ptr<RxCore::SecondaryCommandBuffer> buf,
         bool flipY) const
     {

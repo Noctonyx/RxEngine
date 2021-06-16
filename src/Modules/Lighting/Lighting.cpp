@@ -54,7 +54,7 @@ namespace RxEngine
               {
                   auto sc = e.world->getSingleton<Lighting>();
 
-                  ds->ds->updateDescriptor(1, vk::DescriptorType::eUniformBufferDynamic,
+                  ds->ds->updateDescriptor(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                                            sc->lightingBuffer, sizeof(LightingShaderData),
                                            static_cast<uint32_t>(sc->ix * sc->bufferAlignment));
 

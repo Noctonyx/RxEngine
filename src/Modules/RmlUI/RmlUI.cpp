@@ -126,9 +126,9 @@ namespace RxEngine
 
     void RmlRenderInterface::SetScissorRegion(int x, int y, int width, int height)
     {
-        scissorRect = vk::Rect2D{
-            vk::Offset2D{x, y},
-            vk::Extent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)}
+        scissorRect = VkRect2D{
+            VkOffset2D{x, y},
+            VkExtent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)}
         };
     }
 
@@ -139,7 +139,7 @@ namespace RxEngine
     {
         XMStoreFloat4x4(&transform_, XMMatrixIdentity());
         descriptorPool = device->CreateDescriptorPool(
-            {{vk::DescriptorType::eCombinedImageSampler, 5000}}, 5);
+            {{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 5000}}, 5);
     }
 
     bool RmlRenderInterface::LoadTexture(
@@ -159,16 +159,16 @@ namespace RxEngine
 
         auto image = device_->createImage(
             id.imType == RxAssets::eBC7
-                ? vk::Format::eBc7UnormBlock
-                : vk::Format::eR8G8B8A8Unorm,
-            vk::Extent3D{id.width, id.height, 1},
+                ? VK_FORMAT_BC7_UNORM_BLOCK
+                : VK_FORMAT_R8G8B8A8_UNORM,
+            VkExtent3D{id.width, id.height, 1},
             static_cast<uint32_t>(id.mipLevels.size()),
             1,
-            vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
-            vk::ImageType::e2D);
+            VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+            VK_IMAGE_TYPE_2D);
 
         auto iv =
-            device_->createImageView(image, vk::ImageViewType::e2D, vk::ImageAspectFlagBits::eColor);
+            device_->createImageView(image, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT);
 
         for (uint32_t j = 0; j < id.mipLevels.size(); j++) {
             auto staging_buffer = device_->createStagingBuffer(
@@ -177,23 +177,25 @@ namespace RxEngine
             device_->transferBufferToImage(
                 staging_buffer,
                 image,
-                vk::Extent3D(id.mipLevels[j].width, id.mipLevels[j].height, 1),
-                vk::ImageLayout::eShaderReadOnlyOptimal,
+                VkExtent3D{ id.mipLevels[j].width, id.mipLevels[j].height, 1 },
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 1,
                 0,
                 j);
         }
 
         //RXCore::Device::Context()->transitionImageLayout(
-        //    image, vk::ImageLayout::eShaderReadOnlyOptimal);
+        //    image, VkImageLayout::eShaderReadOnlyOptimal);
 
-        vk::SamplerCreateInfo sci{};
-        sci.setMinFilter(vk::Filter::eNearest)
-           .setMagFilter(vk::Filter::eNearest)
-           .setAddressModeU(vk::SamplerAddressMode::eClampToEdge)
-           .setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
-           .setMaxLod(1.0f)
-           .setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
+        VkSamplerCreateInfo sci{};
+        sci.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+
+        sci.minFilter = (VK_FILTER_NEAREST);
+        sci.magFilter = VK_FILTER_NEAREST;
+        sci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        sci.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        sci.maxLod = 1.0f;
+        sci.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 
         auto sampler = device_->createSampler(sci);
 
@@ -216,18 +218,18 @@ namespace RxEngine
     {
         OPTICK_EVENT()
         auto image = device_->createImage(
-            vk::Format::eR8G8B8A8Unorm,
-            vk::Extent3D{
+            VK_FORMAT_R8G8B8A8_UNORM,
+            VkExtent3D{
                 static_cast<uint32_t>(source_dimensions.x),
                 static_cast<uint32_t>(source_dimensions.y), 1
             },
             1,
             1,
-            vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
-            vk::ImageType::e2D);
+            VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+            VK_IMAGE_TYPE_2D);
 
         auto iv =
-            device_->createImageView(image, vk::ImageViewType::e2D, vk::ImageAspectFlagBits::eColor);
+            device_->createImageView(image, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT);
 
         auto staging_buffer = device_->createStagingBuffer(
             (source_dimensions.x * source_dimensions.y * 4), source);
@@ -235,22 +237,24 @@ namespace RxEngine
         device_->transferBufferToImage(
             staging_buffer,
             image,
-            vk::Extent3D(static_cast<uint32_t>(source_dimensions.x),
-                         static_cast<uint32_t>(source_dimensions.y), 1),
-            vk::ImageLayout::eShaderReadOnlyOptimal,
+            VkExtent3D{ static_cast<uint32_t>(source_dimensions.x),
+                         static_cast<uint32_t>(source_dimensions.y), 1 },
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             1,
             0);
 
         //RXCore::Device::Context()->transitionImageLayout(
-        //    image, vk::ImageLayout::eShaderReadOnlyOptimal);
+        //    image, VkImageLayout::eShaderReadOnlyOptimal);
 
-        vk::SamplerCreateInfo sci{};
-        sci.setMinFilter(vk::Filter::eNearest)
-           .setMagFilter(vk::Filter::eNearest)
-           .setAddressModeU(vk::SamplerAddressMode::eClampToEdge)
-           .setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
-           .setMaxLod(1.0f)
-           .setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
+        VkSamplerCreateInfo sci{};
+        sci.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+
+        sci.minFilter = (VK_FILTER_NEAREST);
+        sci.magFilter = VK_FILTER_NEAREST;
+        sci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        sci.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        sci.maxLod = 1.0f;
+        sci.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 
         auto sampler = device_->createSampler(sci);
 
@@ -332,7 +336,7 @@ namespace RxEngine
             }
 
             if (!samplers.empty()) {
-                descriptor_set->updateDescriptor(1, vk::DescriptorType::eCombinedImageSampler,
+                descriptor_set->updateDescriptor(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                                  samplers);
             }
 
@@ -347,12 +351,12 @@ namespace RxEngine
             XMStoreFloat4x4(&projectionMatrix_, pm);
 
             ub_ = device_->createBuffer(
-                vk::BufferUsageFlagBits::eUniformBuffer,
+                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                 VMA_MEMORY_USAGE_CPU_TO_GPU,
                 sizeof(XMFLOAT4X4),
                 &projectionMatrix_);
             ub_->map();
-            descriptor_set->updateDescriptor(0, vk::DescriptorType::eUniformBuffer, ub_);
+            descriptor_set->updateDescriptor(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, ub_);
 
             currentDescriptorSet = descriptor_set;
             dirtyTextures = false;
@@ -416,7 +420,7 @@ namespace RxEngine
                     buf->setScissor({{0, 0}, {wd->width, wd->height}});
                 }
                 buf->pushConstant(
-                    vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
+                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
                     0,
                     sizeof(RmlPushConstantData),
                     &pd);

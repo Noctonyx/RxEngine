@@ -85,9 +85,9 @@ namespace RxEngine
         struct ShaderModule
         {
             std::shared_ptr<RxCore::Shader> shader;
-            //vk::ShaderModule module{};
+            //VkShaderModule module{};
             std::string shaderAssetName{};
-            //vk::Device device{};
+            //VkDevice device{};
         };
 #endif
 #if 0
@@ -139,7 +139,7 @@ namespace RxEngine
 #endif
         struct MaterialSampler
         {
-            vk::Sampler sampler;
+            VkSampler sampler;
             uint32_t sequence;
         };
 #if 0

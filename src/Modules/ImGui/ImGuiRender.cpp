@@ -44,7 +44,7 @@ namespace RxEngine
 {
     IMGuiRender::IMGuiRender(ecs::World * world, EngineMain * engine, const ecs::entity_t moduleId)
         : Module(world, engine, moduleId)
-          , window_(engine->getWindow())
+        , window_(engine->getWindow())
     {
         ImGui::CreateContext();
         ImGui::StyleColorsDark();
@@ -70,10 +70,11 @@ namespace RxEngine
             static_cast<float>(wd->height));
 
         world_->createSystem("ImGui:UpdateGui")
-                  //.after<UiContextUpdate>()
+              //.after<UiContextUpdate>()
               .inGroup("Pipeline:Early")
               .execute(
-                  [&, this](ecs::World * world) {
+                  [&, this](ecs::World * world)
+                  {
                       OPTICK_EVENT("ImGui:UpdateGui")
                       if (!enabled) {
                           return;
@@ -85,9 +86,10 @@ namespace RxEngine
         world_->createSystem("ImGui:WindowResize")
               .withStream<WindowResize>()
               .inGroup("Pipeline:PreFrame")
-                  //.label<UiContextUpdate>()
+              //.label<UiContextUpdate>()
               .execute<WindowResize>(
-                  [this](ecs::World * world, const WindowResize * resize) {
+                  [this](ecs::World * world, const WindowResize * resize)
+                  {
                       OPTICK_EVENT("ImGui:WindowResize")
                       if (!enabled) {
                           return false;
@@ -105,7 +107,8 @@ namespace RxEngine
               .withStream<MousePosition>()
               .inGroup("Pipeline:PreFrame")
               .execute<MousePosition>(
-                  [this](ecs::World * world, const MousePosition * pos) {
+                  [this](ecs::World * world, const MousePosition * pos)
+                  {
                       OPTICK_EVENT("ImGui:MousePos")
                       if (!enabled) {
                           return false;
@@ -127,7 +130,8 @@ namespace RxEngine
               .withStream<MouseButton>()
               .inGroup("Pipeline:PreFrame")
               .execute<MouseButton>(
-                  [this](ecs::World * world, const MouseButton * button) {
+                  [this](ecs::World * world, const MouseButton * button)
+                  {
                       OPTICK_EVENT()
                       if (!enabled) {
                           return false;
@@ -146,7 +150,8 @@ namespace RxEngine
               .withStream<MouseScroll>()
               .inGroup("Pipeline:PreFrame")
               .execute<MouseScroll>(
-                  [this](ecs::World * world, const MouseScroll * s) {
+                  [this](ecs::World * world, const MouseScroll * s)
+                  {
                       OPTICK_EVENT()
                       if (!enabled) {
                           return false;
@@ -165,12 +170,14 @@ namespace RxEngine
               .withStream<KeyboardKey>()
               .inGroup("Pipeline:PreFrame")
               .execute<KeyboardKey>(
-                  [this](ecs::World * world, const KeyboardKey * key) {
+                  [this](ecs::World * world, const KeyboardKey * key)
+                  {
                       OPTICK_EVENT()
 
-                      if (key->key == EKey::F1 /* && (key->mods & EInputMod_Control) */ && key->action
-                                                                                           ==
-                                                                                           EInputAction::Press) {
+                      if (key->key == EKey::F1 /* && (key->mods & EInputMod_Control) */ && key->
+                          action
+                          ==
+                          EInputAction::Press) {
                           enabled = !enabled;
                       }
 
@@ -187,13 +194,13 @@ namespace RxEngine
                           io.KeysDown[static_cast<int>(key->key)] = false;
                       }
                       io.KeyCtrl = io.KeysDown[static_cast<int>(EKey::ControlLeft)] ||
-                                   io.KeysDown[static_cast<int>(EKey::ControlRight)];
+                          io.KeysDown[static_cast<int>(EKey::ControlRight)];
                       io.KeyShift = io.KeysDown[static_cast<int>(EKey::ShiftLeft)] ||
-                                    io.KeysDown[static_cast<int>(EKey::ShiftRight)];
+                          io.KeysDown[static_cast<int>(EKey::ShiftRight)];
                       io.KeyAlt = io.KeysDown[static_cast<int>(EKey::AltLeft)] ||
-                                  io.KeysDown[static_cast<int>(EKey::AltRight)];
+                          io.KeysDown[static_cast<int>(EKey::AltRight)];
                       io.KeySuper = io.KeysDown[static_cast<int>(EKey::SuperLeft)] ||
-                                    io.KeysDown[static_cast<int>(EKey::SuperRight)];
+                          io.KeysDown[static_cast<int>(EKey::SuperRight)];
                       if (!io.WantCaptureKeyboard) {
                           return false;
                       }
@@ -205,7 +212,8 @@ namespace RxEngine
               .withStream<KeyboardChar>()
               .inGroup("Pipeline:PreFrame")
               .execute<KeyboardChar>(
-                  [this](ecs::World * world, const KeyboardChar * c) {
+                  [this](ecs::World * world, const KeyboardChar * c)
+                  {
                       OPTICK_EVENT("ImGui:Char")
                       if (!enabled) {
                           return false;
@@ -221,10 +229,11 @@ namespace RxEngine
               );
 
         world_->createSystem("ImGui:NewFrame")
-                  //.after<UiContextUpdate>()
+              //.after<UiContextUpdate>()
               .inGroup("Pipeline:PreFrame")
               .execute(
-                  [this](ecs::World * world) {
+                  [this](ecs::World * world)
+                  {
                       OPTICK_EVENT("ImGui:NewFrame")
                       if (!enabled) {
                           return;
@@ -239,7 +248,8 @@ namespace RxEngine
               .withStreamWrite<Render::EngineUiRenderCommand>()
               .withJob()
               .execute(
-                  [this](ecs::World *) {
+                  [this](ecs::World *)
+                  {
                       OPTICK_EVENT("Imgui:Render")
                       if (!enabled) {
                           return;
@@ -258,8 +268,7 @@ namespace RxEngine
         createDescriptorSet();
     }
 
-    void IMGuiRender::shutdown()
-    {}
+    void IMGuiRender::shutdown() {}
 
     void IMGuiRender::setupInputs(ImGuiIO & io)
     {
@@ -317,15 +326,17 @@ namespace RxEngine
         auto device = engine_->getDevice();
 
         fontImage_ = device->createImage(
-            vk::Format::eR8G8B8A8Unorm,
+            VK_FORMAT_R8G8B8A8_UNORM,
             {static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1}, 1, 1,
-            vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst
+            VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT
         );
 
         auto b = device->createStagingBuffer(upload_size, pixels);
 
+        VkExtent3D e{static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1};
+
         device->transferBufferToImage(
-            b, fontImage_, vk::Extent3D(width, height, 1), vk::ImageLayout::eShaderReadOnlyOptimal,
+            b, fontImage_, e, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             1,
             0
         );
@@ -337,22 +348,23 @@ namespace RxEngine
         auto device = engine_->getDevice();
 
         auto dp = device->CreateDescriptorPool(
-            {{vk::DescriptorType::eCombinedImageSampler, 1}}, 1
+            {{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1}}, 1
         );
 
         set0_ = dp->allocateDescriptorSet(layout->dsls[0]);
 
-        vk::SamplerCreateInfo sci;
-        sci.setMagFilter(vk::Filter::eLinear)
-           .setMinFilter(vk::Filter::eLinear)
-           .setAddressModeU(vk::SamplerAddressMode::eClampToEdge)
-           .setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
-           .setMaxLod(1.0f)
-           .setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
+        VkSamplerCreateInfo sci{};
+        sci.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        sci.minFilter = VK_FILTER_LINEAR;
+        sci.magFilter = VK_FILTER_LINEAR;
+        sci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        sci.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        sci.maxLod = 1.f;
+        sci.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 
         auto sampler = device->createSampler(sci);
 
-        set0_->updateDescriptor(0, vk::DescriptorType::eCombinedImageSampler, fontImage_, sampler);
+        set0_->updateDescriptor(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, fontImage_, sampler);
     }
 
     void IMGuiRender::update(float deltaTime)
@@ -473,7 +485,7 @@ namespace RxEngine
         }
 
         // Create Vertex/Index Buffers
-        auto[vb, ib] = createBuffers(engine_->getDevice());
+        auto [vb, ib] = createBuffers(engine_->getDevice());
         uint32_t triangles = 0;
         uint32_t drawCalls = 0;
 
@@ -502,7 +514,7 @@ namespace RxEngine
             pd.scale = scale;
 
             buf->pushConstant(
-                vk::ShaderStageFlagBits::eVertex, 0,
+                VK_SHADER_STAGE_VERTEX_BIT, 0,
                 sizeof(pd), static_cast<void *>(&pd));
 
             buf->bindVertexBuffer(vb);

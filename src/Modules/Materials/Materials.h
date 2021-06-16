@@ -12,35 +12,35 @@ namespace RxEngine
     struct GraphicsPipeline
     {
         std::shared_ptr<RxCore::Pipeline> pipeline;
-        vk::RenderPass renderPass;
+        VkRenderPass renderPass;
         uint32_t subPass;
     };
 #if 0
     struct ShadowPipeline
     {
         std::shared_ptr<RxCore::Pipeline> pipeline;
-        vk::RenderPass renderPass;
+        VkRenderPass renderPass;
         uint32_t subPass;
     };
 
     struct OpaquePipeline
     {
         std::shared_ptr<RxCore::Pipeline> pipeline;
-        vk::RenderPass renderPass;
+        VkRenderPass renderPass;
         uint32_t subPass;
     };
 
     struct TransparentPipeline
     {
         std::shared_ptr<RxCore::Pipeline> pipeline;
-        vk::RenderPass renderPass;
+        VkRenderPass renderPass;
         uint32_t subPass;
     };
 
     struct UiPipeline
     {
         std::shared_ptr<RxCore::Pipeline> pipeline;
-        vk::RenderPass renderPass;
+        VkRenderPass renderPass;
         uint32_t subPass;
     };
 #endif
@@ -58,8 +58,8 @@ namespace RxEngine
 
     struct PipelineLayout
     {
-        vk::PipelineLayout layout;
-        std::vector<vk::DescriptorSetLayout> dsls;
+        VkPipelineLayout layout;
+        std::vector<VkDescriptorSetLayout> dsls;
         std::vector<uint32_t> counts;
     };
 
@@ -143,11 +143,11 @@ namespace RxEngine
         void loadData(sol::table table) override;
         //void processStartupData(sol::state * lua, RxCore::Device * device) override;
 
-        vk::Pipeline createMaterialPipeline(const MaterialPipelineDetails * mpd,
+        VkPipeline createMaterialPipeline(const MaterialPipelineDetails * mpd,
                                                    const FragmentShader * frag,
                                                    const VertexShader * vert,
-                                                   vk::PipelineLayout layout,
-                                                   vk::RenderPass rp,
+                                                   VkPipelineLayout layout,
+                                                   VkRenderPass rp,
                                                    uint32_t subpass);
 
         void createPipelines(ecs::EntityHandle e,

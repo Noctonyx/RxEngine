@@ -98,16 +98,17 @@ namespace RxEngine
               .withRelation<UsesLayout, PipelineLayout>()
               .withSingleton<RenderPasses>()
               .each<MaterialPipelineDetails,
-                  FragmentShader,
-                  VertexShader,
-                  PipelineLayout,
-                  RenderPasses>(
+                    FragmentShader,
+                    VertexShader,
+                    PipelineLayout,
+                    RenderPasses>(
                   [this](ecs::EntityHandle e,
                          const MaterialPipelineDetails * mpd,
                          const FragmentShader * frag,
                          const VertexShader * vert,
                          const PipelineLayout * pll,
-                         const RenderPasses * rp) {
+                         const RenderPasses * rp)
+                  {
                       createPipelines(e, mpd, frag, vert, pll, rp);
                   }
               );
@@ -119,7 +120,8 @@ namespace RxEngine
               .withRead<Material>()
               .withRead<MaterialImage>()
               .each<DescriptorSet>(
-                  [this](ecs::EntityHandle e, DescriptorSet * ds) {
+                  [this](ecs::EntityHandle e, DescriptorSet * ds)
+                  {
                       createShaderMaterialData(e, ds);
                   }
               );
@@ -134,15 +136,15 @@ namespace RxEngine
         world_->lookup("Material:setDescriptor").destroy();
     }
 
-    vk::ShaderStageFlags getStageFlags(const std::string & stage)
+    VkShaderStageFlags getStageFlags(const std::string & stage)
     {
         if (stage == "both") {
-            return vk::ShaderStageFlagBits::eFragment |
-                   vk::ShaderStageFlagBits::eVertex;
+            return VK_SHADER_STAGE_FRAGMENT_BIT |
+                VK_SHADER_STAGE_VERTEX_BIT;
         } else if (stage == "vert") {
-            return vk::ShaderStageFlagBits::eVertex;
+            return VK_SHADER_STAGE_VERTEX_BIT;
         } else if (stage == "frag") {
-            return vk::ShaderStageFlagBits::eFragment;
+            return VK_SHADER_STAGE_FRAGMENT_BIT;
         } else {
             throw std::runtime_error(
                 R"(Invalid value for stage - valid values: "both", "frag", "vert")"
@@ -156,7 +158,7 @@ namespace RxEngine
     {
         //sol::table shaders = lua["data"]["shaders"];
 
-        for (auto &[key, value]: shaders) {
+        for (auto & [key, value]: shaders) {
             auto name = key.as<std::string>();
             spdlog::debug("Loading shader {0} to world", name);
             sol::table data = value;
@@ -192,21 +194,23 @@ namespace RxEngine
         //Render::PipelineLayoutDetails pld;
         spdlog::debug("Loading layout {0} to world", name);
 
-        vk::PipelineLayoutCreateInfo plci{};
-        std::vector<vk::DescriptorSetLayout> dsls{};
-        std::vector<vk::PushConstantRange> pcr{};
+        VkPipelineLayoutCreateInfo plci{};
+        plci.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+
+        std::vector<VkDescriptorSetLayout> dsls{};
+        std::vector<VkPushConstantRange> pcr{};
 
         PipelineLayout pll{};
 
         sol::table dsLayouts = layout.get<sol::table>("ds_layouts");
-        for (auto &[dsLayoutKey, dsLayoutValue]: dsLayouts) {
+        for (auto & [dsLayoutKey, dsLayoutValue]: dsLayouts) {
             sol::table dsLayoutData = dsLayoutValue;
             pll.counts.clear();
-            std::vector<vk::DescriptorSetLayoutBinding> binding = {};
-            std::vector<vk::DescriptorBindingFlags> binding_flags = {};
+            std::vector<VkDescriptorSetLayoutBinding> binding = {};
+            std::vector<VkDescriptorBindingFlags> binding_flags = {};
 
             sol::table bindings = dsLayoutData.get<sol::table>("bindings");
-            for (auto &[bindingKey, bindingValue]: bindings) {
+            for (auto & [bindingKey, bindingValue]: bindings) {
                 sol::table bindingData = bindingValue;
                 auto & b = binding.emplace_back();
                 auto & bf = binding_flags.emplace_back();
@@ -214,7 +218,7 @@ namespace RxEngine
                 b.binding = bindingData.get<uint32_t>("binding");
                 b.descriptorCount = bindingData.get_or<uint32_t>("count", 1);
 
-                if(b.descriptorCount != 1) {
+                if (b.descriptorCount != 1) {
                     pll.counts.push_back(b.descriptorCount);
                 }
 
@@ -223,15 +227,15 @@ namespace RxEngine
                 b.stageFlags = getStageFlags(stage);
 
                 if (type == "combined-sampler") {
-                    b.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+                    b.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
                 } else if (type == "storage-buffer") {
-                    b.descriptorType = vk::DescriptorType::eStorageBuffer;
+                    b.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
                 } else if (type == "uniform-buffer") {
-                    b.descriptorType = vk::DescriptorType::eUniformBuffer;
+                    b.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                 } else if (type == "uniform-buffer-dynamic") {
-                    b.descriptorType = vk::DescriptorType::eUniformBufferDynamic;
+                    b.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
                 } else if (type == "storage-buffer-dynamic") {
-                    b.descriptorType = vk::DescriptorType::eStorageBufferDynamic;
+                    b.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
                 } else {
                     throw std::runtime_error(
                         R"(Invalid value for stage - valid values: "combined-sampler", "storage-buffer", "uniform-buffer", "storage-buffer-dynamic", "uniform-buffer-dynamic")"
@@ -239,24 +243,27 @@ namespace RxEngine
                 }
 
                 if (bindingData.get_or("variable", false)) {
-                    bf |= vk::DescriptorBindingFlagBits::eVariableDescriptorCount;
+                    bf |= VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT;
                 }
                 if (bindingData.get_or("partially_bound", false)) {
-                    bf |= vk::DescriptorBindingFlagBits::ePartiallyBound;
+                    bf |= VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
                 }
                 if (bindingData.get_or("update_after", false)) {
-                    bf |= vk::DescriptorBindingFlagBits::eUpdateAfterBind;
+                    bf |= VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
                 }
             }
 
-            vk::DescriptorSetLayoutBindingFlagsCreateInfo dslbfc{};
-            dslbfc.setBindingFlags(binding_flags);
+            VkDescriptorSetLayoutBindingFlagsCreateInfo dslbfc{};
+            dslbfc.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+            dslbfc.bindingCount = static_cast<uint32_t>(binding_flags.size());
+            dslbfc.pBindingFlags = binding_flags.data();
 
-            vk::DescriptorSetLayoutCreateInfo dslci{};
-            dslci.setFlags(vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool);
-
-            dslci.setPNext(&dslbfc);
-            dslci.setBindings(binding);
+            VkDescriptorSetLayoutCreateInfo dslci{};
+            dslci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+            dslci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+            dslci.pNext = &dslbfc;
+            dslci.bindingCount = static_cast<uint32_t>(binding.size());
+            dslci.pBindings = binding.data();
 
             auto dsl = device->createDescriptorSetLayout(dslci);
 
@@ -265,7 +272,7 @@ namespace RxEngine
         }
 
         sol::table pushConstants = layout.get<sol::table>("push_constants");
-        for (auto &[pcKey, pcValue]: pushConstants) {
+        for (auto & [pcKey, pcValue]: pushConstants) {
             sol::table pcData = pcValue;
 
             auto & p = pcr.emplace_back();
@@ -274,9 +281,10 @@ namespace RxEngine
             p.offset = pcData.get<uint32_t>("offset");
             p.size = pcData.get<uint32_t>("size");
         }
-
-        plci.setSetLayouts(dsls)
-            .setPushConstantRanges(pcr);
+        plci.setLayoutCount = dsls.size();
+        plci.pSetLayouts = dsls.data();
+        plci.pushConstantRangeCount = pcr.size();
+        plci.pPushConstantRanges = pcr.data();
 
         auto l = device->createPipelineLayout(plci);
 
@@ -287,7 +295,7 @@ namespace RxEngine
 
     void loadLayouts(ecs::World * world, RxCore::Device * device, sol::table & layouts)
     {
-        for (auto &[key, value]: layouts) {
+        for (auto & [key, value]: layouts) {
             auto layoutName = key.as<std::string>();
 
             sol::table details = value;
@@ -440,7 +448,7 @@ namespace RxEngine
         }
 
         sol::table vertices = details.get<sol::table>("vertices");
-        for (auto &[key, value]: vertices) {
+        for (auto & [key, value]: vertices) {
             uint32_t count;
             uint32_t offset;
             sol::table v = value;
@@ -464,7 +472,7 @@ namespace RxEngine
         }
 
         sol::table blends = details.get<sol::table>("blends");
-        for (auto &[blendKey, blendValue]: blends) {
+        for (auto & [blendKey, blendValue]: blends) {
             sol::table blendData = blendValue;
 
             auto & blend = mpd.blends.emplace_back();
@@ -555,7 +563,7 @@ namespace RxEngine
 
     void loadPipelines(ecs::World * world, RxCore::Device * device, sol::table & pipelines)
     {
-        for (auto &[key, value]: pipelines) {
+        for (auto & [key, value]: pipelines) {
             auto pipelineName = key.as<std::string>();
 
             sol::table details = value;
@@ -673,21 +681,22 @@ namespace RxEngine
         }
     }
 
-    vk::Sampler createSampler(RxCore::Device * device, RxAssets::SamplerData & sd)
+    VkSampler createSampler(RxCore::Device * device, RxAssets::SamplerData & sd)
     {
-        vk::SamplerCreateInfo sci;
+        VkSamplerCreateInfo sci{};
+        sci.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 
-        sci.setMinFilter(static_cast<vk::Filter>(sd.minFilter));
-        sci.setMagFilter(static_cast<vk::Filter>(sd.magFilter));
-        sci.setMipmapMode(static_cast<vk::SamplerMipmapMode>(sd.mipMapMode));
-        sci.setAddressModeU(static_cast<vk::SamplerAddressMode>(sd.addressU));
-        sci.setAddressModeV(static_cast<vk::SamplerAddressMode>(sd.addressV));
-        sci.setAddressModeW(static_cast<vk::SamplerAddressMode>(sd.addressW));
-        sci.setMipLodBias(sd.mipLodBias);
-        sci.setAnisotropyEnable(sd.anisotropy);
-        sci.setMaxAnisotropy(sd.maxAnisotropy);
-        sci.setMinLod(sd.minLod);
-        sci.setMaxLod(sd.maxLod);
+        sci.minFilter = (static_cast<VkFilter>(sd.minFilter));
+        sci.magFilter = (static_cast<VkFilter>(sd.magFilter));
+        sci.mipmapMode = (static_cast<VkSamplerMipmapMode>(sd.mipMapMode));
+        sci.addressModeU = (static_cast<VkSamplerAddressMode>(sd.addressU));
+        sci.addressModeV = (static_cast<VkSamplerAddressMode>(sd.addressV));
+        sci.addressModeW = (static_cast<VkSamplerAddressMode>(sd.addressW));
+        sci.mipLodBias = (sd.mipLodBias);
+        sci.anisotropyEnable = (sd.anisotropy);
+        sci.maxAnisotropy = (sd.maxAnisotropy);
+        sci.minLod = (sd.minLod);
+        sci.maxLod = (sd.maxLod);
 
         return device->createSampler(sci);
     }
@@ -707,17 +716,17 @@ namespace RxEngine
 
         auto image = device->createImage(
             id.imType == RxAssets::eBC7
-            ? vk::Format::eBc7UnormBlock
-            : vk::Format::eR8G8B8A8Unorm,
-            vk::Extent3D{id.width, id.height, 1},
+                ? VK_FORMAT_BC7_UNORM_BLOCK
+                : VK_FORMAT_R8G8B8A8_UNORM,
+            VkExtent3D{id.width, id.height, 1},
             static_cast<uint32_t>(id.mipLevels.size()),
             1,
-            vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
-            vk::ImageType::e2D
+            VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+            VK_IMAGE_TYPE_2D
         );
 
         auto iv =
-            device->createImageView(image, vk::ImageViewType::e2D, vk::ImageAspectFlagBits::eColor);
+            device->createImageView(image, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT);
 
         for (uint32_t j = 0; j < id.mipLevels.size(); j++) {
             const auto staging_buffer = device->createStagingBuffer(
@@ -726,8 +735,8 @@ namespace RxEngine
             device->transferBufferToImage(
                 staging_buffer,
                 image,
-                vk::Extent3D(id.mipLevels[j].width, id.mipLevels[j].height, 1),
-                vk::ImageLayout::eShaderReadOnlyOptimal,
+                VkExtent3D{ id.mipLevels[j].width, id.mipLevels[j].height, 1 },
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 1,
                 0,
                 j
@@ -763,7 +772,7 @@ namespace RxEngine
 
     void loadTextures(ecs::World * world, RxCore::Device * device, sol::table & textures)
     {
-        for (auto &[key, value]: textures) {
+        for (auto & [key, value]: textures) {
             const std::string texture_name = key.as<std::string>();
             sol::table details = value;
 
@@ -896,7 +905,7 @@ namespace RxEngine
 
     void loadMaterials(ecs::World * world, RxCore::Device * device, sol::table & materials)
     {
-        for (auto &[key, value]: materials) {
+        for (auto & [key, value]: materials) {
             const std::string name = key.as<std::string>();
             sol::table details = value;
             loadMaterial(world, device, name, details);
@@ -930,104 +939,128 @@ namespace RxEngine
         }
     }
 
-    vk::Pipeline MaterialsModule::createMaterialPipeline(const MaterialPipelineDetails * mpd,
-                                                         const FragmentShader * frag,
-                                                         const VertexShader * vert,
-                                                         vk::PipelineLayout layout,
-                                                         vk::RenderPass rp,
-                                                         uint32_t subpass)
+    VkPipeline MaterialsModule::createMaterialPipeline(const MaterialPipelineDetails * mpd,
+                                                       const FragmentShader * frag,
+                                                       const VertexShader * vert,
+                                                       VkPipelineLayout layout,
+                                                       VkRenderPass rp,
+                                                       uint32_t subpass)
     {
-        vk::GraphicsPipelineCreateInfo gpci{};
-        vk::PipelineDynamicStateCreateInfo pdsci{};
-        vk::PipelineColorBlendStateCreateInfo pcbsci{};
-        vk::PipelineDepthStencilStateCreateInfo pdssci{};
-        vk::PipelineMultisampleStateCreateInfo pmsci{};
-        vk::PipelineRasterizationStateCreateInfo prsci{};
-        vk::PipelineViewportStateCreateInfo pvsci{};
-        vk::PipelineInputAssemblyStateCreateInfo piasci{};
-        vk::PipelineVertexInputStateCreateInfo pvisci;
-        std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
-        std::vector<vk::PipelineColorBlendAttachmentState> attachments;
-        std::vector<vk::DynamicState> dynamicStates;
+        VkGraphicsPipelineCreateInfo gpci{};
+        gpci.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 
-        piasci.setTopology(vk::PrimitiveTopology::eTriangleList)
-              .setPrimitiveRestartEnable(false);
+        VkPipelineDynamicStateCreateInfo pdsci{};
+        pdsci.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
 
-        pvsci.setViewportCount(1)
-             .setPViewports(nullptr)
-             .setScissorCount(1);
+        VkPipelineColorBlendStateCreateInfo pcbsci{};
+        pcbsci.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 
-        prsci.setLineWidth(mpd->lineWidth)
-             .setPolygonMode(static_cast<vk::PolygonMode>(mpd->fillMode))
-             .setDepthClampEnable(mpd->depthClamp)
-             .setRasterizerDiscardEnable(false)
-             .setCullMode(static_cast<vk::CullModeFlagBits>(mpd->cullMode))
-             .setFrontFace(static_cast<vk::FrontFace>(mpd->frontFace));
+        VkPipelineDepthStencilStateCreateInfo pdssci{};
+        pdssci.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 
-        pmsci.setRasterizationSamples(vk::SampleCountFlagBits::e1);
+        VkPipelineMultisampleStateCreateInfo pmsci{};
+        pmsci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+
+        VkPipelineRasterizationStateCreateInfo prsci{};
+        prsci.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+
+        VkPipelineViewportStateCreateInfo pvsci{};
+        pvsci.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+
+        VkPipelineInputAssemblyStateCreateInfo piasci{};
+        piasci.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+
+        VkPipelineVertexInputStateCreateInfo pvisci{};
+        pvisci.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+
+        std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+        std::vector<VkPipelineColorBlendAttachmentState> attachments;
+        std::vector<VkDynamicState> dynamicStates;
+
+        piasci.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        piasci.primitiveRestartEnable = VK_FALSE;
+
+        pvsci.viewportCount = 1;
+        pvsci.pViewports = nullptr;
+        pvsci.scissorCount = 1;
+
+        prsci.lineWidth = (mpd->lineWidth);
+        prsci.polygonMode = (static_cast<VkPolygonMode>(mpd->fillMode));
+        prsci.depthClampEnable = (mpd->depthClamp);
+        prsci.rasterizerDiscardEnable = (false);
+        prsci.cullMode = (static_cast<VkCullModeFlagBits>(mpd->cullMode));
+        prsci.frontFace = (static_cast<VkFrontFace>(mpd->frontFace));
+        pmsci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
         shaderStages.push_back(
-            vk::PipelineShaderStageCreateInfo{
-                {},
-                vk::ShaderStageFlagBits::eVertex,
+            VkPipelineShaderStageCreateInfo{
+                VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+                nullptr,
+                0,
+                VK_SHADER_STAGE_VERTEX_BIT,
                 vert->shader->Handle(),
-                "main"
+                "main",
+                nullptr
             }
         );
         shaderStages.push_back(
-            vk::PipelineShaderStageCreateInfo{
-                {},
-                vk::ShaderStageFlagBits::eFragment,
+            VkPipelineShaderStageCreateInfo{
+                VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+                nullptr,
+                0,
+                VK_SHADER_STAGE_FRAGMENT_BIT,
                 frag->shader->Handle(),
-                "main"
+                "main",
+                nullptr
             }
         );
 
         for (auto & mpa: mpd->blends) {
             auto & at = attachments.emplace_back();
-            at.setColorWriteMask(
-                  vk::ColorComponentFlagBits::eA |
-                  vk::ColorComponentFlagBits::eR |
-                  vk::ColorComponentFlagBits::eG |
-                  vk::ColorComponentFlagBits::eB
-              )
-              .setBlendEnable(mpa.enable)
-              .setSrcColorBlendFactor(static_cast<vk::BlendFactor>(mpa.sourceFactor))
-              .setDstColorBlendFactor(static_cast<vk::BlendFactor>(mpa.destFactor))
-              .setColorBlendOp(static_cast<vk::BlendOp>(mpa.colorBlendOp))
-              .setSrcAlphaBlendFactor(static_cast<vk::BlendFactor>(mpa.sourceAlphaFactor))
-              .setDstAlphaBlendFactor(static_cast<vk::BlendFactor>(mpa.destAlphaFactor))
-              .setAlphaBlendOp(static_cast<vk::BlendOp>(mpa.alphaBlendOp));
+            at.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+            at.blendEnable = (mpa.enable);
+            at.srcColorBlendFactor = (static_cast<VkBlendFactor>(mpa.sourceFactor));
+            at.dstColorBlendFactor = (static_cast<VkBlendFactor>(mpa.destFactor));
+            at.colorBlendOp = (static_cast<VkBlendOp>(mpa.colorBlendOp));
+            at.srcAlphaBlendFactor = (static_cast<VkBlendFactor>(mpa.sourceAlphaFactor));
+            at.dstAlphaBlendFactor = (static_cast<VkBlendFactor>(mpa.destAlphaFactor));
+            at.alphaBlendOp = (static_cast<VkBlendOp>(mpa.alphaBlendOp));
         }
 
-        pdssci.setDepthTestEnable(mpd->depthWriteEnable)
-              .setDepthWriteEnable(mpd->depthTestEnable)
-              .setDepthCompareOp(static_cast<vk::CompareOp>(mpd->depthCompareOp))
-              .setDepthBoundsTestEnable(false)
-              .setStencilTestEnable(mpd->stencilTest)
-              .setFront({vk::StencilOp::eKeep, vk::StencilOp::eKeep})
-              .setBack({vk::StencilOp::eKeep, vk::StencilOp::eKeep})
-              .setMinDepthBounds(mpd->minDepth)
-              .setMaxDepthBounds(mpd->maxDepth);
+        pdssci.depthTestEnable = (mpd->depthWriteEnable);
+        pdssci.depthWriteEnable = (mpd->depthTestEnable);
+        pdssci.depthCompareOp = (static_cast<VkCompareOp>(mpd->depthCompareOp));
+        pdssci.depthBoundsTestEnable = (false);
+        pdssci.stencilTestEnable = (mpd->stencilTest);
+        //        pdssci.front = ( {
+        //          VK_STENCIL_OP_KEEP, VK_STENCIL_OP_KEEP, VK_STENCIL_OP_KEEP, VK_COMPARE_OP_NEVER, 0, 0, 0
+        //    });
+        //  pdssci.back = ( {
+        //    VK_STENCIL_OP_KEEP, VK_STENCIL_OP_KEEP, VK_STENCIL_OP_KEEP, VK_COMPARE_OP_NEVER, 0, 0, 0
+        //});
+        pdssci.minDepthBounds = (mpd->minDepth);
+        pdssci.maxDepthBounds = (mpd->maxDepth);
 
-        dynamicStates.push_back(vk::DynamicState::eViewport);
-        dynamicStates.push_back(vk::DynamicState::eScissor);
+        dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
+        dynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
 
-        gpci.setPInputAssemblyState(&piasci)
-            .setPViewportState(&pvsci)
-            .setPRasterizationState(&prsci)
-            .setPMultisampleState(&pmsci)
-            .setPDepthStencilState(&pdssci)
-            .setPColorBlendState(&pcbsci)
-            .setPVertexInputState(&pvisci)
-            .setPDynamicState(&pdsci)
-            .setLayout(layout)
-            .setStages(shaderStages)
-            .setRenderPass(rp)
-            .setSubpass(subpass);
+        gpci.pInputAssemblyState = (&piasci);
+        gpci.pViewportState = (&pvsci);
+        gpci.pRasterizationState = (&prsci);
+        gpci.pMultisampleState = (&pmsci);
+        gpci.pDepthStencilState = (&pdssci);
+        gpci.pColorBlendState = (&pcbsci);
+        gpci.pVertexInputState = (&pvisci);
+        gpci.pDynamicState = (&pdsci);
+        gpci.layout = (layout);
+        gpci.stageCount = shaderStages.size();
+        gpci.pStages = shaderStages.data();
+        gpci.renderPass = rp;
+        gpci.subpass = subpass;
 
-        std::vector<vk::VertexInputBindingDescription> bindings;
-        std::vector<vk::VertexInputAttributeDescription> attributes;
+        std::vector<VkVertexInputBindingDescription> bindings;
+        std::vector<VkVertexInputAttributeDescription> attributes;
 
         if (mpd->inputs.size() > 0) {
             uint32_t offset = 0;
@@ -1037,62 +1070,69 @@ namespace RxEngine
                 if (i.inputType == RxAssets::MaterialPipelineInputType::eFloat) {
                     switch (i.count) {
                     case 1:
-                        attributes.emplace_back(loc++, 0, vk::Format::eR32Sfloat, offset);
+                        attributes.push_back({ loc++, 0, VK_FORMAT_R32_SFLOAT, offset });
                         offset += 4;
                         break;
                     case 2:
-                        attributes.emplace_back(loc++, 0, vk::Format::eR32G32Sfloat, offset);
+                        attributes.push_back({ loc++, 0, VK_FORMAT_R32G32_SFLOAT, offset });
                         offset += 8;
                         break;
                     case 3:
-                        attributes.emplace_back(loc++, 0, vk::Format::eR32G32B32Sfloat, offset);
+                        attributes.push_back({ loc++, 0, VK_FORMAT_R32G32B32_SFLOAT, offset });
                         offset += 12;
                         break;
                     case 4:
-                        attributes.emplace_back(loc++, 0, vk::Format::eR32G32B32A32Sfloat, offset);
+                        attributes.push_back({ loc++, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offset });
                         offset += 16;
                         break;
-                    default:;
+                    default: ;
                     }
                 }
                 if (i.inputType == RxAssets::MaterialPipelineInputType::eByte) {
                     switch (i.count) {
                     case 1:
-                        attributes.emplace_back(loc++, 0, vk::Format::eR8Unorm, offset);
+                        attributes.push_back({ loc++, 0, VK_FORMAT_R8_UNORM, offset });
                         offset += 1;
                         break;
                     case 2:
-                        attributes.emplace_back(loc++, 0, vk::Format::eR8G8Unorm, offset);
+                        attributes.push_back({ loc++, 0, VK_FORMAT_R8G8_UNORM, offset });
                         offset += 2;
                         break;
                     case 3:
-                        attributes.emplace_back(loc++, 0, vk::Format::eR8G8B8Unorm, offset);
+                        attributes.push_back({ loc++, 0, VK_FORMAT_R8G8B8_UNORM, offset });
                         offset += 3;
                         break;
                     case 4:
-                        attributes.emplace_back(loc++, 0, vk::Format::eR8G8B8A8Unorm, offset);
+                        attributes.push_back({ loc++, 0, VK_FORMAT_R8G8B8A8_UNORM, offset });
                         offset += 4;
                         break;
-                    default:;
+                    default: ;
                     }
                 }
             }
 
-            bindings.emplace_back(0, offset, vk::VertexInputRate::eVertex);
-            pvisci.setVertexBindingDescriptions(bindings).
-                setVertexAttributeDescriptions(attributes);
+            bindings.push_back({ 0, offset, VK_VERTEX_INPUT_RATE_VERTEX });
+            pvisci.vertexBindingDescriptionCount = bindings.size();
+            pvisci.pVertexBindingDescriptions = bindings.data();
+            pvisci.vertexAttributeDescriptionCount = attributes.size();
+            pvisci.pVertexAttributeDescriptions = attributes.data();
 
         }
+        pcbsci.attachmentCount = attachments.size();
+        pcbsci.pAttachments = attachments.data();
 
-        pcbsci.setAttachments(attachments);
-        pdsci.setDynamicStates(dynamicStates);
+        pdsci.dynamicStateCount = dynamicStates.size();
+        pdsci.pDynamicStates = dynamicStates.data();
 
         auto device = engine_->getDevice();
+        std::vector<VkPipeline> pipelines(1);
 
-        auto rv = device->getDevice().createGraphicsPipeline(nullptr, gpci);
-        assert(rv.result == vk::Result::eSuccess);
+        auto rv = vkCreateGraphicsPipelines(device->getDevice(), nullptr, 1, &gpci, nullptr,
+                                            pipelines.data());
+        //auto rv = device->getDevice().createGraphicsPipeline(nullptr, gpci);
+        assert(rv == VK_SUCCESS);
 
-        return rv.value;
+        return pipelines[0];
     }
 
     void MaterialsModule::createPipelines(
@@ -1174,7 +1214,8 @@ namespace RxEngine
         std::vector<RxCore::CombinedSampler> ts;
 
         res.each<Material>(
-            [&](ecs::EntityHandle e, Material * m) {
+            [&](ecs::EntityHandle e, Material * m)
+            {
                 m->sequence = static_cast<uint32_t>(mv.size());
 
                 //auto me = mv.emplace_back();
@@ -1194,8 +1235,8 @@ namespace RxEngine
         buffer->update(mv.data(), mv.size() * sizeof(MaterialShaderEntry));
         buffer->unmap();
 
-        ds->ds->updateDescriptor(3, vk::DescriptorType::eStorageBuffer, buffer);
-        ds->ds->updateDescriptor(4, vk::DescriptorType::eCombinedImageSampler, ts);
+        ds->ds->updateDescriptor(3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer);
+        ds->ds->updateDescriptor(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, ts);
 
         e.addDeferred<MaterialDescriptor>();
     }
