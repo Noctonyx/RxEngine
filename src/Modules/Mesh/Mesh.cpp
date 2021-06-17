@@ -227,7 +227,7 @@ namespace RxEngine
             );
 
             auto da = instanceBuffer->getDeviceAddress();
-            buf->pushConstant(vk::ShaderStageFlagBits::eVertex, 8, sizeof(da), &da);
+            buf->pushConstant(VK_SHADER_STAGE_VERTEX_BIT, 8, sizeof(da), &da);
             MeshModule::renderIndirectDraws(world, ids, buf, triangles, drawCalls);
         }
         buf->end();
@@ -264,7 +264,7 @@ namespace RxEngine
                     OPTICK_EVENT("Bind Bundle")
                     auto bund = world->get<MeshBundle>(h.bundle);
                     buf->pushConstant(
-                        vk::ShaderStageFlagBits::eVertex, 0,
+                        VK_SHADER_STAGE_VERTEX_BIT, 0,
                         sizeof(bund->address), &bund->address
                     );
                     {

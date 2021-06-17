@@ -233,13 +233,13 @@ namespace RxEngine
 
     struct RenderPasses
     {
-        vk::RenderPass opaqueRenderPass{};
+        VkRenderPass opaqueRenderPass{};
         uint32_t opaqueSubPass;
-        vk::RenderPass shadowRenderPass{};
+        VkRenderPass shadowRenderPass{};
         uint32_t shadowSubPass;
-        vk::RenderPass transparentRenderPass{};
+        VkRenderPass transparentRenderPass{};
         uint32_t transparentSubPass;
-        vk::RenderPass uiRenderPass{};
+        VkRenderPass uiRenderPass{};
         uint32_t uiSubPass;
     };
 
@@ -264,7 +264,7 @@ namespace RxEngine
     public:
         explicit Renderer(RxCore::Device * device,
                           ecs::World * world,
-                          vk::Format imageFormat,
+                          //VkFormat imageFormat,
                           EngineMain * engine, const ecs::entity_t moduleId);
 
         ~Renderer();
@@ -273,11 +273,11 @@ namespace RxEngine
         void startup();
 
         void render(
-            vk::ImageView imageView,
-            vk::Extent2D extent,
-            std::vector<vk::Semaphore> waitSemaphores,
-            std::vector<vk::PipelineStageFlags> waitStages,
-            vk::Semaphore completeSemaphore
+            VkImageView imageView,
+            VkExtent2D extent,
+            std::vector<VkSemaphore> waitSemaphores,
+            std::vector<VkPipelineStageFlags> waitStages,
+            VkSemaphore completeSemaphore
         );
         void shutdown();
 
@@ -294,15 +294,15 @@ namespace RxEngine
             entityJobs);
 
         void setScissorAndViewport(
-            vk::Extent2D extent,
+            VkExtent2D extent,
             std::shared_ptr<RxCore::SecondaryCommandBuffer> buf,
             bool flipY) const;
 
-        vk::Pipeline createUiMaterialPipeline(const MaterialPipelineDetails * mpd,
+        VkPipeline createUiMaterialPipeline(const MaterialPipelineDetails * mpd,
                                               const FragmentShader * frag,
                                               const VertexShader * vert,
-                                              vk::PipelineLayout layout,
-                                              vk::RenderPass rp,
+                                              VkPipelineLayout layout,
+                                              VkRenderPass rp,
                                               uint32_t subpass);
     public:
         //void collectLights(const std::vector<IRenderable *> & subsystems, std::vector<LightData> & lights);
@@ -313,10 +313,10 @@ namespace RxEngine
 
     private:
         RxCore::Device * device_;
-        vk::Format imageFormat_;
+        //VkFormat imageFormat_;
 
-        vk::Extent2D bufferExtent_;
-        vk::QueryPool queryPool_;
+        VkExtent2D bufferExtent_;
+        VkQueryPool queryPool_;
 
         std::shared_ptr<RxCore::Image> depthBuffer_;
         std::shared_ptr<RxCore::Image> shadowMap_;
@@ -326,29 +326,29 @@ namespace RxEngine
         std::shared_ptr<RxCore::ImageView> depthBufferView_;
         std::shared_ptr<RxCore::CommandPool> graphicsCommandPool_;
 
-        vk::RenderPass renderPass_;
-        vk::RenderPass depthRenderPass_;
+        VkRenderPass renderPass_;
+        VkRenderPass depthRenderPass_;
 
-        vk::DescriptorSetLayout ds0Layout;
+        VkDescriptorSetLayout ds0Layout;
         std::shared_ptr<RxCore::DescriptorSet> ds0_;
         bool shadowImagesChanged;
 
-        vk::Sampler shadowSampler_;
+        VkSampler shadowSampler_;
 
         //std::shared_ptr<Lighting> lightingManager_;
-        //vk::PipelineLayout pipelineLayout;
-        //std::vector<vk::DescriptorSetLayout> dsLayouts;
+        //VkPipelineLayout pipelineLayout;
+        //std::vector<VkDescriptorSetLayout> dsLayouts;
 
         std::shared_ptr<RxCore::DescriptorPool> descriptorPool;
-        void ensureDepthBufferExists(vk::Extent2D & extent);
+        void ensureDepthBufferExists(VkExtent2D & extent);
         void ensureShadowImages(uint32_t shadowMapSize, uint32_t numCascades);
 
         //RxCore::DescriptorPoolTemplate poolTemplate;
-        //void ensureFrameBufferSize(const vk::ImageView & imageView, const vk::Extent2D & extent);
+        //void ensureFrameBufferSize(const VkImageView & imageView, const VkExtent2D & extent);
 
         std::shared_ptr<RxCore::FrameBuffer> createRenderFrameBuffer(
-            const vk::ImageView & imageView,
-            const vk::Extent2D & extent) const;
+            const VkImageView & imageView,
+            const VkExtent2D & extent) const;
 
         //void createPipelineLayout();
         //void updateDescriptorSet0(const std::shared_ptr<RenderCamera> & renderCamera);

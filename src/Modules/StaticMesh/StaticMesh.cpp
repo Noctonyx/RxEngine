@@ -61,7 +61,7 @@ namespace RxEngine
         const RxCore::DescriptorPoolTemplate pool_template(
             {
                 {
-                    vk::DescriptorType::eStorageBuffer,
+                    VkDescriptorType::eStorageBuffer,
                     10
                 }
             }, 10);
@@ -117,8 +117,8 @@ namespace RxEngine
         mb->maxIndexCount = mb->maxVertexCount;
 
         mb->vertexBuffer = device->createBuffer(
-            vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eVertexBuffer |
-            vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
             VMA_MEMORY_USAGE_GPU_ONLY, mb->maxVertexCount * mb->vertexSize
         );
 
@@ -130,7 +130,7 @@ namespace RxEngine
         const RxCore::DescriptorPoolTemplate pool_template(
             {
                 {
-                    vk::DescriptorType::eStorageBuffer,
+                    VkDescriptorType::eStorageBuffer,
                     10
                 }
             }, 10);
@@ -139,9 +139,9 @@ namespace RxEngine
 #if 0
         mb->descriptorSet = RxCore::threadResources.getDescriptorSet(pool_template, pl->dsls[1]);
         mb->descriptorSet->
-            updateDescriptor(0, vk::DescriptorType::eStorageBuffer, mb->vertexBuffer);
+            updateDescriptor(0, VkDescriptorType::eStorageBuffer, mb->vertexBuffer);
 #endif
-        //vk::BufferDeviceAddressInfo bdai{};
+        //VkBufferDeviceAddressInfo bdai{};
         //bdai.setBuffer(mb->vertexBuffer->handle());
 
         mb->address = mb->vertexBuffer->getDeviceAddress();

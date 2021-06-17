@@ -79,15 +79,16 @@ namespace RxEngine
             std::shared_ptr<RxCore::SecondaryCommandBuffer> buf;
             uint32_t triangles;
             uint32_t drawCalls;
+            uint8_t cascadeIndex;
         };
 
 #if 0
         struct ShaderModule
         {
             std::shared_ptr<RxCore::Shader> shader;
-            //vk::ShaderModule module{};
+            //VkShaderModule module{};
             std::string shaderAssetName{};
-            //vk::Device device{};
+            //VkDevice device{};
         };
 #endif
 #if 0
@@ -139,7 +140,7 @@ namespace RxEngine
 #endif
         struct MaterialSampler
         {
-            vk::Sampler sampler;
+            VkSampler sampler;
             uint32_t sequence;
         };
 #if 0

@@ -6,7 +6,6 @@
 #define RXENGINE_SWAPCHAIN_H
 
 #include <Modules/Module.h>
-#include <Vulkan/SwapChain.hpp>
 #include "Vulkan/DescriptorSet.hpp"
 
 namespace RxEngine
@@ -20,17 +19,17 @@ namespace RxEngine
 
     struct MainRenderImageInput
     {
-        vk::ImageView imageView;
-        vk::Semaphore imageAvailableSempahore;
+        VkImageView imageView;
+        VkSemaphore imageAvailableSempahore;
         uint32_t imageIndex;
-        vk::Extent2D extent;
-        vk::Semaphore finishRenderSemaphore;
+        VkExtent2D extent;
+        VkSemaphore finishRenderSemaphore;
     };
 
     struct MainRenderImageOutput
     {
-        vk::ImageView imageView;
-        vk::Semaphore finishRenderSemaphore;
+        VkImageView imageView;
+        VkSemaphore finishRenderSemaphore;
     };
 
     class SwapChainModule : public Module
@@ -39,7 +38,7 @@ namespace RxEngine
         SwapChainModule(ecs::World * world, EngineMain * engine, ecs::entity_t moduleId);
         void startup() override;
         void shutdown() override;
-        [[nodiscard]] vk::Format getImageFormat() const;
+        //[[nodiscard]] VkFormat getImageFormat() const;
 
     protected:
         void replaceSwapChain();
@@ -47,8 +46,8 @@ namespace RxEngine
         void destroySemaphores();
 
     private:
-        std::unique_ptr<RxCore::SwapChain> swapChain_;
-        std::vector<vk::Semaphore> submitCompleteSemaphores_;
+        //std::unique_ptr<RxCore::SwapChain> swapChain_;
+        std::vector<VkSemaphore> submitCompleteSemaphores_;
     };
 }
 

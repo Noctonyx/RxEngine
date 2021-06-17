@@ -69,7 +69,7 @@ namespace RxEngine
         Rml::TextureHandle texture;
         DirectX::XMFLOAT2 translation;
         bool scissorEnable;
-        vk::Rect2D scissor;
+        VkRect2D scissor;
         DirectX::XMFLOAT4X4 transform;
     };
 
@@ -77,7 +77,7 @@ namespace RxEngine
     {
         std::shared_ptr<RxCore::Image> image;
         std::shared_ptr<RxCore::ImageView> imageView;
-        vk::Sampler sampler;
+        VkSampler sampler;
     };
 
     struct RmlPushConstantData
@@ -135,7 +135,7 @@ namespace RxEngine
 
         uintptr_t getNextTextureHandle() const;
         bool scissorEnabled_{};
-        vk::Rect2D scissorRect;
+        VkRect2D scissorRect;
         DirectX::XMFLOAT4X4 transform_{};
         std::vector<UiRenderEntry> renders;
         std::vector<Rml::Vertex> vertices_;

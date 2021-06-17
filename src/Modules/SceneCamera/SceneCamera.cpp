@@ -69,7 +69,7 @@ namespace RxEngine
               .each<DescriptorSet, SceneCamera>(
                   [](ecs::EntityHandle e, DescriptorSet * ds, const SceneCamera * sc)
                   {
-                      ds->ds->updateDescriptor(0, vk::DescriptorType::eUniformBufferDynamic,
+                      ds->ds->updateDescriptor(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                                                sc->camBuffer, sizeof(SceneCameraShaderData),
                                                static_cast<uint32_t>(sc->ix * sc->bufferAlignment));
 
