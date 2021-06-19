@@ -49,7 +49,7 @@ namespace RxEngine
     {
         //world_->addSingleton<StaticMeshActiveBundle>();
         worldObjects_ = world_->createQuery<WorldObject, WorldTransform, HasVisiblePrototype>()
-                              .withJob()
+                              //.withJob()
                                   //.withRelation<HasVisiblePrototype, VisiblePrototype>()
                               .withInheritance(true).id;
 
