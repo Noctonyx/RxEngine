@@ -5,9 +5,9 @@ namespace RxEngine
 {
     using namespace Transforms;
 
-    void worldPositionGui(ecs::World *, void * ptr)
+    void worldPositionGui(ecs::EntityHandle, const void * ptr)
     {
-        auto position = static_cast<WorldPosition *>(ptr);
+        auto position = static_cast<const WorldPosition *>(ptr);
 
         if (position) {
             ImGui::TableNextRow();
@@ -28,9 +28,9 @@ namespace RxEngine
         }
     }
 
-    void localRotationGui(ecs::World*, void* ptr)
+    void localRotationGui(ecs::EntityHandle, const void* ptr)
     {
-        auto rotation = static_cast<LocalRotation*>(ptr);
+        auto rotation = static_cast<const LocalRotation*>(ptr);
         if (rotation) {
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
@@ -65,9 +65,9 @@ namespace RxEngine
         }
     }
 #endif
-    void scalarScaleGui(ecs::World *, void * ptr)
+    void scalarScaleGui(ecs::EntityHandle, const void * ptr)
     {
-        auto sc = static_cast<ScalarScale *>(ptr);
+        auto sc = static_cast<const ScalarScale *>(ptr);
 
         if (sc) {
             ImGui::TableNextRow();

@@ -180,8 +180,9 @@ namespace RxEngine
                       //                  pl->dsls[0], {1});
 
                       auto e = world->newEntity();
-                      auto x = e.addAndUpdate<DescriptorSet>();
-                      x->ds = ds0x_;
+                      e.addAndUpdate<DescriptorSet>([&](DescriptorSet * x){
+                          x->ds = ds0x_;
+                      });
 
                       world->setSingleton<CurrentMainDescriptorSet>({e.id});
                   }
@@ -542,7 +543,7 @@ namespace RxEngine
                     }
                 }
                 VkClearValue clv1{};
-                clv1.color = {0.0f, 0.0f, 0.0f, 1.0f};
+                clv1.color = {{0.0f, 0.0f, 0.0f, 1.0f}};
                 VkClearValue clv2{};
                 clv2.depthStencil = {1.0f, ~0u};
 

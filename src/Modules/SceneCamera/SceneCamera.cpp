@@ -10,9 +10,11 @@ constexpr int camera_buffer_count = 5;
 
 namespace RxEngine
 {
-    void sceneCameraGUI(ecs::World * w, void * ptr)
+    void sceneCameraGUI(ecs::EntityHandle h, const void * ptr)
     {
-        auto sc = static_cast<SceneCamera *>(ptr);
+        ecs::World * w = h.getWorld();
+
+        auto sc = static_cast<const SceneCamera *>(ptr);
         if (sc) {
             ImGui::TableNextRow();
             ImGui::TableNextColumn();

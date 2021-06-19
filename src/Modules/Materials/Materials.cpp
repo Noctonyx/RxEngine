@@ -35,12 +35,13 @@
 #include "sol/table.hpp"
 #include "RxECS.h"
 #include "Modules/Render.h"
+#include "fx/gltf.h"
 
 namespace RxEngine
 {
-    void materialUi(ecs::World *, void * ptr)
+    void materialUi(ecs::EntityHandle, const void * ptr)
     {
-        auto material = static_cast<Material *>(ptr);
+        auto material = static_cast<const Material *>(ptr);
 
         if (material) {
             ImGui::TableNextRow();

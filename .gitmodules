@@ -40,3 +40,6 @@
 [submodule "extern/lunasvg"]
 	path = extern/lunasvg
 	url = https://github.com/sammycage/lunasvg.git
+[submodule "extern/fx-gltf"]
+	path = extern/fx-gltf
+	url = https://github.com/jessey-git/fx-gltf

@@ -30,9 +30,9 @@
 
 namespace RxEngine
 {
-    void frameStatsGui(ecs::World *, void * ptr)
+    void frameStatsGui(ecs::EntityHandle, const void * ptr)
     {
-        auto fs = static_cast<FrameStats *>(ptr);
+        auto fs = static_cast<const FrameStats *>(ptr);
         if (fs) {
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
@@ -184,7 +184,7 @@ namespace RxEngine
                         ImGui::TableSetupColumn("Value");
 
                         world->get<ComponentGui>(c)->
-                               editor(world.get(), world->getUpdate(entity.id, c));
+                            editor(entity, world->get(entity.id, c));
 
                         ImGui::EndTable();
                     }
@@ -215,7 +215,7 @@ namespace RxEngine
                             ImGui::TableSetupColumn("Value");
 
                             world->get<ComponentGui>(c)->
-                                   editor(world.get(), world->getUpdate(entity.id, c));
+                                editor(entity, world->get(entity.id, c));
 
                             ImGui::EndTable();
                         }
@@ -247,7 +247,8 @@ namespace RxEngine
 
             if (ImGui::BeginCombo(
                 "Archetype",
-                tab ? tab->description().c_str() : "Unknown")) {
+                tab ? tab->description().c_str() : "Unknown"
+            )) {
                 for (auto it: *world) {
                     auto table = world->getTableForArchetype(it.id);
                     if (table && table->entities.size() > 0) {
@@ -360,7 +361,7 @@ namespace RxEngine
                 ImGui::TableSetupScrollFreeze(0, 1);
                 ImGui::TableHeadersRow();
 
-                for (auto & [k, v]: world->allSingletons()) {
+                for (auto &[k, v]: world->allSingletons()) {
                     ImGui::TableNextRow();
                     ImGui::TableNextColumn();
                     if (ImGui::Selectable(
@@ -388,8 +389,9 @@ namespace RxEngine
 
                     ImGui::TableNextRow();
                     ImGui::TableNextColumn();
+                    ecs::EntityHandle h{0, world.get()};
                     world->get<ComponentGui>(selectedSingleton)->editor(
-                        world.get(), world->getSingletonUpdate(selectedSingleton));
+                        h, world->getSingleton(selectedSingleton));
                 }
 
                 ImGui::EndTable();
@@ -431,10 +433,13 @@ namespace RxEngine
                     ImGui::TableNextColumn();
                     //ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
                     //ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f));
-                    ImGui::PushStyleColor(ImGuiCol_Text,
-                                          static_cast<ImVec4>(ImColor(226, 255, 138)));
-                    bool open = ImGui::TreeNodeEx(world->description(pg).c_str(),
-                                                  ImGuiTreeNodeFlags_SpanFullWidth);
+                    ImGui::PushStyleColor(
+                        ImGuiCol_Text,
+                        static_cast<ImVec4>(ImColor(226, 255, 138)));
+                    bool open = ImGui::TreeNodeEx(
+                        world->description(pg).c_str(),
+                        ImGuiTreeNodeFlags_SpanFullWidth
+                    );
                     ImGui::PopStyleColor(1);
 
                     ImGui::TableNextColumn();
@@ -446,7 +451,7 @@ namespace RxEngine
                         for (auto e: sg->executionSequence) {
                             auto sys = world->get<ecs::System>(e);
                             ImGui::TableNextRow();
-                            ImGui::TableNextColumn();                          
+                            ImGui::TableNextColumn();
                             if (ImGui::Selectable(
                                 world->description(e).c_str(),
                                 selectedSystem == e
@@ -464,8 +469,9 @@ namespace RxEngine
                     if (open) {
                         ImGui::TableNextRow();
                         ImGui::TableNextColumn();
-                        ImGui::PushStyleColor(ImGuiCol_Text,
-                                              static_cast<ImVec4>(ImColor(138, 233, 255)));
+                        ImGui::PushStyleColor(
+                            ImGuiCol_Text,
+                            static_cast<ImVec4>(ImColor(138, 233, 255)));
                         ImGui::Text("Deferred Processing");
                         ImGui::PopStyleColor();
 
@@ -478,7 +484,7 @@ namespace RxEngine
                     }
                     ImGui::PopID();
                 }
-            
+
 #if 0
                 for (auto x : v) {
                     if (x == 0) {
@@ -625,9 +631,9 @@ namespace RxEngine
         }
     }
 
-    void ecsNameGui(ecs::World *, void * ptr)
+    void ecsNameGui(ecs::EntityHandle, const void * ptr)
     {
-        auto name = static_cast<ecs::Name *>(ptr);
+        auto name = static_cast<const ecs::Name *>(ptr);
         if (name) {
 
             ImGui::TableNextRow();
@@ -638,9 +644,9 @@ namespace RxEngine
         }
     }
 
-    void ecsComponentGui(ecs::World *, void * ptr)
+    void ecsComponentGui(ecs::EntityHandle, const void * ptr)
     {
-        auto comp = static_cast<ecs::Component *>(ptr);
+        auto comp = static_cast<const ecs::Component *>(ptr);
         if (comp) {
 
             ImGui::TableNextRow();
@@ -663,9 +669,9 @@ namespace RxEngine
         }
     }
 
-    void ecsSystemGroupGui(ecs::World *, void * ptr)
+    void ecsSystemGroupGui(ecs::EntityHandle, const void * ptr)
     {
-        auto group = static_cast<ecs::SystemGroup *>(ptr);
+        auto group = static_cast<const ecs::SystemGroup *>(ptr);
         if (group) {
 
             ImGui::TableNextRow();
@@ -694,9 +700,9 @@ namespace RxEngine
         }
     }
 
-    void ecsWindowDetailsGui(ecs::World *, void * ptr)
+    void ecsWindowDetailsGui(ecs::EntityHandle, const void * ptr)
     {
-        auto window_details = static_cast<WindowDetails *>(ptr);
+        auto window_details = static_cast<const WindowDetails *>(ptr);
         if (window_details) {
 
             ImGui::TableNextRow();
@@ -713,9 +719,9 @@ namespace RxEngine
         }
     }
 
-    void ecsEngineTimeGui(ecs::World *, void * ptr)
+    void ecsEngineTimeGui(ecs::EntityHandle, const void * ptr)
     {
-        auto engine_time = static_cast<EngineTime *>(ptr);
+        auto engine_time = static_cast<const EngineTime *>(ptr);
         if (engine_time) {
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
@@ -731,9 +737,11 @@ namespace RxEngine
         }
     }
 
-    void ecsSystemGui(ecs::World * w, void * ptr)
+    void ecsSystemGui(ecs::EntityHandle h, const void * ptr)
     {
-        auto system = static_cast<ecs::System *>(ptr);
+        ecs::World * w = h.getWorld();
+
+        auto system = static_cast<const ecs::System *>(ptr);
         if (system) {
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
@@ -741,8 +749,8 @@ namespace RxEngine
             ImGui::TableNextColumn();
             ImGui::Text(
                 "%s", system->query
-                          ? "Query"
-                          : (system->stream ? "Stream" : "Execute"));
+                      ? "Query"
+                      : (system->stream ? "Stream" : "Execute"));
 
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
@@ -792,9 +800,9 @@ namespace RxEngine
         }
     }
 
-    void ecsStreamComponentGui(ecs::World *, void * ptr)
+    void ecsStreamComponentGui(ecs::EntityHandle, const void * ptr)
     {
-        auto comp = static_cast<ecs::StreamComponent *>(ptr);
+        auto comp = static_cast<const ecs::StreamComponent *>(ptr);
         if (comp) {
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
@@ -812,13 +820,13 @@ namespace RxEngine
         ImGui::TableNextColumn();
     }
 
-    void guiDisplay(const char * name, uint32_t & value)
+    void guiDisplay(const char * name, const uint32_t & value)
     {
         guiDisplayStart(name);
         ImGui::Text("%d", value);
     }
 
-    void guiDisplay(const char * name, int32_t & value)
+    void guiDisplay(const char * name, const int32_t & value)
     {
         guiDisplayStart(name);
         ImGui::Text("%d", value);

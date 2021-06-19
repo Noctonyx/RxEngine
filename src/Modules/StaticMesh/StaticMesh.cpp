@@ -50,7 +50,7 @@ namespace RxEngine
         //world_->addSingleton<StaticMeshActiveBundle>();
         worldObjects_ = world_->createQuery<WorldObject, WorldTransform, HasVisiblePrototype>()
                               .withJob()
-                              //.withRelation<HasVisiblePrototype, VisiblePrototype>()
+                                  //.withRelation<HasVisiblePrototype, VisiblePrototype>()
                               .withInheritance(true).id;
 
         instanceBuffers.count = 5;
@@ -75,8 +75,7 @@ namespace RxEngine
               .withRead<VisiblePrototype>()
               .withJob()
               .execute(
-                  [this](ecs::World *)
-                  {
+                  [this](ecs::World *) {
                       OPTICK_EVENT("StaticMesh:Render")
                       createOpaqueRenderCommands();
                   }
@@ -91,8 +90,7 @@ namespace RxEngine
               .withRead<VisiblePrototype>()
               .withRead<ShadowCascadeData>()
               .execute(
-                  [](ecs::World *)
-                  {
+                  [](ecs::World *) {
                       OPTICK_EVENT("StaticMesh:ShadowRender")
                       //createOpaqueRenderCommands();
                   }
@@ -101,31 +99,36 @@ namespace RxEngine
         //pipeline_ = world_->lookup("pipeline/staticmesh_opaque");
     }
 
-    void StaticMeshModule::shutdown() {}
+    void StaticMeshModule::shutdown()
+    {}
 
     ecs::entity_t createStaticMeshBundle(RxCore::Device * device, ecs::World * world)
     {
         auto mbe = world->newEntity();
 
-        auto mb = mbe.addAndUpdate<MeshBundle>();
+        mbe.addAndUpdate<MeshBundle>(
+            [=](MeshBundle * mb) {
+                mb->vertexCount = 0;
+                mb->indexCount = 0;
+                mb->vertexSize = sizeof(StaticMeshVertex);
+                //mb->useDescriptor = true;
+                mb->maxVertexCount = (256 * 1024 * 1024 / mb->vertexSize);
+                mb->maxIndexCount = mb->maxVertexCount;
 
-        mb->vertexCount = 0;
-        mb->indexCount = 0;
-        mb->vertexSize = sizeof(StaticMeshVertex);
-        //mb->useDescriptor = true;
-        mb->maxVertexCount = (256 * 1024 * 1024 / mb->vertexSize);
-        mb->maxIndexCount = mb->maxVertexCount;
+                mb->vertexBuffer = device->createBuffer(
+                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                    VMA_MEMORY_USAGE_GPU_ONLY, mb->maxVertexCount * mb->vertexSize
+                );
 
-        mb->vertexBuffer = device->createBuffer(
-            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
-            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-            VMA_MEMORY_USAGE_GPU_ONLY, mb->maxVertexCount * mb->vertexSize
+                mb->indexBuffer = device->createIndexBuffer(
+                    VMA_MEMORY_USAGE_GPU_ONLY, static_cast<uint32_t>(mb->maxVertexCount * sizeof(uint32_t)),
+                    false
+                );
+                mb->address = mb->vertexBuffer->getDeviceAddress();
+            }
         );
 
-        mb->indexBuffer = device->createIndexBuffer(
-            VMA_MEMORY_USAGE_GPU_ONLY, static_cast<uint32_t>(mb->maxVertexCount * sizeof(uint32_t)),
-            false
-        );
 #if 0
         const RxCore::DescriptorPoolTemplate pool_template(
             {
@@ -144,7 +147,6 @@ namespace RxEngine
         //VkBufferDeviceAddressInfo bdai{};
         //bdai.setBuffer(mb->vertexBuffer->handle());
 
-        mb->address = mb->vertexBuffer->getDeviceAddress();
         //  RxCore::iVulkan()->VkDevice().getBufferAddress(bdai);
 
         world->getSingletonUpdate<StaticMeshActiveBundle>()->currentBundle = mbe.id;
@@ -224,8 +226,7 @@ namespace RxEngine
         std::copy(msd.indices.begin(), msd.indices.end(), mesh_indices.begin());
         std::transform(
             msd.vertices.begin(), msd.vertices.end(), mesh_vertices.begin(),
-            [](RxAssets::MeshSaveVertex & m)
-            {
+            [](RxAssets::MeshSaveVertex & m) {
                 return StaticMeshVertex{
                     {m.x, m.y, m.z}, 0.f, {m.nx, m.ny, m.nz}, 0.f, {m.uvx, m.uvy}, 0.f,
                     0.f
@@ -238,30 +239,33 @@ namespace RxEngine
             auto smb = world->get<MeshBundle>(mb);
 
             if (mesh_vertices.size() + smb->vertexCount > smb->maxVertexCount || mesh_indices.size()
-                +
-                smb->indexCount > smb->maxIndexCount) {
+                                                                                 +
+                                                                                 smb->indexCount > smb->maxIndexCount) {
                 mb = createStaticMeshBundle(device, world);
                 world->getSingletonUpdate<StaticMeshActiveBundle>()->currentBundle = mb;
             }
         }
 
-        auto smb = world->getUpdate<MeshBundle>(mb);
+        auto smb = world->get<MeshBundle>(mb);
 
         auto static_mesh_entity = world->newEntity(meshName.c_str())
                                        .set<Mesh>(
                                            {
                                                .vertexOffset = smb->vertexCount,
                                                .indexOffset = smb->indexCount,
-                                               .indexCount = static_cast<uint32_t>(mesh_indices.
-                                                   size()),
+                                               .indexCount = static_cast<uint32_t>(mesh_indices.size()),
                                                .boundSphere = bs
                                            }
                                        )
                                        .set<InBundle>({{mb}});
 
-        copyToBuffers(device, mesh_vertices, mesh_indices, smb);
+        world->update<MeshBundle>(
+            mb, [=](MeshBundle * smb2) {
+                copyToBuffers(device, mesh_vertices, mesh_indices, smb2);
 
-        smb->entries.push_back(static_mesh_entity.id);
+                smb2->entries.push_back(static_mesh_entity.id);
+            }
+        );
 
         //auto sm = mesh_prim_entity.addAndUpdate<StaticMesh>();
 
@@ -270,7 +274,7 @@ namespace RxEngine
 
         std::vector<ecs::entity_t> mEntities;
 
-        for (auto & [k, v]: mtab) {
+        for (auto &[k, v]: mtab) {
             std::string mn = v.as<std::string>();
 
             auto mat_entity = world->lookup(mn.c_str());
@@ -279,30 +283,33 @@ namespace RxEngine
             }
         }
 
-        auto smu = static_mesh_entity.getUpdate<Mesh>();
+        //auto smu = static_mesh_entity.get<Mesh>();
 
-        uint32_t ix = 0;
-        for (auto & [k, v]: smtab) {
-            sol::table subMeshValue = v;
+        static_mesh_entity.update<Mesh>([&](Mesh * smu){
 
-            uint32_t first_index = subMeshValue.get<uint32_t>("first_index");
-            uint32_t index_count = subMeshValue.get<uint32_t>("index_count");
-            const uint32_t material = subMeshValue.get<uint32_t>("material");
+            uint32_t ix = 0;
+            for (auto &[k, v]: smtab) {
+                sol::table subMeshValue = v;
 
-            //sm->subMeshes.push_back(
-            smu->subMeshes.push_back(
-                world->newEntity()
-                     //.set<ecs::InstanceOf>({{me.id}})
-                     .set<SubMesh>({first_index, index_count, ix++})
-                     .set<SubMeshOf>({{static_mesh_entity.id}})
-                     .set<UsesMaterial>({{mEntities[material]}}).id
-            );
-        }
+                uint32_t first_index = subMeshValue.get<uint32_t>("first_index");
+                uint32_t index_count = subMeshValue.get<uint32_t>("index_count");
+                const uint32_t material = subMeshValue.get<uint32_t>("material");
+
+                //sm->subMeshes.push_back(
+                smu->subMeshes.push_back(
+                    world->newEntity()
+                    //.set<ecs::InstanceOf>({{me.id}})
+                    .set<SubMesh>({first_index, index_count, ix++})
+                    .set<SubMeshOf>({{static_mesh_entity.id}})
+                    .set<UsesMaterial>({{mEntities[material]}}).id
+                    );
+            }
+        });
     }
 
     void loadMeshes(ecs::World * world, RxCore::Device * device, sol::table & meshes)
     {
-        for (auto & [key, value]: meshes) {
+        for (auto &[key, value]: meshes) {
             const std::string name = key.as<std::string>();
             const sol::table details = value;
             loadMesh(world, device, name, details);
@@ -360,8 +367,7 @@ namespace RxEngine
             res.each<WorldTransform, HasVisiblePrototype>(
                 [&](ecs::EntityHandle e,
                     const WorldTransform * wt,
-                    const HasVisiblePrototype * vpp)
-                {
+                    const HasVisiblePrototype * vpp) {
                     auto vp = world_->get<VisiblePrototype>(vpp->entity);
                     //OPTICK_EVENT("Process Entity")
                     if (!vp) {
@@ -403,10 +409,9 @@ namespace RxEngine
             std::sort(
                 instances.begin(),
                 instances.begin() + ix,
-                [](const auto & a, const auto & b)
-                {
-                    auto & [ar, apipeline, am] = a;
-                    auto & [br, bpipeline, bm] = b;
+                [](const auto & a, const auto & b) {
+                    auto &[ar, apipeline, am] = a;
+                    auto &[br, bpipeline, bm] = b;
                     if (apipeline < bpipeline) {
                         return true;
                     }
@@ -437,7 +442,7 @@ namespace RxEngine
 
             for (size_t i = 0; i < ix; i++) {
                 auto & instance = instances[i];
-                auto & [rdc, rpipeline, m] = instance;
+                auto &[rdc, rpipeline, m] = instance;
 
                 if (prevPL != rpipeline || rdc->bundle != prevBundle) {
 
@@ -481,8 +486,10 @@ namespace RxEngine
         }
 
         createInstanceBuffer(ids);
-        MeshModule::drawInstances(instanceBuffers.buffers[instanceBuffers.ix], world_, pipeline,
-                                  layout, ids);
+        MeshModule::drawInstances(
+            instanceBuffers.buffers[instanceBuffers.ix], world_, pipeline,
+            layout, ids
+        );
     }
 
     void StaticMeshModule::createInstanceBuffer(IndirectDrawSet & ids)

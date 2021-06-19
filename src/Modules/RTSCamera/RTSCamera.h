@@ -48,15 +48,20 @@ namespace RxEngine
                     XMLoadFloat4x4(&iView)));
         }
 
-        static void rtsCameraUI(ecs::World*, void* ptr)
+        static void rtsCameraUI(ecs::EntityHandle e, const  void* ptr)
         {
-            auto rts_camera = static_cast<RTSCamera*>(ptr);
+            auto rts_camera = static_cast<const RTSCamera*>(ptr);
             if (rts_camera) {
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
                 ImGui::Text("Dolly");
                 ImGui::TableNextColumn();
-                ImGui::DragFloat("", &rts_camera->dolly);
+                float f= rts_camera->dolly;
+                if(ImGui::DragFloat("", &f)) {
+                    e.update<RTSCamera>([=](RTSCamera * r){
+                       r->dolly = f;
+                    });
+                }
             }
         }
     };

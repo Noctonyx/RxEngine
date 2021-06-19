@@ -8,6 +8,7 @@ add_subdirectory("extern/json")
 add_subdirectory("extern/spdlog")
 
 set(imgui_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/extern/imgui)
+set(fxgltf_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/extern/fx-gltf)
 #add_subdirectory("extern/bitsery")
 
 set(tinygltf_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/extern/tinygltf)
@@ -20,6 +21,7 @@ add_subdirectory(extern/lunasvg)
 add_subdirectory(extern/sol2)
 add_subdirectory(extern/freetype)
 add_subdirectory(extern/dxmath)
+#add_subdirectory(extern/fx-gltf)
 
 add_subdirectory("RxUtil")
 add_subdirectory("RxCore")
@@ -109,5 +111,7 @@ target_link_libraries(RxEngine PUBLIC DirectXMath)
 target_include_directories(RxEngine PUBLIC ${imgui_SOURCE_DIR})
 target_sources(RxEngine PRIVATE ${imgui_SOURCE_DIR}/imgui_draw.cpp ${imgui_SOURCE_DIR}/imgui_widgets ${imgui_SOURCE_DIR}/imgui_demo.cpp ${imgui_SOURCE_DIR}/imgui.cpp ${imgui_SOURCE_DIR}/imgui_tables.cpp ${imgui_SOURCE_DIR}/misc/freetype/imgui_freetype.cpp )
 target_compile_options(RxEngine PUBLIC -DIMGUI_ENABLE_FREETYPE)
+
+target_include_directories(RxEngine PUBLIC ${fxgltf_SOURCE_DIR}/include)
 
 set_target_properties(RxEngine PROPERTIES CXX_STANDARD 20)

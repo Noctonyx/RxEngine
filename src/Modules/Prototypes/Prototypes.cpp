@@ -34,9 +34,11 @@
 
 namespace RxEngine
 {
-    void visiblePrototypeUi(ecs::World * world, void * ptr)
+    void visiblePrototypeUi(ecs::EntityHandle e, const void * ptr)
     {
-        auto visible_prototype = static_cast<VisiblePrototype *>(ptr);
+        ecs::World * world = e.getWorld();
+
+        auto visible_prototype = static_cast<const VisiblePrototype *>(ptr);
 
         if (visible_prototype) {
             for (auto x: visible_prototype->subMeshEntities) {
@@ -106,23 +108,24 @@ namespace RxEngine
                      const sol::table & details)
     {
         auto e = world->newEntity(visibleName.c_str());
-        auto vp = e.addAndUpdate<VisiblePrototype>();
 
-        sol::table objects = details.get<sol::table>("objects");
+        e.addAndUpdate<VisiblePrototype>([&](VisiblePrototype * vp){
+            sol::table objects = details.get<sol::table>("objects");
 
-        for (auto & [k, v]: objects) {
-            sol::table objectDetails = v.as<sol::table>();
-            std::string m = objectDetails.get<std::string>("mesh");
-            uint32_t smi = objectDetails.get<uint32_t>("submesh_id");
+            for (auto & [k, v]: objects) {
+                sol::table objectDetails = v.as<sol::table>();
+                std::string m = objectDetails.get<std::string>("mesh");
+                uint32_t smi = objectDetails.get<uint32_t>("submesh_id");
 
-            auto meshEntity = world->lookup(m).get<Mesh>();
-            vp->boundingSphere = meshEntity->boundSphere;
-            assert(meshEntity);
-            assert(meshEntity->subMeshes.size() > smi);
+                auto meshEntity = world->lookup(m).get<Mesh>();
+                vp->boundingSphere = meshEntity->boundSphere;
+                assert(meshEntity);
+                assert(meshEntity->subMeshes.size() > smi);
 
-            auto se = e.getHandle(meshEntity->subMeshes[smi]);
-            vp->subMeshEntities.push_back(se);
-        }
+                auto se = e.getHandle(meshEntity->subMeshes[smi]);
+                vp->subMeshEntities.push_back(se);
+            }
+        });
     }
 
     void loadVisibles(ecs::World * world, sol::table & visibles)

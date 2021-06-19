@@ -307,13 +307,13 @@ namespace RxEngine
         auto vfs = RxAssets::Vfs::getInstance();
 
         auto size = vfs->getFilesize("/fonts/NotoSans-Regular.ttf");
-        if (size == 0) {
+        if (!size.has_value()) {
             throw RxAssets::AssetException(
                 "Error loading font /fonts/NotoSans-Regular.ttf",
                 std::string(""));
         }
 
-        std::vector<std::byte> data(size);
+        std::vector<std::byte> data(size.value());
         vfs->getFileContents("/fonts/NotoSans-Regular.ttf", data.data());
 
         io.Fonts->AddFontFromMemoryTTF(data.data(), static_cast<uint32_t>(data.size()), 16);

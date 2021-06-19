@@ -113,8 +113,7 @@ namespace RxEngine
              .withStream<WindowResize>()
              .inGroup("Pipeline:PostUpdate")
              .execute<WindowResize>(
-                 [this](ecs::World *, const WindowResize * rs)
-                 {
+                 [this](ecs::World *, const WindowResize * rs) {
                      setUint32ConfigValue("window", "width", rs->width);
                      setUint32ConfigValue("window", "height", rs->height);
                      return false;
@@ -124,8 +123,7 @@ namespace RxEngine
         world->createSystem("Engine:Clean")
              .inGroup("Pipeline:PostFrame")
              .execute(
-                 [](ecs::World *)
-                 {
+                 [](ecs::World *) {
                      RxCore::JobManager::instance().clean();
                      RxCore::threadResources.freeAllResources();
                  }
@@ -134,8 +132,7 @@ namespace RxEngine
         world->createSystem("Engine:ECSMain")
              .inGroup("Pipeline:UpdateUi")
              .execute(
-                 [this](ecs::World *)
-                 {
+                 [this](ecs::World *) {
                      OPTICK_EVENT("Engine GUI")
                      updateEntityGui();
                  }
@@ -145,118 +142,150 @@ namespace RxEngine
     void setupWorld(ecs::World * world, RxCore::Window * window)
     {
         auto g1 = world->newEntity("Pipeline:PreFrame").set<ecs::SystemGroup>(
-            {1, false, 0.0f, 0.0f});
+            {1, false, 0.0f, 0.0f}
+        );
         auto g2 = world->newEntity("Pipeline:Early").set<ecs::SystemGroup>({2, false, 0.0f, 0.0f});
-        auto g3 = world->newEntity("Pipeline:FixedUpdate").set<ecs::SystemGroup>({
-            3, true, 0.0f, 0.02f
-        });
+        auto g3 = world->newEntity("Pipeline:FixedUpdate").set<ecs::SystemGroup>(
+            {
+                3, true, 0.0f, 0.02f
+            }
+        );
         auto g4 = world->newEntity("Pipeline:Update").set<ecs::SystemGroup>({4, false, 0.0f, 0.0f});
         auto g5 = world->newEntity("Pipeline:UpdateUi").set<ecs::SystemGroup>(
-            {5, false, 0.0f, 0.0f});
-        auto g6 = world->newEntity("Pipeline:PostUpdate").set<ecs::SystemGroup>({
-            6, false, 0.0f, 0.0f
-        });
-        auto g7 = world->newEntity("Pipeline:PreRender").set<ecs::SystemGroup>({
-            7, false, 0.0f, 0.0f
-        });
+            {5, false, 0.0f, 0.0f}
+        );
+        auto g6 = world->newEntity("Pipeline:PostUpdate").set<ecs::SystemGroup>(
+            {
+                6, false, 0.0f, 0.0f
+            }
+        );
+        auto g7 = world->newEntity("Pipeline:PreRender").set<ecs::SystemGroup>(
+            {
+                7, false, 0.0f, 0.0f
+            }
+        );
         auto g8 = world->newEntity("Pipeline:Render").set<ecs::SystemGroup>({8, false, 0.0f, 0.0f});
-        auto g9 = world->newEntity("Pipeline:PostRender").set<ecs::SystemGroup>({
-            9, false, 0.0f, 0.0f
-        });
-        auto g10 = world->newEntity("Pipeline:PostFrame").set<ecs::SystemGroup>({
-            10, false, 0.0f, 0.0f
-        });
+        auto g9 = world->newEntity("Pipeline:PostRender").set<ecs::SystemGroup>(
+            {
+                9, false, 0.0f, 0.0f
+            }
+        );
+        auto g10 = world->newEntity("Pipeline:PostFrame").set<ecs::SystemGroup>(
+            {
+                10, false, 0.0f, 0.0f
+            }
+        );
 
-        auto sg1 = g1.getUpdate<ecs::SystemGroup>();
-        sg1->onBegin = []()
-        {
-            OPTICK_PUSH("Pipeline:PreFrame")
-        };
-        sg1->onEnd = []()
-        {
-            OPTICK_POP()
-        };
-        auto sg2 = g2.getUpdate<ecs::SystemGroup>();
-        sg2->onBegin = []()
-        {
-            OPTICK_PUSH("Pipeline:Early")
-        };
-        sg2->onEnd = []()
-        {
-            OPTICK_POP()
-        };
-        auto sg3 = g3.getUpdate<ecs::SystemGroup>();
-        sg3->onBegin = []()
-        {
-            OPTICK_PUSH("Pipeline:FixedUpdate")
-        };
-        sg3->onEnd = []()
-        {
-            OPTICK_POP()
-        };
-        auto sg4 = g4.getUpdate<ecs::SystemGroup>();
-        sg4->onBegin = []()
-        {
-            OPTICK_PUSH("Pipeline:Update")
-        };
-        sg4->onEnd = []()
-        {
-            OPTICK_POP()
-        };
-        auto sg5 = g5.getUpdate<ecs::SystemGroup>();
-        sg5->onBegin = []()
-        {
-            OPTICK_PUSH("Pipeline:UpdateUi")
-        };
-        sg5->onEnd = []()
-        {
-            OPTICK_POP()
-        };
-        auto sg6 = g6.getUpdate<ecs::SystemGroup>();
-        sg6->onBegin = []()
-        {
-            OPTICK_PUSH("Pipeline:PostUpdate")
-        };
-        sg6->onEnd = []()
-        {
-            OPTICK_POP()
-        };
-        auto sg7 = g7.getUpdate<ecs::SystemGroup>();
-        sg7->onBegin = []()
-        {
-            OPTICK_PUSH("Pipeline:PreRender")
-        };
-        sg7->onEnd = []()
-        {
-            OPTICK_POP()
-        };
-        auto sg8 = g8.getUpdate<ecs::SystemGroup>();
-        sg8->onBegin = []()
-        {
-            OPTICK_PUSH("Pipeline:Render")
-        };
-        sg8->onEnd = []()
-        {
-            OPTICK_POP()
-        };
-        auto sg9 = g9.getUpdate<ecs::SystemGroup>();
-        sg9->onBegin = []()
-        {
-            OPTICK_PUSH("Pipeline:PostRender")
-        };
-        sg9->onEnd = []()
-        {
-            OPTICK_POP()
-        };
-        auto sg10 = g10.getUpdate<ecs::SystemGroup>();
-        sg10->onBegin = []()
-        {
-            OPTICK_PUSH("Pipeline:PostFrame")
-        };
-        sg10->onEnd = []()
-        {
-            OPTICK_POP()
-        };
+        g1.update<ecs::SystemGroup>(
+            [=](auto * sg1) {
+                sg1->onBegin = []() {
+                    OPTICK_PUSH("Pipeline:PreFrame")
+                };
+                sg1->onEnd = []() {
+                    OPTICK_POP()
+                };
+
+            }
+        );
+        g2.update<ecs::SystemGroup>(
+            [=](auto * sg2) {
+                sg2->onBegin = []() {
+                    OPTICK_PUSH("Pipeline:Early")
+                };
+                sg2->onEnd = []() {
+                    OPTICK_POP()
+                };
+
+            }
+        );
+        g3.update<ecs::SystemGroup>(
+            [=](auto * sg3) {
+                sg3->onBegin = []() {
+                    OPTICK_PUSH("Pipeline:FixedUpdate")
+                };
+                sg3->onEnd = []() {
+                    OPTICK_POP()
+                };
+
+            }
+        );
+        g4.update<ecs::SystemGroup>(
+            [=](auto * sg4) {
+                sg4->onBegin = []() {
+                    OPTICK_PUSH("Pipeline:Update")
+                };
+                sg4->onEnd = []() {
+                    OPTICK_POP()
+                };
+
+            }
+        );
+        g5.update<ecs::SystemGroup>(
+            [=](auto * sg5) {
+                sg5->onBegin = []() {
+                    OPTICK_PUSH("Pipeline:UpdateUi")
+                };
+                sg5->onEnd = []() {
+                    OPTICK_POP()
+                };
+
+            }
+        );
+        g6.update<ecs::SystemGroup>(
+            [=](auto * sg6) {
+                sg6->onBegin = []() {
+                    OPTICK_PUSH("Pipeline:PostUpdate")
+                };
+                sg6->onEnd = []() {
+                    OPTICK_POP()
+                };
+
+            }
+        );
+        g7.update<ecs::SystemGroup>(
+            [=](auto * sg7) {
+                sg7->onBegin = []() {
+                    OPTICK_PUSH("Pipeline:PreRender")
+                };
+                sg7->onEnd = []() {
+                    OPTICK_POP()
+                };
+
+            }
+        );
+        g8.update<ecs::SystemGroup>(
+            [=](auto * sg8) {
+                sg8->onBegin = []() {
+                    OPTICK_PUSH("Pipeline:Render")
+                };
+                sg8->onEnd = []() {
+                    OPTICK_POP()
+                };
+
+            }
+        );
+        g9.update<ecs::SystemGroup>(
+            [=](auto * sg9) {
+                sg9->onBegin = []() {
+                    OPTICK_PUSH("Pipeline:PostRender")
+                };
+                sg9->onEnd = []() {
+                    OPTICK_POP()
+                };
+
+            }
+        );
+        g10.update<ecs::SystemGroup>(
+            [=](auto * sg10) {
+                sg10->onBegin = []() {
+                    OPTICK_PUSH("Pipeline:PostFrame")
+                };
+                sg10->onEnd = []() {
+                    OPTICK_POP()
+                };
+
+            }
+        );
 
         world->setSingleton<WindowDetails>(
             {
@@ -288,27 +317,23 @@ namespace RxEngine
         window_ = std::make_unique<RxCore::Window>(width, height, windowTitle);
 
         device_ = decltype(device_){
-            new RxCore::Device(window_->GetWindow()), [](RxCore::Device * d)
-            {
+            new RxCore::Device(window_->GetWindow()), [](RxCore::Device * d) {
                 delete d;
             }
         };
 
         // auto surface = RxCore::Device::Context()->surface;
 
-        RxCore::JobManager::instance().freeAllResourcesFunction = []()
-        {
+        RxCore::JobManager::instance().freeAllResourcesFunction = []() {
             RxCore::threadResources.freeAllResources();
         };
 
-        RxCore::JobManager::instance().freeResourcesFunction = []()
-        {
+        RxCore::JobManager::instance().freeResourcesFunction = []() {
             RxCore::threadResources.freeUnused();
         };
 
         auto d = device_.get();
-        RxCore::JobManager::instance().initFunction = [d]()
-        {
+        RxCore::JobManager::instance().initFunction = [d]() {
             RxCore::setThreadDevice(d);
             //RxCore::threadResources.device = d;
         };
@@ -562,28 +587,26 @@ namespace RxEngine
     void EngineMain::handleEvents()
     {
         RxCore::Events::pollEvents(
-            [this](SDL_Event * ev)
-            {
+            [this](SDL_Event * ev) {
                 switch (ev->type) {
                 case SDL_QUIT:
                     shouldQuit = true;
                     break;
 
                 case SDL_KEYUP:
-                case SDL_KEYDOWN:
-                    {
-                        auto k = mapSDLToEKey(ev->key.keysym.sym);
-                        world->getStream<KeyboardKey>()->add(
-                            KeyboardKey
+                case SDL_KEYDOWN: {
+                    auto k = mapSDLToEKey(ev->key.keysym.sym);
+                    world->getStream<KeyboardKey>()->add(
+                        KeyboardKey
                             {
                                 k,
                                 ev->key.state == SDL_PRESSED
-                                    ? EInputAction::Press
-                                    : EInputAction::Release,
+                                ? EInputAction::Press
+                                : EInputAction::Release,
                                 getKeyMod()
                             }
-                        );
-                    }
+                    );
+                }
                     if (ev->key.state == SDL_PRESSED) {
                         world->getStream<KeyboardChar>()->add<KeyboardChar>(
                             {
@@ -592,58 +615,54 @@ namespace RxEngine
                         );
                     }
                     break;
-                case SDL_MOUSEMOTION:
-                    {
-                        MousePosition pos{
-                            static_cast<float>(ev->motion.x),
-                            static_cast<float>(ev->motion.y),
-                            static_cast<float>(ev->motion.xrel),
-                            static_cast<float>(ev->motion.yrel),
-                            getKeyMod(),
-                            capturedMouse
-                        };
-                        world->getStream<MousePosition>()->add(pos);
-                    }
+                case SDL_MOUSEMOTION: {
+                    MousePosition pos{
+                        static_cast<float>(ev->motion.x),
+                        static_cast<float>(ev->motion.y),
+                        static_cast<float>(ev->motion.xrel),
+                        static_cast<float>(ev->motion.yrel),
+                        getKeyMod(),
+                        capturedMouse
+                    };
+                    world->getStream<MousePosition>()->add(pos);
+                }
                     break;
                 case SDL_MOUSEBUTTONDOWN:
-                case SDL_MOUSEBUTTONUP:
-                    {
-                        world->getStream<MouseButton>()->add(
-                            MouseButton
+                case SDL_MOUSEBUTTONUP: {
+                    world->getStream<MouseButton>()->add(
+                        MouseButton
                             {
                                 ev->button.button - 1,
                                 ev->button.state == SDL_PRESSED,
                                 getKeyMod()
                             }
-                        );
-                    }
+                    );
+                }
                     break;
-                case SDL_MOUSEWHEEL:
-                    {
-                        world->getStream<MouseScroll>()->add(
-                            MouseScroll
+                case SDL_MOUSEWHEEL: {
+                    world->getStream<MouseScroll>()->add(
+                        MouseScroll
                             {
                                 static_cast<float>(ev->wheel.y),
                                 getKeyMod()
                             }
-                        );
-                    }
+                    );
+                }
                     break;
-                case SDL_WINDOWEVENT:
-                    {
-                        switch (ev->window.event) {
-                        case SDL_WINDOWEVENT_RESIZED:
-                            WindowResize res{
-                                static_cast<uint32_t>(ev->window.data1),
-                                static_cast<uint32_t>(ev->window.data2)
-                            };
-                            world->getStream<WindowResize>()->add(res);
-                            auto wd = world->getSingletonUpdate<WindowDetails>();
-                            wd->width = ev->window.data1;
-                            wd->height = ev->window.data2;
-                            break;
-                        }
+                case SDL_WINDOWEVENT: {
+                    switch (ev->window.event) {
+                    case SDL_WINDOWEVENT_RESIZED:
+                        WindowResize res{
+                            static_cast<uint32_t>(ev->window.data1),
+                            static_cast<uint32_t>(ev->window.data2)
+                        };
+                        world->getStream<WindowResize>()->add(res);
+                        auto wd = world->getSingletonUpdate<WindowDetails>();
+                        wd->width = ev->window.data1;
+                        wd->height = ev->window.data2;
+                        break;
                     }
+                }
                     break;
                 }
             }

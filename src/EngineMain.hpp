@@ -67,7 +67,7 @@ namespace RxEngine
 
     struct ComponentGui
     {
-        std::function<void(ecs::World *, void *)> editor;
+        std::function<void(ecs::EntityHandle, const void *)> editor;
     };
 
     struct RxJobAdaptor : ecs::JobInterface
@@ -474,23 +474,23 @@ namespace RxEngine
         return result;
     }
 
-    void ecsNameGui(ecs::World * world, void * ptr);
-    void ecsComponentGui(ecs::World * world, void * ptr);
-    void ecsSystemGroupGui(ecs::World * world, void * ptr);
-    void ecsWindowDetailsGui(ecs::World * world, void * ptr);
-    void ecsEngineTimeGui(ecs::World * world, void * ptr);
-    void ecsSystemGui(ecs::World * world, void * ptr);
-    void ecsStreamComponentGui(ecs::World * world, void * ptr);
-    void frameStatsGui(ecs::World * world, void * ptr);
+    void ecsNameGui(ecs::EntityHandle e, const void * ptr);
+    void ecsComponentGui(ecs::EntityHandle e, const void * ptr);
+    void ecsSystemGroupGui(ecs::EntityHandle e, const void * ptr);
+    void ecsWindowDetailsGui(ecs::EntityHandle e, const void * ptr);
+    void ecsEngineTimeGui(ecs::EntityHandle e, const void * ptr);
+    void ecsSystemGui(ecs::EntityHandle e, const void * ptr);
+    void ecsStreamComponentGui(ecs::EntityHandle e, const void * ptr);
+    void frameStatsGui(ecs::EntityHandle e, const void * ptr);
 
-    void guiDisplay(const char * name, uint32_t & value);
-    void guiDisplay(const char * name, int32_t & value);
-    void guiDisplay(const char * name, float & value);
+    void guiDisplay(const char * name, const uint32_t & value);
+    void guiDisplay(const char * name, const int32_t & value);
+    void guiDisplay(const char * name, const float & value);
 
     template<typename T>
-    void autoComponentGui(ecs::World *, void * ptr)
+    void autoComponentGui(ecs::EntityHandle e, const void * ptr)
     {
-        auto sc = static_cast<T *>(ptr);
+        auto sc = static_cast<const T *>(ptr);
         if (sc) {
             tuple_for_each(
                 Reflection<T>::layout(), [&](auto && x) {

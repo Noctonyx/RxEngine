@@ -85,26 +85,26 @@ namespace RxEngine
     {
         auto mbe = world->newEntity();
 
-        auto mb = mbe.addAndUpdate<MeshBundle>();
+        mbe.addAndUpdate<MeshBundle>([&](MeshBundle * mb) {
+            mb->vertexCount = 0;
+            mb->indexCount = 0;
+            mb->vertexSize = sizeof(DynamicMeshVertex);
+            mb->maxVertexCount = (32 * 1024 * 1024 / mb->vertexSize);
+            mb->maxIndexCount = mb->maxVertexCount * 3 / 2;
 
-        mb->vertexCount = 0;
-        mb->indexCount = 0;
-        mb->vertexSize = sizeof(DynamicMeshVertex);
-        mb->maxVertexCount = (32 * 1024 * 1024 / mb->vertexSize);
-        mb->maxIndexCount = mb->maxVertexCount * 3 / 2;
+            mb->vertexBuffer = device->createBuffer(
+                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                VMA_MEMORY_USAGE_GPU_ONLY, mb->maxVertexCount * mb->vertexSize
+                );
 
-        mb->vertexBuffer = device->createBuffer(
-            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
-            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-            VMA_MEMORY_USAGE_GPU_ONLY, mb->maxVertexCount * mb->vertexSize
-        );
+            mb->indexBuffer = device->createIndexBuffer(
+                VMA_MEMORY_USAGE_GPU_ONLY, static_cast<uint32_t>(mb->maxVertexCount * sizeof(uint32_t)),
+                false
+                );
 
-        mb->indexBuffer = device->createIndexBuffer(
-            VMA_MEMORY_USAGE_GPU_ONLY, static_cast<uint32_t>(mb->maxVertexCount * sizeof(uint32_t)),
-            false
-        );
-
-        mb->address = mb->vertexBuffer->getDeviceAddress();
+            mb->address = mb->vertexBuffer->getDeviceAddress();
+        });
 
         world->getSingletonUpdate<DynamicMeshActiveBundle>()->currentBundle = mbe.id;
         //world->createDynamicComponent(mbe);
@@ -173,36 +173,43 @@ namespace RxEngine
         if (!world->has<ecs::Component>(mb)) {
             world->setAsParent(mb);
         }
-        auto smb = world->getUpdate<MeshBundle>(mb);
+        auto smb = world->get<MeshBundle>(mb);
 
-        auto dynamic_mesh_entity = world->newEntity()
-                                        .set<Mesh>(
-                                            {
-                                                .vertexOffset = smb->vertexCount,
-                                                .indexOffset = smb->indexCount,
-                                                .indexCount = static_cast<uint32_t>(indices.size())
-                                            }
-                                        )
-                                        .add<DynamicMesh>()
-                                        .addParent(mb)
-                                        .set<InBundle>({{mb}});
+        ecs::EntityHandle dynamic_mesh_entity;
+        dynamic_mesh_entity = world->newEntity()
+            .set<Mesh>(
+                {
+                    .vertexOffset = smb->vertexCount,
+                    .indexOffset = smb->indexCount,
+                    .indexCount = static_cast<uint32_t>(indices.size())
+                }
+                )
+                .add<DynamicMesh>()
+                .addParent(mb)
+                .set<InBundle>({{mb}});
 
-        copyToBuffers(device, vertices, indices, smb);
-        smb->entries.push_back(dynamic_mesh_entity);
+        world->update<MeshBundle>(mb, [&](MeshBundle * smb){
+            copyToBuffers(device, vertices, indices, smb);
+            smb->entries.push_back(dynamic_mesh_entity);
+        });
 
-        auto smu = dynamic_mesh_entity.getUpdate<Mesh>();
-        std::vector<ecs::entity_t> mEntities;
 
-        uint32_t ix = 0;
-        for (auto & submesh: submeshes) {
-            //sm->subMeshes.push_back(
-            smu->subMeshes.push_back(
-                world->newEntity()
-                     .set<SubMesh>({submesh.firstIndex, submesh.indexCount, ix++})
-                     .set<SubMeshOf>({{dynamic_mesh_entity.id}})
-                     .set<UsesMaterial>({{submesh.materialId}}).id
-            );
-        }
+        //auto smu = dynamic_mesh_entity.getUpdate<Mesh>();
+        //std::vector<ecs::entity_t> mEntities;
+
+        dynamic_mesh_entity.update<Mesh>([&](Mesh * smu){
+            uint32_t ix = 0;
+            for (auto & submesh: submeshes) {
+                //sm->subMeshes.push_back(
+                smu->subMeshes.push_back(
+                    world->newEntity()
+                    .set<SubMesh>({submesh.firstIndex, submesh.indexCount, ix++})
+                    .set<SubMeshOf>({{dynamic_mesh_entity.id}})
+                    .set<UsesMaterial>({{submesh.materialId}}).id
+                    );
+            }
+        });
+
 
         return dynamic_mesh_entity;
     }

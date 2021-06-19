@@ -473,7 +473,7 @@ namespace RxEngine
     Rml::FileHandle RmlFileInterface::Open(const Rml::String & path)
     {
         auto size = vfs_->getFilesize(path);
-        if (size == 0) {
+        if (!size.has_value()) {
             return 0;
         }
 
@@ -482,9 +482,9 @@ namespace RxEngine
         auto [iterator, r] = fileData.emplace(handle, FileHandle{});
         assert(r);
 
-        iterator->second.size = size;
+        iterator->second.size = size.value();
         iterator->second.pointer = 0;
-        iterator->second.buffer.resize(size);
+        iterator->second.buffer.resize(size.value());
         vfs_->getFileContents(path, iterator->second.buffer.data());
 
         return handle;

@@ -32,9 +32,9 @@
 
 namespace RxEngine
 {
-    void meshPrimitiveGui(ecs::World *, void * ptr)
+    void meshPrimitiveGui(ecs::EntityHandle, const void * ptr)
     {
-        auto mesh = static_cast<Mesh *>(ptr);
+        auto mesh = static_cast<const Mesh *>(ptr);
 
         if (mesh) {
             ImGui::TableNextRow();
@@ -75,9 +75,9 @@ namespace RxEngine
         }
     }
 
-    void subMeshGui(ecs::World *, void * ptr)
+    void subMeshGui(ecs::EntityHandle, const void * ptr)
     {
-        auto sub_mesh = static_cast<SubMesh *>(ptr);
+        auto sub_mesh = static_cast<const SubMesh *>(ptr);
 
         if (sub_mesh) {
             ImGui::TableNextRow();
@@ -93,9 +93,9 @@ namespace RxEngine
         }
     }
 
-    void meshBundleGui(ecs::World *, void * ptr)
+    void meshBundleGui(ecs::EntityHandle, const void * ptr)
     {
-        auto mesh_bundle = static_cast<MeshBundle *>(ptr);
+        auto mesh_bundle = static_cast<const MeshBundle *>(ptr);
 
         if (mesh_bundle) {
             ImGui::TableNextRow();
