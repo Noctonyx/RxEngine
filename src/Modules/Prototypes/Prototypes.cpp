@@ -23,6 +23,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <Modules/Scene/SceneModule.h>
 #include "Prototypes.h"
 
 #include "imgui.h"
@@ -52,14 +53,16 @@ namespace RxEngine
             }
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
-            ImGui::Text("SphereBounds");
+            ImGui::Text("Bounding Box");
             ImGui::TableNextColumn();
             ImGui::Text(
-                "(%.2f,%.2f,%.2f) %.2f",
-                visible_prototype->boundingSphere.Center.x,
-                visible_prototype->boundingSphere.Center.y,
-                visible_prototype->boundingSphere.Center.z,
-                visible_prototype->boundingSphere.Radius
+                "(%.2f,%.2f,%.2f) (%.2f,%.2f,%.2f)",
+                visible_prototype->boundingBox.Center.x,
+                visible_prototype->boundingBox.Center.y,
+                visible_prototype->boundingBox.Center.z,
+                visible_prototype->boundingBox.Extents.x,
+                visible_prototype->boundingBox.Extents.y,
+                visible_prototype->boundingBox.Extents.z
             );
         }
     }
@@ -78,20 +81,24 @@ namespace RxEngine
     {
         auto e = world->newEntity(prototypeName.c_str()).add<ecs::Prefab>();
         if (details.get_or("world_position", false)) {
-            e.add<Transforms::WorldPosition>();
+            e.add<WorldPosition>();
         }
         if (details.get_or("rotation", false)) {
-            e.add<Transforms::LocalRotation>();
+            e.add<LocalRotation>();
         }
         if (details.get_or("world_object", false)) {
-            e.add<WorldObject>();
+            e.add<SceneNode>();
+        }
+        if (details.get_or("scene_node", false)) {
+            e.add<SceneNode>();
         }
 
         std::string visible = details.get<std::string>("visible");
         auto visible_entity = world->lookup(visible.c_str());
         assert(visible_entity.isAlive());
-
+        auto vpd = visible_entity.get<VisiblePrototype>();
         e.set<HasVisiblePrototype>({{visible_entity}});
+        e.set<LocalBoundingBox>({vpd->boundingBox});
     }
 
     void loadPrototypes(ecs::World * world, sol::table & prototypes)
@@ -118,7 +125,7 @@ namespace RxEngine
                 uint32_t smi = objectDetails.get<uint32_t>("submesh_id");
 
                 auto meshEntity = world->lookup(m).get<Mesh>();
-                vp->boundingSphere = meshEntity->boundSphere;
+                vp->boundingBox = meshEntity->boundBox;
                 assert(meshEntity);
                 assert(meshEntity->subMeshes.size() > smi);
 

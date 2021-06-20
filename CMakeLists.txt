@@ -71,7 +71,7 @@ add_library(RxEngine STATIC
         src/FSM.cpp
         src/Modules/SwapChain/SwapChain.h
         src/Modules/SwapChain/SwapChain.cpp
-    )
+        src/Modules/Scene/SceneModule.cpp src/Modules/Scene/SceneModule.h)
 
 target_compile_options(RxEngine PUBLIC -DVK_USE_PLATFORM_WIN32_KHR -DNOMINMAX)
 

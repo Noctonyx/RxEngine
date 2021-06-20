@@ -48,9 +48,10 @@
 #include "Events.h"
 #include "Modules/RTSCamera/RTSCamera.h"
 #include "Modules/SceneCamera/SceneCamera.h"
+#include "Modules/Scene/SceneModule.h"
 #include "Modules/StaticMesh/StaticMesh.h"
 #include "Modules/Transforms/Transforms.h"
-#include "Modules/WorldObject/WorldObject.h"
+//#include "Modules/WorldObject/WorldObject.h"
 #include "Vulkan/ThreadResources.h"
 #include "Vulkan/Device.h"
 #include "Window.hpp"
@@ -77,12 +78,13 @@ namespace RxEngine
         addModule<MaterialsModule>();
         addModule<RmlUiModule>();
         addModule<IMGuiRender>();
-        addModule<TransformsModule>();
+        addModule<SceneModule>();
+//        addModule<TransformsModule>();
         addModule<StatsModule>();
         addModule<MeshModule>();
         addModule<StaticMeshModule>();
         addModule<DynamicMeshModule>();
-        addModule<WorldObjectModule>();
+        //addModule<WorldObjectModule>();
         addModule<PrototypesModule>();
         addModule<RTSCameraModule>();
         addModule<SceneCameraModule>();

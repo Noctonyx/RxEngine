@@ -58,7 +58,8 @@ namespace RxEngine
         uint32_t indexOffset{};
         uint32_t indexCount{};
 
-        DirectX::BoundingSphere boundSphere;
+        DirectX::BoundingBox boundBox;
+        //DirectX::BoundingSphere boundSphere;
 
         std::vector<ecs::entity_t> subMeshes;
     };
@@ -93,7 +94,7 @@ namespace RxEngine
         uint32_t indexOffset;
         uint32_t indexCount;
         ecs::entity_t material;
-        DirectX::BoundingSphere boundSphere;
+        DirectX::BoundingBox boundBox;
     };
 
     struct InstanceBuffers

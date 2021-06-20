@@ -26,6 +26,7 @@
 #include <Modules/RTSCamera/RTSCamera.h>
 #include <Modules/SceneCamera/SceneCamera.h>
 #include <Modules/Transforms/Transforms.h>
+#include <Modules/Scene/SceneModule.h>
 #include "DynamicMesh.h"
 
 #include "Modules/Render.h"
@@ -41,8 +42,8 @@ namespace RxEngine
         instanceBuffers.sizes.resize(5);
         instanceBuffers.buffers.resize(5);
 
-        worldObjects_ = world_->createQuery<WorldObject, WorldTransform, DynamicMesh,
-                                  Transforms::LocalBoundingSphere>()
+        worldObjects_ = world_->createQuery<SceneNode, WorldTransform, DynamicMesh,
+                                  WorldBoundingSphere>()
                               .withJob()
                               .withInheritance(true).id;
 
@@ -254,15 +255,16 @@ namespace RxEngine
                 }
             }
 
-            res.each<WorldTransform, Transforms::LocalBoundingSphere, Mesh>(
+            res.each<WorldTransform, WorldBoundingSphere, Mesh>(
                 [&](ecs::EntityHandle e,
                     const WorldTransform * wt,
-                    const Transforms::LocalBoundingSphere * lbs,
+                    const WorldBoundingSphere * lbs,
                     const Mesh * mesh
                 ) {
-                    DirectX::BoundingSphere bs;
+                    DirectX::BoundingSphere bs = lbs->boundSphere;
+
                     auto tx = XMLoadFloat4x4(&wt->transform);
-                    lbs->boundSphere.Transform(bs, tx);
+//                    lbs->boundSphere.Transform(bs, tx);
 
                     for (auto & plane: planes) {
                         DirectX::XMVECTOR c = DirectX::XMLoadFloat3(&bs.Center);

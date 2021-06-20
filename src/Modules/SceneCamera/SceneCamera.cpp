@@ -1,16 +1,13 @@
 #include <Modules/Renderer/Renderer.hpp>
 #include "SceneCamera.h"
-
 #include "EngineMain.hpp"
-#include "Geometry/Camera.hpp"
 #include "Modules/RTSCamera/RTSCamera.h"
-#include "Vulkan/Buffer.hpp"
 
 constexpr int camera_buffer_count = 5;
 
 namespace RxEngine
 {
-    void sceneCameraGUI(ecs::EntityHandle h, const void * ptr)
+    void sceneCameraGui(ecs::EntityHandle h, const void * ptr)
     {
         ecs::World * w = h.getWorld();
 
@@ -101,8 +98,10 @@ namespace RxEngine
                     ds->ds0->setDescriptorOffset(0, sc->getDescriptorOffset());
                 });
 #endif
-        world_->set<ComponentGui>(world_->getComponentId<SceneCamera>(),
-                                  {sceneCameraGUI});
+        world_->set<ComponentGui>(
+            world_->getComponentId<SceneCamera>(),
+            {sceneCameraGui}
+        );
     }
 
     void SceneCameraModule::shutdown()

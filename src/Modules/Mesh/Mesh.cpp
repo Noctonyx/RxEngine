@@ -57,11 +57,13 @@ namespace RxEngine
             ImGui::Text("SphereBounds");
             ImGui::TableNextColumn();
             ImGui::Text(
-                "(%.2f,%.2f,%.2f) %.2f",
-                mesh->boundSphere.Center.x,
-                mesh->boundSphere.Center.y,
-                mesh->boundSphere.Center.z,
-                mesh->boundSphere.Radius
+                "(%.2f,%.2f,%.2f) (%.2f,%.2f,%.2f)",
+                mesh->boundBox.Center.x,
+                mesh->boundBox.Center.y,
+                mesh->boundBox.Center.z,
+                mesh->boundBox.Extents.x,
+                mesh->boundBox.Extents.y,
+                mesh->boundBox.Extents.z
             );
 
             ImGui::TableNextRow();
@@ -135,7 +137,7 @@ namespace RxEngine
         rdc.vertexOffset = mesh->vertexOffset;
         rdc.indexCount = mesh->indexCount;
         rdc.indexOffset = mesh->indexOffset;
-        rdc.boundSphere = mesh->boundSphere;
+        rdc.boundBox = mesh->boundBox;
 
         const auto bundle_entity = mesh_entity.getRelatedEntity<InBundle>();
         if (!bundle_entity) {

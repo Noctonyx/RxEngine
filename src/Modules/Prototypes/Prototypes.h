@@ -7,7 +7,7 @@ namespace RxEngine
 {
     struct VisiblePrototype
     {
-        DirectX::BoundingSphere boundingSphere;
+        DirectX::BoundingBox boundingBox;
         std::vector<ecs::entity_t> subMeshEntities;
     };
 

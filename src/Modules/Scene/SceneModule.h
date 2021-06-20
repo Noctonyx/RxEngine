@@ -23,77 +23,85 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+//
+// Created by shane on 20/06/2021.
+//
 
-#include "Modules/Module.h"
+#ifndef INDUSTRONAUT_SCENEMODULE_H
+#define INDUSTRONAUT_SCENEMODULE_H
+
+#include <Modules/Module.h>
 #include "RxECS.h"
-#include "DirectXCollision.h"
-#include "EngineMain.hpp"
-
-struct Sector;
+#include <DirectXMath.h>
+#include <DirectXCollision.h>
 
 namespace RxEngine
 {
-#if 0
-    namespace Transforms
+    struct SceneNode
     {
-        struct WorldPosition
-        {
-            DirectX::XMFLOAT3 position;
-        };
+        //bool dirty;
+        ecs::entity_t  parent{};
+        std::vector<ecs::entity_t> children{};
+    };
 
-        struct LocalRotation
-        {
-            DirectX::XMFLOAT3 rotation;
-        };
-#if 0
-        struct YRotation
-        {
-            float yRotation;
-        };
+    struct LocalPosition
+    {
+        DirectX::XMFLOAT3 position;
+    };
 
-        struct XRotation
-        {
-            float xRotation;
-        };
-#endif
-        struct ScalarScale
-        {
-            float scale;
-        };
+    struct LocalRotation
+    {
+        DirectX::XMFLOAT3 rotation;
+    };
 
-        struct LocalBoundingSphere
-        {
-            DirectX::BoundingSphere boundSphere;
-        };
+    struct LocalScale
+    {
+        float scale;
+    };
 
-        struct WorldBoundingSphere
-        {
-            DirectX::BoundingSphere boundSphere;
-        };
+    struct WorldPosition
+    {
+        DirectX::XMFLOAT3 position;
+    };
 
-        struct LocalBoundingBox
-        {
-            DirectX::BoundingBox boundBox;
-        };
-    }
+    struct WorldRotation
+    {
+        DirectX::XMFLOAT3 rotation;
+    };
 
-    class TransformsModule : public Module
+    struct WorldScale
+    {
+        float scale;
+    };
+
+    struct WorldTransform
+    {
+        DirectX::XMFLOAT4X4 transform;
+    };
+
+    struct LocalBoundingBox
+    {
+        DirectX::BoundingBox boundBox;
+    };
+
+    struct WorldBoundingSphere
+    {
+        DirectX::BoundingSphere boundSphere;
+    };
+
+    class SceneModule final : public Module
     {
     public:
-        TransformsModule(ecs::World * world, EngineMain * engine, const ecs::entity_t moduleId)
-            : Module(world, engine, moduleId)
-        {}
-
+        SceneModule(ecs::World * world, EngineMain * engine, ecs::entity_t moduleId);
         void startup() override;
         void shutdown() override;
 
-    private:
+    protected:
+        bool updatedSceneNode(ecs::EntityHandle e);
+        static bool updateTransforms(ecs::EntityHandle e);
 
-        //static void worldPositionGui(void * ptr);
-        //static void yRotationGui(void* ptr);
-        //static void xRotationGui(void* ptr);
-        //static void scalarScaleGui(void* ptr);
+        ecs::EntityQueueHandle updateTransformQueue{};
     };
-#endif
-};
+}
+
+#endif //INDUSTRONAUT_SCENEMODULE_H

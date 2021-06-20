@@ -31,6 +31,7 @@ using namespace DirectX;
 
 namespace RxEngine
 {
+#if 0
     void WorldObjectModule::startup()
     {
         auto eq = world_->createEntityQueue("UpdateWorldTransform");
@@ -97,4 +98,5 @@ namespace RxEngine
         world_->lookup("UpdateWorldTransform").destroy();
         world_->deleteSystem(world_->lookup("WorldObject:UpdateWorldTransform"));
     }
+#endif
 }

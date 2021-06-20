@@ -4,6 +4,7 @@
 
 namespace RxEngine
 {
+#if 0
     struct WorldObject
     {
         
@@ -28,4 +29,5 @@ namespace RxEngine
         void startup() override;
         void shutdown() override;
     };
+#endif
 }

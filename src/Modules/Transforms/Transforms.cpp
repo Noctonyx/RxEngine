@@ -3,6 +3,7 @@
 
 namespace RxEngine
 {
+#if 0
     using namespace Transforms;
 
     void worldPositionGui(ecs::EntityHandle, const void * ptr)
@@ -94,4 +95,5 @@ namespace RxEngine
         world_->remove<ComponentGui>(world_->getComponentId<LocalRotation>());
         world_->remove<ComponentGui>(world_->getComponentId<ScalarScale>());
     }
+#endif
 }

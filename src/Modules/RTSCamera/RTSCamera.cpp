@@ -1,3 +1,4 @@
+#include <Modules/Scene/SceneModule.h>
 #include "RTSCamera.h"
 
 #include "RxECS.h"
@@ -5,7 +6,6 @@
 #include "Modules/Transforms/Transforms.h"
 #include "Modules/ImGui/ImGuiRender.hpp"
 
-using namespace RxEngine::Transforms;
 using namespace DirectX;
 
 namespace RxEngine

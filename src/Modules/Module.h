@@ -43,7 +43,7 @@ namespace RxEngine
         EngineMain * engine_;
 
     public:
-        Module(ecs::World * world, EngineMain * engine, const ecs::entity_t moduleId)
+        Module(ecs::World * world, EngineMain * engine, ecs::entity_t moduleId)
             : ecs::ModuleBase(world, moduleId)
             , engine_(engine)
         {           

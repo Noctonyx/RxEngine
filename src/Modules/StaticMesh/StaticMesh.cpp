@@ -24,6 +24,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <Vulkan/Buffer.hpp>
+#include <Modules/Scene/SceneModule.h>
 #include "StaticMesh.h"
 
 #include "EngineMain.hpp"
@@ -48,7 +49,7 @@ namespace RxEngine
     void StaticMeshModule::startup()
     {
         //world_->addSingleton<StaticMeshActiveBundle>();
-        worldObjects_ = world_->createQuery<WorldObject, WorldTransform, HasVisiblePrototype>()
+        worldObjects_ = world_->createQuery<SceneNode, WorldTransform, HasVisiblePrototype>()
                               //.withJob()
                                   //.withRelation<HasVisiblePrototype, VisiblePrototype>()
                               .withInheritance(true).id;
@@ -254,7 +255,7 @@ namespace RxEngine
                                                .vertexOffset = smb->vertexCount,
                                                .indexOffset = smb->indexCount,
                                                .indexCount = static_cast<uint32_t>(mesh_indices.size()),
-                                               .boundSphere = bs
+                                               .boundBox = bb
                                            }
                                        )
                                        .set<InBundle>({{mb}});
@@ -364,18 +365,19 @@ namespace RxEngine
                 }
             }
 
-            res.each<WorldTransform, HasVisiblePrototype>(
+            res.each<WorldTransform, WorldBoundingSphere, HasVisiblePrototype>(
                 [&](ecs::EntityHandle e,
                     const WorldTransform * wt,
+                    const WorldBoundingSphere * wbs,
                     const HasVisiblePrototype * vpp) {
                     auto vp = world_->get<VisiblePrototype>(vpp->entity);
                     //OPTICK_EVENT("Process Entity")
                     if (!vp) {
                         return;
                     }
-                    DirectX::BoundingSphere bs;
+                    DirectX::BoundingSphere bs = wbs->boundSphere;
                     auto tx = XMLoadFloat4x4(&wt->transform);
-                    vp->boundingSphere.Transform(bs, tx);
+                    //vp->boundingSphere.Transform(bs, tx);
 
                     for (auto & plane: planes) {
                         DirectX::XMVECTOR c = DirectX::XMLoadFloat3(&bs.Center);
