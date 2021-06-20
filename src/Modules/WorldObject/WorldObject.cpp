@@ -33,21 +33,49 @@ namespace RxEngine
 {
     void WorldObjectModule::startup()
     {
+        auto eq = world_->createEntityQueue("UpdateWorldTransform");
+        eq.triggerOnAdd<Transforms::WorldPosition>();
+        eq.triggerOnAdd<Transforms::LocalRotation>();
+        eq.triggerOnUpdate<Transforms::WorldPosition>();
+        eq.triggerOnUpdate<Transforms::LocalRotation>();
+
+        world_->createSystem("WorldObject:UpdateWorldTransform")
+              .inGroup("Pipeline:PostUpdate")
+              .withEntityQueue(eq)
+              .eachEntity(
+                  [](ecs::EntityHandle e) {
+                      auto wp = e.get<Transforms::WorldPosition>();
+                      auto rot = e.get<Transforms::LocalRotation>();
+
+                      auto tm = XMMatrixTranslation(wp->position.x, wp->position.y, wp->position.z);
+                      auto rm = XMMatrixRotationRollPitchYaw(
+                          rot ? rot->rotation.x : 0.0f, rot ? rot->rotation.y : 0.0f,
+                          rot ? rot->rotation.z : 0.0f
+                          );
+                      auto nm = XMMatrixMultiply(rm, tm);
+                      e.add<WorldTransform>();
+                      e.update<WorldTransform>([&](WorldTransform * wt){
+                          XMStoreFloat4x4(&wt->transform, nm);
+                      });
+                      return true;
+                  }
+              );
+#if 0
         world_->createSystem("WorldObject:CreateTransform")
               .withQuery<WorldObject, Transforms::WorldPosition>()
               .inGroup("Pipeline:PostUpdate")
-              //.withJob()
-              .withUpdates()
+                  //.withJob()
+                  //.withUpdates()
               .each<Transforms::WorldPosition, Transforms::LocalRotation, WorldTransform>(
                   [](ecs::EntityHandle e,
                      const Transforms::WorldPosition * wp,
                      const Transforms::LocalRotation * rot,
-                     WorldTransform * wt)
-                  {
+                     WorldTransform * wt) {
                       auto tm = XMMatrixTranslation(wp->position.x, wp->position.y, wp->position.z);
                       auto rm = XMMatrixRotationRollPitchYaw(
                           rot ? rot->rotation.x : 0.0f, rot ? rot->rotation.y : 0.0f,
-                          rot ? rot->rotation.z : 0.0f);
+                          rot ? rot->rotation.z : 0.0f
+                      );
                       auto nm = XMMatrixMultiply(rm, tm);
                       if (!wt) {
                           WorldTransform wtt;
@@ -59,11 +87,14 @@ namespace RxEngine
                           return;
                       }
                       XMStoreFloat4x4(&wt->transform, nm);
-                  });
+                  }
+              );
+#endif
     }
 
     void WorldObjectModule::shutdown()
     {
-        world_->deleteSystem(world_->lookup("WorldObject:CreateTransform"));
+        world_->lookup("UpdateWorldTransform").destroy();
+        world_->deleteSystem(world_->lookup("WorldObject:UpdateWorldTransform"));
     }
 }
