@@ -40,14 +40,12 @@ add_library(RxEngine STATIC
         src/ini.h
         src/Modules/Render.h
         src/Modules/Render.cpp
-        src/Modules/Transforms/Transforms.h
         src/EngineConfig.cpp
         src/EngineUI.cpp 
         src/Modules/Stats/Stats.h
         src/Modules/Stats/Stats.cpp
         src/Modules/Module.h 
-        src/Modules/Transforms/Transforms.cpp 
-        src/Modules/RmlUI/RmlUI.h 
+        src/Modules/RmlUI/RmlUI.h
         src/Modules/RmlUI/RmlUI.cpp
         src/Modules/SceneCamera/SceneCamera.h
         src/Modules/SceneCamera/SceneCamera.cpp
@@ -55,9 +53,7 @@ add_library(RxEngine STATIC
         src/Modules/StaticMesh/StaticMesh.cpp
         src/Modules/Prototypes/Prototypes.h
         src/Modules/Prototypes/Prototypes.cpp
-        src/Modules/WorldObject/WorldObject.h
-        src/Modules/WorldObject/WorldObject.cpp 
-        src/Modules/Materials/Materials.h 
+        src/Modules/Materials/Materials.h
         src/Modules/Materials/Materials.cpp
         src/Modules/RTSCamera/RTSCamera.h 
         src/Modules/RTSCamera/RTSCamera.cpp 

@@ -25,13 +25,11 @@
 
 #include <Modules/RTSCamera/RTSCamera.h>
 #include <Modules/SceneCamera/SceneCamera.h>
-#include <Modules/Transforms/Transforms.h>
 #include <Modules/Scene/SceneModule.h>
 #include "DynamicMesh.h"
+#include "EngineMain.hpp"
 
 #include "Modules/Render.h"
-#include "Modules/Mesh/Mesh.h"
-#include "Modules/WorldObject/WorldObject.h"
 #include "Vulkan/ThreadResources.h"
 
 namespace RxEngine

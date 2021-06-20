@@ -24,13 +24,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <Modules/Scene/SceneModule.h>
+#include <imgui.h>
+#include <EngineMain.hpp>
 #include "Prototypes.h"
-
-#include "imgui.h"
 #include "Modules/Mesh/Mesh.h"
 #include "Modules/StaticMesh/StaticMesh.h"
-#include "Modules/Transforms/Transforms.h"
-#include "Modules/WorldObject/WorldObject.h"
 #include "sol/table.hpp"
 
 namespace RxEngine

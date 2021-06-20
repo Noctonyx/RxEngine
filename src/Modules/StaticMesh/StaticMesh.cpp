@@ -26,21 +26,14 @@
 #include <Vulkan/Buffer.hpp>
 #include <Modules/Scene/SceneModule.h>
 #include "StaticMesh.h"
-
 #include "EngineMain.hpp"
 #include "imgui.h"
 #include "Loader.h"
 #include "Modules/Render.h"
 #include "Modules/Lighting/Lighting.h"
-#include "Modules/Materials/Materials.h"
 #include "Modules/Prototypes/Prototypes.h"
-#include "Modules/RTSCamera/RTSCamera.h"
-#include "Modules/WorldObject/WorldObject.h"
-#include "sol/state.hpp"
-#include "sol/table.hpp"
 #include "Vulkan/ThreadResources.h"
 #include "Modules/SceneCamera/SceneCamera.h"
-#include "Modules/Mesh/Mesh.h"
 
 namespace RxEngine
 {
@@ -57,16 +50,7 @@ namespace RxEngine
         instanceBuffers.count = 5;
         instanceBuffers.sizes.resize(5);
         instanceBuffers.buffers.resize(5);
-        //sib->descriptorSets.resize(5);
-#if 0
-        const RxCore::DescriptorPoolTemplate pool_template(
-            {
-                {
-                    VkDescriptorType::eStorageBuffer,
-                    10
-                }
-            }, 10);
-#endif
+
         world_->createSystem("StaticMesh:Render")
               .inGroup("Pipeline:Render")
               .withStreamWrite<Render::OpaqueRenderCommand>()
