@@ -342,7 +342,7 @@ namespace RxEngine
             OPTICK_EVENT("Collect instances")
             auto res = world_->getResults(worldObjects_);
             {
-                OPTICK_EVENT("Resize");
+                OPTICK_EVENT("Resize")
                 if (instances.size() < res.count() * 2) {
                     instances.resize(res.count() * 2);
                     mats.resize(res.count() * 2);
@@ -360,7 +360,7 @@ namespace RxEngine
                         return;
                     }
                     DirectX::BoundingSphere bs = wbs->boundSphere;
-                    auto tx = XMLoadFloat4x4(&wt->transform);
+                    //auto tx = XMLoadFloat4x4(&wt->transform);
                     //vp->boundingSphere.Transform(bs, tx);
 
                     for (auto & plane: planes) {

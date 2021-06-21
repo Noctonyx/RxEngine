@@ -35,7 +35,6 @@ using namespace DirectX;
 
 namespace RxEngine
 {
-
     void worldPositionGui(ecs::EntityHandle, const void * ptr)
     {
         auto position = static_cast<const WorldPosition *>(ptr);
@@ -79,6 +78,108 @@ namespace RxEngine
             ImGui::Text("Z");
             ImGui::TableNextColumn();
             ImGui::Text("%.3f", position->position.z);
+        }
+    }
+
+    void worldTransformGui(ecs::EntityHandle, const void * ptr)
+    {
+        auto tx = static_cast<const WorldTransform *>(ptr);
+
+        if (tx) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("");
+            ImGui::TableNextColumn();
+            ImGui::Text(
+                "%.3f, %.3f, %.3f, %.3f",
+                tx->transform.m[0][0],
+                tx->transform.m[0][1],
+                tx->transform.m[0][2],
+                tx->transform.m[0][3]
+            );
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("");
+            ImGui::TableNextColumn();
+            ImGui::Text(
+                "%.3f, %.3f, %.3f, %.3f",
+                tx->transform.m[1][0],
+                tx->transform.m[1][1],
+                tx->transform.m[1][2],
+                tx->transform.m[1][3]
+            );
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("");
+            ImGui::TableNextColumn();
+            ImGui::Text(
+                "%.3f, %.3f, %.3f, %.3f",
+                tx->transform.m[2][0],
+                tx->transform.m[2][1],
+                tx->transform.m[2][2],
+                tx->transform.m[2][3]
+            );
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("");
+            ImGui::TableNextColumn();
+            ImGui::Text(
+                "%.3f, %.3f, %.3f, %.3f",
+                tx->transform.m[3][0],
+                tx->transform.m[3][1],
+                tx->transform.m[3][2],
+                tx->transform.m[3][3]
+            );
+        }
+    }
+
+    void worldBoundingSphereGui(ecs::EntityHandle, const void * ptr)
+    {
+        auto bs = static_cast<const WorldBoundingSphere *>(ptr);
+
+        if (bs) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Sphere");
+            ImGui::TableNextColumn();
+            ImGui::Text(
+                "(%.3f, %.3f, %.3f), %.3f",
+                bs->boundSphere.Center.x,
+                bs->boundSphere.Center.y,
+                bs->boundSphere.Center.z,
+                bs->boundSphere.Radius
+            );
+        }
+    }
+
+    void sceneNodeGui(ecs::EntityHandle e, const void * ptr)
+    {
+        auto sn = static_cast<const SceneNode *>(ptr);
+
+        if (sn) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Parent");
+            ImGui::TableNextColumn();
+            ImGui::Text(
+                "%s", e.getWorld()->description(sn->parent).c_str()
+            );
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Children");
+            bool first = true;
+            for(auto c: sn->children) {
+                if(!first) {
+                    ImGui::TableNextRow();
+                    ImGui::TableNextColumn();
+                    ImGui::Text("");
+                }
+                ImGui::TableNextColumn();
+                ImGui::Text(
+                    "%s", e.getWorld()->description(c).c_str()
+                    );
+                first = false;
+            }
         }
     }
 
@@ -154,7 +255,7 @@ namespace RxEngine
               .withWrite<SceneNode>()
               .eachEntity([this](ecs::EntityHandle e) { return updatedSceneNode(e); });
 
-        world_->createSystem("WorldObject:UpdateWorldTransform")
+        world_->createSystem("Scene:UpdateWorldTransform")
               .inGroup("Pipeline:PostUpdate")
               .withEntityQueue(updateTransformQueue)
               .withRead<LocalRotation>()
@@ -172,7 +273,7 @@ namespace RxEngine
         world_->set<ComponentGui>(
             world_->getComponentId<LocalPosition>(),
             {.editor = localPositionGui}
-            );
+        );
         world_->set<ComponentGui>(
             world_->getComponentId<LocalRotation>(),
             {.editor = localRotationGui}
@@ -180,6 +281,18 @@ namespace RxEngine
         world_->set<ComponentGui>(
             world_->getComponentId<LocalScale>(),
             {.editor = scalarScaleGui}
+        );
+        world_->set<ComponentGui>(
+            world_->getComponentId<WorldTransform>(),
+            {.editor = worldTransformGui}
+        );
+        world_->set<ComponentGui>(
+            world_->getComponentId<WorldBoundingSphere>(),
+            {.editor = worldBoundingSphereGui}
+        );
+        world_->set<ComponentGui>(
+            world_->getComponentId<SceneNode>(),
+            {.editor = sceneNodeGui}
         );
     }
 
@@ -192,6 +305,9 @@ namespace RxEngine
         world_->remove<ComponentGui>(world_->getComponentId<LocalPosition>());
         world_->remove<ComponentGui>(world_->getComponentId<LocalRotation>());
         world_->remove<ComponentGui>(world_->getComponentId<LocalScale>());
+        world_->remove<ComponentGui>(world_->getComponentId<WorldTransform>());
+        world_->remove<ComponentGui>(world_->getComponentId<WorldBoundingSphere>());
+        world_->remove<ComponentGui>(world_->getComponentId<SceneNode>());
     }
 
     bool SceneModule::updatedSceneNode(ecs::EntityHandle e)
@@ -226,7 +342,8 @@ namespace RxEngine
         auto lp = e.get<LocalPosition>();
         auto rot = e.get<LocalRotation>();
         auto bb = e.get<LocalBoundingBox>();
-        if (!sn || !lp || !bb) {
+
+        if (!sn || !lp) {
             return true;
         }
         auto parent = e.getHandle(sn->parent);
@@ -246,35 +363,66 @@ namespace RxEngine
             rot ? rot->rotation.z : 0.0f
         );
         auto nm = XMMatrixMultiply(rm, tm);
-        nm = XMMatrixMultiply(pm, tm);
-
-        BoundingSphere bs;
-        BoundingSphere::CreateFromBoundingBox(bs, bb->boundBox);
+        nm = XMMatrixMultiply(nm, pm);
 
         e.add<WorldTransform>();
         e.update<WorldTransform>(
-            [&](WorldTransform * wt) {
+            [=](WorldTransform * wt) {
                 XMStoreFloat4x4(&wt->transform, nm);
             }
         );
 
-        e.add<WorldBoundingSphere>();
-        e.update<WorldBoundingSphere>(
-            [&](WorldBoundingSphere * bs2) {
-                bs.Transform(bs2->boundSphere, nm);
-            }
-        );
+        if (bb) {
+            BoundingSphere bs;
+            BoundingSphere::CreateFromBoundingBox(bs, bb->boundBox);
+            e.add<WorldBoundingSphere>();
+            e.update<WorldBoundingSphere>(
+                [&](WorldBoundingSphere * bs2) {
+                    bs.Transform(bs2->boundSphere, nm);
+                }
+            );
+        }
 
         XMFLOAT4 origin = {0, 0, 0, 1};
 
-        e.add<WorldPosition>();
-        e.update<WorldPosition>(
-            [&](WorldPosition * wp) {
-                auto p = XMLoadFloat4(&origin);
-                auto wpp = XMVector3TransformCoord(p, nm);
-                XMStoreFloat3(&wp->position, wpp);
+        if (e.has<WorldPosition>()) {
+            e.update<WorldPosition>(
+                [&](WorldPosition * wp) {
+                    auto p = XMLoadFloat4(&origin);
+                    auto wpp = XMVector3TransformCoord(p, nm);
+                    XMStoreFloat3(&wp->position, wpp);
+                }
+            );
+        }
+        return true;
+    }
+
+    void SceneNode::parentEntity(ecs::EntityHandle parent, ecs::EntityHandle child)
+    {
+        if (!parent.isAlive() || !child.isAlive() || !parent.has<SceneNode>() || !child.has<SceneNode>()) {
+            return;
+        }
+        auto childSceneNode = child.get<SceneNode>();
+        auto currentParent = parent.getHandle(childSceneNode->parent);
+        if (currentParent.isAlive()) {
+            parent.update<SceneNode>(
+                [&](SceneNode * sn) {
+                    auto it = std::find(sn->children.begin(), sn->children.end(), child.id);
+                    if (it != sn->children.end()) {
+                        sn->children.erase(it);
+                    }
+                }
+            );
+        }
+        parent.update<SceneNode>(
+            [&](SceneNode * sn) {
+                sn->children.push_back(child.id);
             }
         );
-        return true;
+        child.update<SceneNode>(
+            [&](SceneNode * sn) {
+                sn->parent = parent;
+            }
+        );
     }
 }

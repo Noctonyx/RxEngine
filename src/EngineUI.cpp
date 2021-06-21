@@ -666,6 +666,24 @@ namespace RxEngine
             ImGui::Text("Size");
             ImGui::TableNextColumn();
             ImGui::Text("%d", comp->size);
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("On Updates");
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", comp->onUpdates.size());
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("On Adds");
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", comp->onAdds.size());
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("On Removes");
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", comp->onRemove.size());
         }
     }
 

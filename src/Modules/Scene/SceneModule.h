@@ -42,6 +42,8 @@ namespace RxEngine
         //bool dirty;
         ecs::entity_t  parent{};
         std::vector<ecs::entity_t> children{};
+
+        static void parentEntity(ecs::EntityHandle parent, ecs::EntityHandle child);
     };
 
     struct LocalPosition

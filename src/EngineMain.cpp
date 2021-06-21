@@ -139,7 +139,7 @@ namespace RxEngine
         auto g2 = world->newEntity("Pipeline:Early").set<ecs::SystemGroup>({2, false, 0.0f, 0.0f});
         auto g3 = world->newEntity("Pipeline:FixedUpdate").set<ecs::SystemGroup>(
             {
-                3, true, 0.0f, 0.02f
+                3, true, 0.0f, 1.f/50.f
             }
         );
         auto g4 = world->newEntity("Pipeline:Update").set<ecs::SystemGroup>({4, false, 0.0f, 0.0f});
